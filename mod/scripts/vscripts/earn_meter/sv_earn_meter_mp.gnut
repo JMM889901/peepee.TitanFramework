@@ -22,7 +22,7 @@ void function Sv_EarnMeterMP_Init()
 void function EarnMeterMP_SetTitanLoadout( entity player )
 {
 	if ( EarnMeterMP_IsTitanEarnGametype() )
-		PlayerEarnMeter_SetGoal( player, EarnObject_GetByRef( GetTitanLoadoutForPlayer( player ).titanClass ) )
+		PlayerEarnMeter_SetGoal( player, EarnObject_GetByRef( GetModdedTitanClassForMods(GetTitanLoadoutForPlayer( player ).titanClass )) )
 	else
 		PlayerEarnMeter_SetGoal( player, PlayerEarnMeter_GetReward( player ) )
 }

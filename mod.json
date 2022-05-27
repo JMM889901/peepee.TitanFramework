@@ -1,7 +1,7 @@
 {
 	"Name": "TitanFramework",
 	"Description": "Pain",
-	"LoadPriority": 5,
+	"LoadPriority": 50,
 	"RequiredOnClient": true,
 	"Version": "1.0.0",
 	"Scripts": [

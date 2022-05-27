@@ -185,8 +185,8 @@ TitanLoadoutDef function GetTitanLoadoutFromPersistentData( entity player, int l
 {
 	TitanLoadoutDef loadout
 	PopulateTitanLoadoutFromPersistentData( player, loadout, loadoutIndex )
-	print("/////////////////GetTitanLoadoutFromPersistenceData")
-	PrintTitanLoadout(loadout)
+	//print("/////////////////GetTitanLoadoutFromPersistenceData")
+	//PrintTitanLoadout(loadout)
 	return loadout
 }
 
@@ -229,9 +229,9 @@ void function PopulateTitanLoadoutFromPersistentData( entity player, TitanLoadou
 	if(loadoutIndex in GetModdedTitansByIndexNoPersist())
 	{
 		loadout.name 				= GetModdedTitanByIndexNoPersist(loadoutIndex).name
-		print(loadout.name)
+		//print(loadout.name)
 		loadout.titanClass			= GetModdedTitanByIndexNoPersist(loadoutIndex).titanClass
-		print(loadout.titanClass)
+		//print(loadout.titanClass)
 		loadout.primaryMod			= GetModdedTitanByIndexNoPersist(loadoutIndex).primaryMod
 		loadout.special 			= GetModdedTitanByIndexNoPersist(loadoutIndex).special
 		loadout.antirodeo 			= GetModdedTitanByIndexNoPersist(loadoutIndex).antirodeo
@@ -239,9 +239,9 @@ void function PopulateTitanLoadoutFromPersistentData( entity player, TitanLoadou
 	else
 	{
 		loadout.name 				= GetValidatedPersistentLoadoutValue( player, "titan", loadoutIndex, "name" )
-		print(loadout.name)
+		//print(loadout.name)
 		loadout.titanClass			= GetValidatedPersistentLoadoutValue( player, "titan", loadoutIndex, "titanClass" )
-		print(loadout.titanClass)
+		//print(loadout.titanClass)
 		loadout.primaryMod			= GetValidatedPersistentLoadoutValue( player, "titan", loadoutIndex, "primaryMod" )
 		loadout.special 			= GetValidatedPersistentLoadoutValue( player, "titan", loadoutIndex, "special" )
 		loadout.antirodeo 			= GetValidatedPersistentLoadoutValue( player, "titan", loadoutIndex, "antirodeo" )
@@ -266,14 +266,15 @@ void function PopulateTitanLoadoutFromPersistentData( entity player, TitanLoadou
 	loadout.primeCamoIndex	= GetValidatedPersistentLoadoutValueInt( player, "titan", loadoutIndex, "primeCamoIndex" )
 	loadout.primeSkinIndex	= GetValidatedPersistentLoadoutValueInt( player, "titan", loadoutIndex, "primeSkinIndex" ) //Important: Skin index needs to be gotten after camoIndex for loadout validation purposes
 	loadout.primeDecalIndex	= GetValidatedPersistentLoadoutValueInt( player, "titan", loadoutIndex, "primeDecalIndex" )
-	print("=======================================================")
-	print("Populating from persistent=============================")
-	PrintTitanLoadout(loadout)
-	print("=======================================================")
+	//print("=======================================================")
+	//print("Populating from persistent=============================")
+	//PrintTitanLoadout(loadout)
+	//print("=======================================================")
 
 	UpdateDerivedTitanLoadoutData( loadout )
 	if(!(loadoutIndex in GetModdedTitansByIndexNoPersist()))
 		OverwriteLoadoutWithDefaultsForSetFile( loadout )
+	
 }
 
 string function GetSetFileForTitanClassAndPrimeStatus( string titanClass, bool isPrimeTitan = false )
@@ -3529,12 +3530,15 @@ string function Loadouts_GetSetFileForRequestedClass( entity player )
 	{
 		int loadoutIndex = GetPersistentSpawnLoadoutIndex( player, "titan" )
 		TitanLoadoutDef loadout = GetTitanLoadoutFromPersistentData( player, loadoutIndex )
-		print("==========GetTitanSpawnLoadout===============")
-		PrintTitanLoadout(loadout)
+		//print("==========GetTitanSpawnLoadout===============")
+		//PrintTitanLoadout(loadout)
+		//print("In modded titans " + loadout.titanClass + " " + GetModdedTitanClasses().contains(loadout.titanClass))
 		if(!(GetModdedTitanClasses().contains(loadout.titanClass)))
 		{
 			OverwriteLoadoutWithDefaultsForSetFile_ExceptSpecialAndAntiRodeo( loadout, player )
 		}
+		//print("===========Post check spawn loadout===========")
+		//PrintTitanLoadout(loadout)
 	
 		return loadout
 	}

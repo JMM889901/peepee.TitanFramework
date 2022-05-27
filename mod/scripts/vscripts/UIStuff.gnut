@@ -170,8 +170,13 @@ void function OverwriteModdedTitanLoadoutDefaultEquipment(TitanLoadoutDef loadou
 	loadout.primary = Default.primary
 	loadout.melee = Default.melee
 	loadout.ordnance = Default.ordnance
+	loadout.special = Default.special
+	loadout.antirodeo = Default.antirodeo
 	loadout.coreAbility = Default.coreAbility
 	loadout.difficulty = Default.difficulty
+	loadout.passive4 = "pas_vanguard_core1"
+	loadout.passive5 = "pas_vanguard_core4"
+	loadout.passive6 = "pas_vanguard_core7"
 }
 array<string> ModdedTitanClasses
 void function RegisterModdedTitan(

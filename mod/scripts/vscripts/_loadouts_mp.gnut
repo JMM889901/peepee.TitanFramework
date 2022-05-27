@@ -67,15 +67,17 @@ void function DelayDestroyDroppedWeapon( entity weapon )
 
 TitanLoadoutDef function GetTitanLoadoutForPlayer( entity player )
 {
+	//print("SetActiveTitanloadout")
 	SetActiveTitanLoadout( player ) // set right loadout
 	
 	// fix bug with titan weapons having null mods
 	// null mods aren't valid and crash if we try to give them to npc
+	//print("GetActiveTitanLoadout")
 	TitanLoadoutDef def = GetActiveTitanLoadout( player )
 	def.primaryMods.removebyvalue( "null" )
-	print("//////////GET TITAN LOADOUT FOR PLAYER///////////")
-	PrintTitanLoadout(def)
-	print("//////////FINISHED TITAN LOADOOUT FOR PLAYER////")
+	//print("//////////GET TITAN LOADOUT FOR PLAYER///////////")
+	//PrintTitanLoadout(def)
+	//print("//////////FINISHED TITAN LOADOOUT FOR PLAYER////")
 	return def
 }
 

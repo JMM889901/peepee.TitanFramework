@@ -56,9 +56,9 @@ void function UpdateTitanLoadoutButtons( int selectedIndex, var[NUM_PERSISTENT_T
 	foreach ( index, button in buttons )
 	{
 		TitanLoadoutDef loadout = GetCachedTitanLoadout( index )
-		print("=======UPDATE TITAN LOADOUT IS PRINTING " +loadout.name + "==============")
-		PrintTitanLoadout(loadout)
-		print("=====================================================================")
+		//print("=======UPDATE TITAN LOADOUT IS PRINTING " +loadout.name + "==============")
+		//PrintTitanLoadout(loadout)
+		//print("=====================================================================")
 		RHud_SetText( button, GetTitanLoadoutName( loadout ) )
 		//Hud_SetPanelAlpha( button, 0 )
 
@@ -99,7 +99,7 @@ void function UpdateTitanLoadoutButtons( int selectedIndex, var[NUM_PERSISTENT_T
 void function UpdateTitanLoadoutPanel( var loadoutPanel, TitanLoadoutDef loadout )
 {
 	var menu = Hud_GetParent( loadoutPanel )
-	PrintTitanLoadout(loadout)
+	//PrintTitanLoadout(loadout)
 	array<var> buttons = GetElementsByClassname( menu, "TitanLoadoutPanelButtonClass" )
 
 	/*if ( button )
