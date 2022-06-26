@@ -1,5 +1,14 @@
 Venom/Templar stuff is still privated so putting this here as standalone for now, also means other mods can use it (not really recommended for until pdiff is done)
 
+Major update:
+
+Reworked just about everything 
+
+No longer uses setfiles to get over classes.txt limit
+
+No longer directly sets the contents of each loadout, instead gives titans past the default 7 an extra loadout button to choose the titan class, now supports up to 20 titans, if that number is somehow reached it can easily be increased
+
+
 the peepeepoopoo mans TitanFramework
 ==
 Basic framework for adding custom titans, needlessly overcomplicated but rpak and datatables has forced my hand (that and impatience)
@@ -14,7 +23,7 @@ void function ArchonUIInit(){
 	RegisterModdedTitan("Archon", "mp_titanweapon_arc_cannon", 
 	"mp_titanweapon_shock_shield", "mp_titanweapon_tesla_node",
 	"mp_titanweapon_charge_ball", "mp_titancore_storm_core", 
-	"titan_atlas_archon", "titan_atlas_stickybomb", "ion", 3, "TITAN_ION_PASSIVE",
+	"titan_atlas_stickybomb", "ion", 3, "TITAN_ION_PASSIVE",
 	eItemTypes.TITAN_ION_EXECUTION
 	)
 	ArchonUIInitP2()
@@ -25,13 +34,13 @@ void function ArchonUIInitP2(){
 	CreateGenericItem(999, eItemTypes.TITAN_ANTIRODEO, "mp_titanweapon_tesla_node", "Tesla node", "I am in pain", "Deploys a tesla node, dealing electrical damage to anything that gets too close", $"rui/titan_loadout/tactical/titan_tactical_rearm_menu", 0, false)
 	CreateGenericItem(999, eItemTypes.TITAN_PRIMARY, "mp_titanweapon_arc_cannon", "Arc cannon", "The pain does not stop", "Charge and release a devastating burst of energy", $"ui/temp", 0, false)
 	CreateGenericItem(999, eItemTypes.TITAN_CORE_ABILITY, "mp_titancore_storm_core", "Storm core", "AAAAAAAA", "Electricity go brrrrr", $"rui/titan_loadout/core/titan_core_flame_wave", 0, false)
-	CreateGenericItem(999, eItemTypes.TITAN_ORDNANCE, "mp_titanweapon_shock_shield", "Shock shield", "Using static forces or some science shit stop bullets", "Using static forces or some science shit stop bullets", $"ui/temp", 0, false)
-	CreateGenericItem(999, eItemTypes.TITAN_SPECIAL, "mp_titanweapon_charge_ball", "Charge ball", "Using static forces or some science shit stop bullets", "Ayo that ball do be kinda charged tho", $"ui/temp", 0, false)
+	CreateGenericItem(999, eItemTypes.TITAN_ORDNANCE, "mp_titanweapon_shock_shield", "Shock shield", "Using static forces or some science stuff stop bullets", "Using static forces or some science shit stop bullets", $"ui/temp", 0, false)
+	CreateGenericItem(999, eItemTypes.TITAN_SPECIAL, "mp_titanweapon_charge_ball", "Charge ball", "Using static forces or some science stuff stop bullets", "Ayo that ball do be kinda charged tho", $"ui/temp", 0, false)
 
 	RegisterModdedTitanItems("Archon", "mp_titanweapon_arc_cannon", 
 	"mp_titanweapon_shock_shield", "mp_titanweapon_tesla_node",
 	"mp_titanweapon_charge_ball", "mp_titancore_storm_core", 
-	"titan_atlas_archon", "titan_atlas_stickybomb", "ion", 3, "TITAN_ION_PASSIVE",
+	"titan_atlas_stickybomb", "ion", 3, "TITAN_ION_PASSIVE",
 	eItemTypes.TITAN_ION_EXECUTION
 	)
 }
@@ -43,7 +52,6 @@ Function args
     string Primary,  <- gun
     string Left, string Mid, <- left and right ability 
     string Right, string Core,  <- mid and core
-    string SetFile,  <- your custom setfile
     string BaseSetFile, <- setfile of basetitan
     string BaseName,  <- name of base titan
     int difficulty, <- costmetic, should be optional lol
@@ -58,8 +66,8 @@ A base titan is just the titan from which to get the passives (until pdiff allow
 
 This will be modified, simplified and improved, but idk here it is for now i guess 
 
-Setfile
-----
-in addition to these functions a custom setfile is also needed, included in this download is a setfile for the archon titan, unfortunately because keyvalues are currently cringe it is impossible to keyvalue classes.txt which your setfile must also be added to, as such you must mod it, which in turn kills compatability so err
+Current known issues
+-------
+Currently lacks authentication for valid titan classes when setting from console, however this wont cause crashes, if a nonexistent titan is selected it should be fine, and loading with a nonexistent titan selected will only result in your titan name being wrong, the loadout should be correct
 
-pain
+Due to passives all custom titans must make sure that the weapons and abilities support the mods that will be added by those passives, even if these mods do nothing you must have them or you will get a bitfield issue 

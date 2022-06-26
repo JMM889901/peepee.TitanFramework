@@ -1,30 +1,25 @@
 global function PreInit
+global function FrameworkInit
 global function GetModdedTitanClasses
 global function GetModdedTitanByClassNoPersist
-global function GetModdedTitanByIndexNoPersist
-global function GetModdedTitansByIndexNoPersist
+//global function GetModdedTitanByIndexNoPersist
+//global function GetModdedTitansByIndexNoPersist
 global function GetModdedTitansByClassNoPersist
 global function OverwriteGlobalTitanLoadoutByIndex
 global function GetModdedTitanClassForMods
 global function GetModdedTitanSetFileForAnims
 global function GetModdedTitansSetFileForAnims
 global function GetModdedTitanPassive1TypeByRef
-global function GetModdedTitanExecutionTypeByIndex
+global function GetModdedTitanExecutionTypeByClass
 global function GetModdedTitanLoadoutPassiveType
+global function GetModdedTitanLoadoutPassiveTypeByClass
 global function OverwriteModdedTitanLoadoutDefaultEquipment
+global function OverwriteDefaultTitanLoadoutByIndex
 global function RegisterModdedTitan
 global function RegisterModdedTitanItems
-global enum eModdedTitans
-{
-	ion
-	scorch
-	ronin
-	tone
-	northstar
-	legion
-	vanguard
-	venom
-}
+#if SERVER
+global function SetTitanLoadout
+#endif
 table<string, TitanLoadoutDef> TitanLoadoutByClass
 table<int, TitanLoadoutDef> TitanLoadoutByIndex
 table<string, string> TitanClassModsToUse //Used for alot, but not actually used for passives
@@ -32,7 +27,9 @@ table<string, string> TitanSetFilesForAnims // Used for other things
 table<string, int> TitanPassiveTypesByRef
 table<int, int> TitanExecutionsByIndex
 table<string, table<string, int> > TitanPassiveTypesBySetFile
+table<string, table<string, int> > TitanPassiveTypesByClass
 //Getters
+
 int function GetModdedTitanLoadoutPassiveType(string ref, string property)
 {
 	if(ref in TitanPassiveTypesBySetFile)
@@ -41,9 +38,17 @@ int function GetModdedTitanLoadoutPassiveType(string ref, string property)
 	}
 	return -1
 }
-int function GetModdedTitanExecutionTypeByIndex(int index)
+int function GetModdedTitanLoadoutPassiveTypeByClass(string ref, string property)
 {
-	return TitanExecutionsByIndex[index]
+	if(ref in TitanPassiveTypesByClass)
+	{
+		return TitanPassiveTypesByClass[ref][property]
+	}
+	return -1
+}
+int function GetModdedTitanExecutionTypeByClass(string titanClass)
+{
+	return TitanExecutionsByIndex[titanClass]
 }
 TitanLoadoutDef function GetModdedTitanByClassNoPersist(string titanClass)
 {
@@ -75,54 +80,127 @@ string function GetModdedTitanSetFileForAnims(string key)
 {
 	if(key in TitanSetFilesForAnims)
 		return TitanSetFilesForAnims[key]
-	print("did NOT change setfile========")
+	//print("did NOT change setfile========")
 	return key
 }
 int function GetModdedTitanPassive1TypeByRef(string ref){
 	return TitanPassiveTypesByRef[ref]
 }
+#if SERVER
+bool function SetPlayerTitanRemote(entity player, array<string> args)
+{
+	if(args[1] == "modded")
+		SetTitanLoadout(player, args[0].tointeger(), GetModdedTitanByClassNoPersist(GetModdedTitanClasses()[args[2].tointeger()]))
+	else if(args[1] == "default")
+		SetTitanLoadout(player, args[0].tointeger(), GetDefaultTitanLoadout(args[2].tointeger()))	
+
+	return true
+}
+void function SetTitanLoadout(entity player, int index, TitanLoadoutDef loadout)
+{
+	if(index < 7)
+	{
+		return
+		print("Should not modify existing titans. Do so manually if you want to at your own risk")
+	}
+	if(loadout.name in TitanLoadoutByClass)
+	{
+		SetPersistentLoadoutValue( player, "titan", index, "name",				loadout.name )
+		SetPersistentLoadoutValue( player, "titan", index, "passive2",			GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.name, "passive2"))[0].ref)
+	}
+	else if(loadout.titanClass in TitanPassiveTypesByClass)
+	{
+		SetPersistentLoadoutValue( player, "titan", index, "isPrime",				loadout.isPrime )
+		SetPersistentTitanLoadout(player, index, loadout)
+	}
+	Remote_CallFunction_NonReplay( player, "UpdateAllCachedTitanLoadouts" )
+	Remote_CallFunction_NonReplay( player, "ServerCallback_UpdateTitanModel", index )
+	player.p.titanLoadoutChanged = true
+	thread UpdateCachedLoadouts()
+	
+	PrintTitanLoadout(GetTitanLoadoutFromPersistentData(player, index))
+	PrintTitanLoadout(shGlobal.cachedTitanLoadouts[index])
+
+}
+#endif
 void function PreInit()
 {
+	#if UI
+	FrameworkMenuInit()
+	#endif
 	PreInitGlobal()
+	RegisterTitanPassiveTypes("titan_ogre_meteor", eItemTypes.TITAN_SCORCH_PASSIVE,eItemTypes.TITAN_SCORCH_EXECUTION, "scorch")
+	RegisterTitanPassiveTypes("titan_atlas_stickybomb", eItemTypes.TITAN_ION_PASSIVE, eItemTypes.TITAN_ION_EXECUTION, "ion")
+	RegisterTitanPassiveTypes("titan_atlas_tracker", eItemTypes.TITAN_TONE_PASSIVE,eItemTypes.TITAN_TONE_EXECUTION, "tone")
+	RegisterTitanPassiveTypes("titan_ogre_minigun", eItemTypes.TITAN_LEGION_PASSIVE,eItemTypes.TITAN_LEGION_EXECUTION, "legion")
+	RegisterTitanPassiveTypes("titan_stryder_sniper", eItemTypes.TITAN_NORTHSTAR_PASSIVE,eItemTypes.TITAN_NORTHSTAR_EXECUTION, "northstar")
+	RegisterTitanPassiveTypes("titan_stryder_leadwall", eItemTypes.TITAN_RONIN_PASSIVE,eItemTypes.TITAN_RONIN_EXECUTION, "ronin")
+	RegisterTitanPassiveTypes("titan_atlas_vanguard", eItemTypes.TITAN_VANGUARD_PASSIVE,eItemTypes.TITAN_VANGUARD_EXECUTION, "vanguard")
+	
 }
-void function SCUFFED_UI_INIT()
+void function FrameworkInit()
 {
-	print("Yep")
-	RegisterNewItemInitCallback(SCUFFED_UI_INIT2)
-	TitanLoadoutDef loadout
-	loadout.name				= "Venom"
-	loadout.titanClass			= "Venom"
-	loadout.setFile 			= "titan_ogre_venom"
-	loadout.special				= "mp_titanweapon_homing_rockets"
-	loadout.antirodeo			= "pp_mp_titanability_viral_matrix"
-	loadout.voice				= "titanos_bt"
-	loadout.primary				= "exrill_mp_titanweapon_colder_war"
-	loadout.melee		= "melee_titan_punch_scorch"
-	loadout.ordnance	= "exrill_mp_titanweapon_acid_wall"
-	loadout.coreAbility	= "exrill_mp_titancore_acid_river"
-	loadout.difficulty	= 2
-	loadout.isPrime = "titan_is_not_prime"
-	loadout.primeTitanRef = "scorch_prime"
-	loadout.passive4 = "pas_vanguard_core1"
-	loadout.passive5 = "pas_vanguard_core4"
-	loadout.passive6 = "pas_vanguard_core7"
-	TitanClassModsToUse[loadout.titanClass] <- "scorch"
-	OverwriteDefaultTitanLoadoutByIndex(7, loadout)
-	TitanLoadoutByIndex[7+TitanLoadoutByIndex.len()] <- loadout
-	TitanExecutionsByIndex[7 + TitanExecutionsByIndex.len()] <- eItemTypes.TITAN_SCORCH_EXECUTION
-	TitanLoadoutByClass[loadout.titanClass] <- loadout
-	ModdedTitanClasses.append("Venom")
-	TitanSetFilesForAnims["titan_ogre_venom"] <- "titan_ogre_meteor"
-	//#if SERVER
-	//SetPersistentLoadoutValue( GetPlayerArray()[0], "titan", 7, "passive6" , "pas_vanguard_core7")
-	//SetPersistentLoadoutValue( GetPlayerArray()[0], "titan", 7, "passive5" , "pas_vanguard_core4")
-	//SetPersistentLoadoutValue( GetPlayerArray()[0], "titan", 7, "passive4" , "pas_vanguard_core1")
-	//#endif
-	SCUFFED_UI_INIT2()
+	for(int i = 7; i < 10; i++)
+	{//most of this is redundant but im afraid to remove it at this point
+		OverwriteDefaultTitanLoadoutByIndex(i, GetDefaultTitanLoadout(i - 7))
+		print("Default titan loadout "+(i-7) + "======")
+		PrintTitanLoadout(GetDefaultTitanLoadout(i - 7))
+		print("Custom titan loadout "+i +"========")
+		PrintTitanLoadout(GetDefaultTitanLoadout(i))
+		#if CLIENT
+		if(GetCachedTitanLoadout( i ).titanClass == "")
+			OverwriteGlobalTitanLoadoutByIndex(i, GetDefaultTitanLoadout(i - 7))
+		PrintTitanLoadout(GetCachedTitanLoadout(i))
+		#endif
+		#if UI
+		if(GetValidatedPersistentLoadoutValue( GetLocalClientPlayer(), "titan", i, "titanClass" ) == "")
+		{
+			OverwriteGlobalTitanLoadoutByIndex(i, GetDefaultTitanLoadout( i-7))
+		}
+		else
+		{
+			OverwriteGlobalTitanLoadoutByIndex(i, GetTitanLoadoutFromPersistentData(GetLocalClientPlayer(), i))
+		}
+		#endif
+		#if SERVER
+		AddClientCommandCallback( "SetTitanClass", SetPlayerTitanRemote )
+		foreach(entity player in GetPlayerArray())
+		{
+			if(GetValidatedPersistentLoadoutValue( player, "titan", i, "titanClass" ) == "")
+			{
+				SetPersistentTitanLoadout(player, i, GetDefaultTitanLoadout( i-7))
+			}
+		}
+		#endif
+
+		//#if CLIENT
+		//if(GetTitanLoadoutFromPersistentData(GetLocalClientPlayer(), i).name == "")
+			//GetLocalClientPlayer().SetPersistentVar( "titanLoadouts[" + i + "].name", GetDefaultTitanLoadout(i-7).name)
+			//GetLocalClientPlayer().SetPersistentVar( "titanLoadouts[" + i + "].titanClass", GetDefaultTitanLoadout(i-7).titanClass)
+		//#endif
+	}
+}
+void function RegisterTitanPassiveTypes(string SetFile, int passive2,int execution, string titanClass)
+{
+	TitanPassiveTypesBySetFile[SetFile] <- {}
+	TitanPassiveTypesBySetFile[SetFile]["passive3"] <- eItemTypes.TITAN_TITANFALL_PASSIVE
+	TitanPassiveTypesBySetFile[SetFile]["passive1"] <- eItemTypes.TITAN_GENERAL_PASSIVE
+	TitanPassiveTypesBySetFile[SetFile]["passive2"] <- passive2
+	TitanPassiveTypesBySetFile[SetFile]["passive4"] <- eItemTypes.TITAN_GENERAL_PASSIVE
+	TitanPassiveTypesBySetFile[SetFile]["passive5"] <- eItemTypes.TITAN_GENERAL_PASSIVE
+	TitanPassiveTypesBySetFile[SetFile]["passive6"] <- eItemTypes.TITAN_GENERAL_PASSIVE
+	TitanPassiveTypesBySetFile[SetFile]["titanExecution"] <- execution
+	TitanPassiveTypesByClass[titanClass] <- {}
+	TitanPassiveTypesByClass[titanClass]["passive3"] <- eItemTypes.TITAN_TITANFALL_PASSIVE
+	TitanPassiveTypesByClass[titanClass]["passive1"] <- eItemTypes.TITAN_GENERAL_PASSIVE
+	TitanPassiveTypesByClass[titanClass]["passive2"] <- passive2
+	TitanPassiveTypesByClass[titanClass]["passive4"] <- eItemTypes.TITAN_GENERAL_PASSIVE
+	TitanPassiveTypesByClass[titanClass]["passive5"] <- eItemTypes.TITAN_GENERAL_PASSIVE
+	TitanPassiveTypesByClass[titanClass]["passive6"] <- eItemTypes.TITAN_GENERAL_PASSIVE
+	TitanPassiveTypesByClass[titanClass]["titanExecution"] <- execution
 }
 void function OverwriteDefaultTitanLoadoutByIndex(int key, TitanLoadoutDef loadout)
 {
-	#if UI || CLIENT
 	//shGlobal.cachedTitanLoadouts[ key ] = loadout
 	shGlobal.defaultTitanLoadouts[ key ].name = loadout.name
 	shGlobal.defaultTitanLoadouts[ key ].titanClass = loadout.titanClass
@@ -140,9 +218,8 @@ void function OverwriteDefaultTitanLoadoutByIndex(int key, TitanLoadoutDef loado
 	shGlobal.defaultTitanLoadouts[ key ].passive4 = loadout.passive4
 	shGlobal.defaultTitanLoadouts[ key ].passive5 = loadout.passive5
 	shGlobal.defaultTitanLoadouts[ key ].passive6 = loadout.passive6
-	#endif
 }
-void function OverwriteGlobalTitanLoadoutByIndex(int key, TitanLoadoutDef loadout)
+void function OverwriteGlobalTitanLoadoutByIndex(int key, TitanLoadoutDef loadout, bool skins = false)
 {
 	#if UI || CLIENT
 	//shGlobal.cachedTitanLoadouts[ key ] = loadout
@@ -162,6 +239,16 @@ void function OverwriteGlobalTitanLoadoutByIndex(int key, TitanLoadoutDef loadou
 	shGlobal.cachedTitanLoadouts[ key ].passive4 = loadout.passive4
 	shGlobal.cachedTitanLoadouts[ key ].passive5 = loadout.passive5
 	shGlobal.cachedTitanLoadouts[ key ].passive6 = loadout.passive6
+	if(skins)
+	{
+		shGlobal.cachedTitanLoadouts[ key ].skinIndex = loadout.skinIndex
+		shGlobal.cachedTitanLoadouts[ key ].primeSkinIndex = loadout.primeSkinIndex
+		shGlobal.cachedTitanLoadouts[ key ].camoIndex = loadout.camoIndex
+		shGlobal.cachedTitanLoadouts[ key ].primeCamoIndex = loadout.primeCamoIndex
+		shGlobal.cachedTitanLoadouts[ key ].primeDecalIndex = loadout.primeDecalIndex
+		shGlobal.cachedTitanLoadouts[ key ].decalIndex = loadout.decalIndex
+
+	}
 	#endif
 }
 void function OverwriteModdedTitanLoadoutDefaultEquipment(TitanLoadoutDef loadout)
@@ -219,12 +306,12 @@ void function RegisterModdedTitan(
 	loadout.passive6 = "pas_vanguard_core7"
 	
 	TitanClassModsToUse[loadout.titanClass] <- BaseName
-	OverwriteDefaultTitanLoadoutByIndex(7 + ModdedTitanClasses.len(), loadout)
+	//OverwriteDefaultTitanLoadoutByIndex(7 + ModdedTitanClasses.len(), loadout)
 	TitanLoadoutByIndex[7+TitanLoadoutByIndex.len()] <- loadout
 	TitanExecutionsByIndex[7 + TitanExecutionsByIndex.len()] <- ExecutionType
 	TitanLoadoutByClass[loadout.titanClass] <- loadout
 	ModdedTitanClasses.append(Name)
-	TitanSetFilesForAnims[SetFile] <- BaseSetFile
+	//TitanSetFilesForAnims[SetFile] <- BaseSetFile
 }
 void function RegisterModdedTitanItems(
 		string Name, 
@@ -243,6 +330,7 @@ void function RegisterModdedTitanItems(
 )
 {
 	//CreateModdedItemType(PassiveTypeName)
+	//Setfile indexing is bad, but still needed for some stuff
 	TitanPassiveTypesBySetFile[SetFile] <- {}
 	TitanPassiveTypesBySetFile[SetFile]["passive3"] <- eItemTypes.TITAN_TITANFALL_PASSIVE
 	TitanPassiveTypesBySetFile[SetFile]["passive1"] <- eItemTypes.TITAN_GENERAL_PASSIVE
@@ -250,6 +338,16 @@ void function RegisterModdedTitanItems(
 	TitanPassiveTypesBySetFile[SetFile]["passive4"] <- eItemTypes.TITAN_GENERAL_PASSIVE
 	TitanPassiveTypesBySetFile[SetFile]["passive5"] <- eItemTypes.TITAN_GENERAL_PASSIVE
 	TitanPassiveTypesBySetFile[SetFile]["passive6"] <- eItemTypes.TITAN_GENERAL_PASSIVE
+	
+	TitanPassiveTypesByClass[Name] <- {}
+	TitanPassiveTypesByClass[Name]["passive3"] <- eItemTypes.TITAN_TITANFALL_PASSIVE
+	TitanPassiveTypesByClass[Name]["passive1"] <- eItemTypes.TITAN_GENERAL_PASSIVE
+	TitanPassiveTypesByClass[Name]["passive2"] <- eItemTypes[PassiveTypeName]
+	TitanPassiveTypesByClass[Name]["passive4"] <- eItemTypes.TITAN_GENERAL_PASSIVE
+	TitanPassiveTypesByClass[Name]["passive5"] <- eItemTypes.TITAN_GENERAL_PASSIVE
+	TitanPassiveTypesByClass[Name]["passive6"] <- eItemTypes.TITAN_GENERAL_PASSIVE
+
+
 	CreateModdedTitanItem(999, eItemTypes.TITAN, Name, Name, "Whats the deal. with airline food?", "i sure love losing progress", $"ui/temp", 0, false, eItemTypes[PassiveTypeName],expect asset(GetItemData("scorch").i.coreIcon))
 	CreateGenericSubItemData( eItemTypes.TITAN_TITANFALL_PASSIVE, Name, "pas_warpfall" )
 	CreateGenericSubItemData( eItemTypes.TITAN_TITANFALL_PASSIVE, Name, "pas_bubbleshield" )
@@ -272,139 +370,6 @@ void function RegisterModdedTitanItems(
 	CreateGenericSubItemData(  eItemTypes[PassiveTypeName], Name, item.ref )
 	}
 }
-void function SCUFFED_UI_INIT2()
-{
-	//table titanClasses = expect table( getconsttable()["titanClasses"] ) 
-	//titanClasses["Venom"] <- 7
-	CreateGenericItem(999, eItemTypes.TITAN_ANTIRODEO, "pp_mp_titanability_viral_matrix", "Viral Matrix", "I am in pain", "So much pain", $"rui/titan_loadout/tactical/titan_tactical_rearm_menu", 0, false)
-	CreateGenericItem(999, eItemTypes.TITAN_PRIMARY, "exrill_mp_titanweapon_colder_war", "Colder war [placeholder name?]", "The pain does not stop", "please stop", $"ui/temp", 0, false)
-	CreateGenericItem(999, eItemTypes.TITAN_CORE_ABILITY, "exrill_mp_titancore_acid_river", "Acid core", "AAAAAAAA", "My sanity is rapidly dwindling", $"rui/titan_loadout/core/titan_core_flame_wave", 0, false)
-	CreateGenericItem(999, eItemTypes.TITAN_ORDNANCE, "exrill_mp_titanweapon_acid_wall", "Acid wall", "im out of funny things to say", ":)", $"ui/temp", 0, false)
-	CreateModdedItemType("TITAN_VENOM_PASSIVE")
-	TitanPassiveTypesBySetFile["titan_ogre_venom"] <- {}
-	TitanPassiveTypesBySetFile["titan_ogre_venom"]["passive3"] <- eItemTypes.TITAN_TITANFALL_PASSIVE
-	TitanPassiveTypesBySetFile["titan_ogre_venom"]["passive1"] <- eItemTypes.TITAN_GENERAL_PASSIVE
-	TitanPassiveTypesBySetFile["titan_ogre_venom"]["passive2"] <- eItemTypes.TITAN_VENOM_PASSIVE
-	TitanPassiveTypesBySetFile["titan_ogre_venom"]["passive4"] <- eItemTypes.TITAN_GENERAL_PASSIVE
-	TitanPassiveTypesBySetFile["titan_ogre_venom"]["passive5"] <- eItemTypes.TITAN_GENERAL_PASSIVE
-	TitanPassiveTypesBySetFile["titan_ogre_venom"]["passive6"] <- eItemTypes.TITAN_GENERAL_PASSIVE
-	CreateModdedTitanItem(999, eItemTypes.TITAN, "Venom", "Venom", "Whats the deal. with airline food?", "i sure love losing progress", $"ui/temp", 0, false, eItemTypes.TITAN_VENOM_PASSIVE,expect asset(GetItemData("scorch").i.coreIcon))
-	CreateGenericSubItemData( eItemTypes.TITAN_TITANFALL_PASSIVE, "Venom", "pas_warpfall" )
-	CreateGenericSubItemData( eItemTypes.TITAN_TITANFALL_PASSIVE, "Venom", "pas_bubbleshield" )
-	foreach(ItemData item in GetAllItemsOfType(eItemTypes.TITAN_GENERAL_PASSIVE))
-	{
-	CreateGenericSubItemData( eItemTypes.TITAN_GENERAL_PASSIVE, "Venom", item.ref )
-	}
-	CreateGenericItem(999, eItemTypes.TITAN_VENOM_PASSIVE, "pp_pas_highcaptanks", "Why does the pain not stop", "I am in pain", "So much pain", $"rui/titan_loadout/tactical/titan_tactical_rearm_menu", 0, false)
-	CreateGenericItem(999, eItemTypes.TITAN_VENOM_PASSIVE, "pp_pas_enhancedacid", "Enhanced nanofoundries", "I am in pain", "So much pain", $"rui/titan_loadout/tactical/titan_tactical_rearm_menu", 0, false)
-	CreateGenericItem(999, eItemTypes.TITAN_VENOM_PASSIVE, "pp_pas_stickyacid", "Adhesive compound", "I am in pain", "So much pain", $"rui/titan_loadout/tactical/titan_tactical_rearm_menu", 0, false)
-	CreateGenericItem(999, eItemTypes.TITAN_VENOM_PASSIVE, "pp_pas_radaracid", "Hijack comms", "I am in pain", "So much pain", $"rui/titan_loadout/tactical/titan_tactical_rearm_menu", 0, false)
-
-	foreach(string ref, SubItemData subitemstuff in GetItemData("scorch").subitems)
-	{
-		ItemData subitem = GetItemData(subitemstuff.ref)
-		CreateGenericSubItemData(subitem.itemType,"Venom", subitem.ref, 0, subitem.i)
-	}
-
-/* 	foreach(ItemData item in GetAllItemsOfType(eItemTypes.TITAN_WARPAINT))
-	{
-		CreateGenericSubItemData( eItemTypes.TITAN_WARPAINT, "Venom", item.ref )
-	}
-	foreach(ItemData item in GetAllItemsOfType(eItemTypes.TITAN_SCORCH_EXECUTION))
-	{
-		CreateGenericSubItemData( eItemTypes.TITAN_SCORCH_EXECUTION, "Venom", item.ref )
-	}
-	foreach(ItemData item in GetAllItemsOfType(eItemTypes.TITAN_NOSE_ART))
-	{
-		CreateGenericSubItemData( eItemTypes.TITAN_NOSE_ART, "Venom", item.ref )
-	}
-	*/
-	foreach(ItemData item in GetAllItemsOfType(eItemTypes.TITAN_VENOM_PASSIVE))
-	{
-	CreateGenericSubItemData( eItemTypes.TITAN_VENOM_PASSIVE, "Venom", item.ref )
-	}
-
-	//var dataTable = GetDataTable( $"datatable/default_titan_loadouts.rpak" )
-	//int i = 1
-	//print("UIInit")
-/* 	TitanLoadoutDef loadout
-	loadout.name				= "Venom"
-	loadout.titanClass			= "Venom"
-	loadout.setFile 			= "titan_ogre_venom"
-	loadout.primaryMod			= "exrill_mp_titanweapon_acid_wall"
-	loadout.special				= "mp_titanweapon_homing_rockets"
-	loadout.antirodeo			= GetDataTableString( dataTable, i, GetDataTableColumnByName( dataTable, "antirodeo" ) )
-	loadout.passive1 			= "ExamplePassive"
-	loadout.passive2 			= GetDataTableString( dataTable, i, GetDataTableColumnByName( dataTable, "passive2" ) )
-	loadout.passive3 			= GetDataTableString( dataTable, i, GetDataTableColumnByName( dataTable, "passive3" ) )
-	loadout.passive4 			= GetDataTableString( dataTable, i, GetDataTableColumnByName( dataTable, "passive4" ) )
-	loadout.passive5 			= GetDataTableString( dataTable, i, GetDataTableColumnByName( dataTable, "passive5" ) )
-	loadout.passive6 			= GetDataTableString( dataTable, i, GetDataTableColumnByName( dataTable, "passive6" ) )
-	loadout.titanExecution 		= GetLoadoutPropertyDefault( "titan", i, "titanExecution" )
-
-	var dataTable2 = GetDataTable( $"datatable/titan_properties.rpak" )
-	string titanName = "scorch"
-	int row = GetDataTableRowMatchingStringValue( dataTable, GetDataTableColumnByName( dataTable, "titanRef" ), titanName )
-
-	loadout.primary		= GetDataTableString( dataTable2, row, GetDataTableColumnByName( dataTable2, "primary" ) )
-	loadout.melee		= GetDataTableString( dataTable2, row, GetDataTableColumnByName( dataTable2, "melee" ) )
-	loadout.ordnance	= GetDataTableString( dataTable2, row, GetDataTableColumnByName( dataTable2, "ordnance" ) )
-	loadout.coreAbility	= GetDataTableString( dataTable2, row, GetDataTableColumnByName( dataTable2, "coreAbility" ) )
-	loadout.setFileMods = GetSetFileModsForSettingType( "titan", [ loadout.passive1, loadout.passive2, loadout.passive3, loadout.passive4, loadout.passive5, loadout.passive6 ] )
-	loadout.difficulty	= GetDataTableInt( dataTable2, row, GetDataTableColumnByName( dataTable2, "difficulty" ) )
-
-	SetTitanLoadoutValue( shGlobal.cachedTitanLoadouts[ 7 ], "name", "Venom" )
-	SetTitanLoadoutValue( shGlobal.cachedTitanLoadouts[ 7 ], "titanClass", "Venom" )
-	SetTitanLoadoutValue( shGlobal.cachedTitanLoadouts[ 7 ], "setFile", "titan_ogre_venom" )
-	SetTitanLoadoutValue( shGlobal.cachedTitanLoadouts[ 7 ], "primaryMod", "exrill_mp_titanweapon_acid_wall" )
-	SetTitanLoadoutValue( shGlobal.cachedTitanLoadouts[ 7 ], "special", "mp_titanweapon_homing_rockets" )
-	SetTitanLoadoutValue( shGlobal.cachedTitanLoadouts[ 7 ], "antirodeo", "pp_mp_titanability_viral_matrix" )
-	SetTitanLoadoutValue( shGlobal.cachedTitanLoadouts[ 7 ], "passive1", "pas_enhanced_titan_ai" )
-	SetTitanLoadoutValue( shGlobal.cachedTitanLoadouts[ 7 ], "passive2", "pas_scorch_flamecore" )
-	SetTitanLoadoutValue( shGlobal.cachedTitanLoadouts[ 7 ], "passive3", "pas_bubbleshield" )
-	SetTitanLoadoutValue( shGlobal.cachedTitanLoadouts[ 7 ], "passive4", "pas_vanguard_core1" )
-	SetTitanLoadoutValue( shGlobal.cachedTitanLoadouts[ 7 ], "passive5", "pas_vanguard_core4" )
-	SetTitanLoadoutValue( shGlobal.cachedTitanLoadouts[ 7 ], "passive6", "pas_vanguard_core7" )
-	SetTitanLoadoutValue( shGlobal.cachedTitanLoadouts[ 7 ], "voice", "titanos_bt" )
-	SetTitanLoadoutValue( shGlobal.cachedTitanLoadouts[ 7 ], "skinIndex", "0" )
-	SetTitanLoadoutValue( shGlobal.cachedTitanLoadouts[ 7 ], "camoIndex", "0" )
-	SetTitanLoadoutValue( shGlobal.cachedTitanLoadouts[ 7 ], "isPrime", "titan_is_not_prime" )
-	SetTitanLoadoutValue( shGlobal.cachedTitanLoadouts[ 7 ], "primary", "exrill_mp_titanweapon_colder_war" )
-	SetTitanLoadoutValue( shGlobal.cachedTitanLoadouts[ 7 ], "difficulty", "2" ) */
-	//#if UI
-/* 	shGlobal.cachedTitanLoadouts[ 7 ].name = "Venom"
-	shGlobal.cachedTitanLoadouts[ 7 ].titanClass = "Venom"
-	ModdedTitanClasses.append("Venom")
-	shGlobal.cachedTitanLoadouts[ 7 ].setFile = "titan_ogre_venom"
-	shGlobal.cachedTitanLoadouts[ 7 ].coreAbility = "exrill_mp_titancore_acid_river"
-	shGlobal.cachedTitanLoadouts[ 7 ].ordnance = "exrill_mp_titanweapon_acid_wall"
-	shGlobal.cachedTitanLoadouts[ 7 ].special = "mp_titanweapon_homing_rockets"
-	shGlobal.cachedTitanLoadouts[ 7 ].antirodeo = "pp_mp_titanability_viral_matrix"
-	shGlobal.cachedTitanLoadouts[ 7 ].passive1 = "pas_enhanced_titan_ai"
-	shGlobal.cachedTitanLoadouts[ 7 ].passive2 = "pas_scorch_flamecore"
-	shGlobal.cachedTitanLoadouts[ 7 ].passive3 = "pas_bubbleshield"
-	shGlobal.cachedTitanLoadouts[ 7 ].passive4 = "pas_vanguard_core1"
-	shGlobal.cachedTitanLoadouts[ 7 ].passive5 = "pas_vanguard_core4"
-	shGlobal.cachedTitanLoadouts[ 7 ].passive6 = "pas_vanguard_core7"
-	shGlobal.cachedTitanLoadouts[ 7 ].voice = "titanos_bt"
-	shGlobal.cachedTitanLoadouts[ 7 ].skinIndex = 0
-	shGlobal.cachedTitanLoadouts[ 7 ].isPrime = "titan_is_not_prime"
-	shGlobal.cachedTitanLoadouts[ 7 ].primary = "exrill_mp_titanweapon_colder_war"
-	shGlobal.cachedTitanLoadouts[ 7 ].primeTitanRef = "scorch_prime" */
-	//#endif
-	//CreateGenericSubItemData( int itemType, string parentRef, string itemRef, int cost = 0, table t = {} )
-	//UpdateDerivedTitanLoadoutData( shGlobal.cachedTitanLoadouts[ 7 ] )
-
-/* 	#if SERVER
-	foreach ( callbackFunc in svGlobal.onUpdateDerivedTitanLoadoutCallbacks )
-	{
-		print("calling something")
-		callbackFunc( loadout )
-	}
-	#endif */
-	//PrintTitanLoadout(shGlobal.cachedTitanLoadouts[ 7 ])
-}
-
 array<string> function GetModdedTitanClasses()
 {
 	return ModdedTitanClasses

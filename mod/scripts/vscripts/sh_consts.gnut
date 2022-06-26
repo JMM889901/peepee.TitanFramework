@@ -700,7 +700,7 @@ global const SAFE_TITANFALL_DISTANCE = 125
 global const SAFE_TITANFALL_DISTANCE_CTF = 270
 
 global const NUM_PERSISTENT_PILOT_LOADOUTS = 10
-global const NUM_PERSISTENT_TITAN_LOADOUTS = 11
+global const NUM_PERSISTENT_TITAN_LOADOUTS = 10 // CANNOT be more than 10
 
 global const EMBARK_TIMEOUT = 13.0 // how long you have to reach your titan before it stands up and bubble shield starts to fade
 

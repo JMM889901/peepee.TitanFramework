@@ -61,11 +61,21 @@ void function UpdateTitanLoadoutButtons( int selectedIndex, var[NUM_PERSISTENT_T
 		//print("=====================================================================")
 		RHud_SetText( button, GetTitanLoadoutName( loadout ) )
 		//Hud_SetPanelAlpha( button, 0 )
-
+		if(index > 6 && loadout.titanClass == "")
+		{
+			OverwriteGlobalTitanLoadoutByIndex(index, GetDefaultTitanLoadout(index - 6))
+			print("Overwrote titan loadout with default")
+			print(loadout.titanClass)
+		}
 		Hud_SetSelected( button, index == selectedIndex )
-		if(!(loadout.titanClass in GetModdedTitansByClassNoPersist()) && index < 7)
-			Hud_SetNew( button, ButtonShouldShowNew( eItemTypes.TITAN, loadout.titanClass ) || ButtonShouldShowNew( eItemTypes.PRIME_TITAN, loadout.primeTitanRef ) )
-		if(index < 7 || GetModdedTitanClasses().contains(loadout.titanClass))
+		if(loadout.titanClass != "")
+		{
+			if(loadout.titanClass == "vanguard")
+				Hud_SetNew( button, ButtonShouldShowNew( eItemTypes.TITAN, loadout.titanClass ) )
+			else if(!(loadout.titanClass in GetModdedTitansByClassNoPersist()))
+				Hud_SetNew( button, ButtonShouldShowNew( eItemTypes.TITAN, loadout.titanClass )) // || ButtonShouldShowNew( eItemTypes.PRIME_TITAN, loadout.primeTitanRef ) )
+		}
+		if(index < 10 || GetModdedTitanClasses().contains(loadout.titanClass))
 		{
 			Hud_SetEnabled( button, true )
 			Hud_SetVisible( button, true )
@@ -78,6 +88,7 @@ void function UpdateTitanLoadoutButtons( int selectedIndex, var[NUM_PERSISTENT_T
 		}
 		if(!(loadout.titanClass in GetModdedTitansByClassNoPersist()))
 		{
+			print("class is "+loadout.titanClass)
 			if ( !IsTitanLoadoutAvailable( player, loadout.titanClass ) )
 			{
 				Hud_SetLocked( button, true )

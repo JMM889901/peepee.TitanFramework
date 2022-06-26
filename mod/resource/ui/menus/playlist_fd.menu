@@ -529,6 +529,63 @@ resource/ui/menus/playlist_mixtape.menu
         navUp					BtnPlaylistIcon02
         navDown                 TutorialButton
     }
+		TitanButton12
+    {
+		ControlName				RuiButton
+		InheritProperties		LoadoutButtonSmall
+		rui						"ui/team_titan_select_button_small.rpak"
+        ypos					0
+        xpos 					0
+        zpos 					10
+        tall 					72
+		wide					72
+        scriptID				12
+
+		pin_to_sibling			TitanButton11
+        pin_corner_to_sibling	TOP_LEFT
+        pin_to_sibling_corner	TOP_RIGHT
+
+        navUp					BtnPlaylistIcon02
+        navDown                 TutorialButton
+    }
+		TitanButton13
+    {
+		ControlName				RuiButton
+		InheritProperties		LoadoutButtonSmall
+		rui						"ui/team_titan_select_button_small.rpak"
+        ypos					0
+        xpos 					0
+        zpos 					10
+        tall 					72
+		wide					72
+        scriptID				13
+
+		pin_to_sibling			TitanButton12
+        pin_corner_to_sibling	TOP_LEFT
+        pin_to_sibling_corner	TOP_RIGHT
+
+        navUp					BtnPlaylistIcon02
+        navDown                 TutorialButton
+    }
+		TitanButton14
+    {
+		ControlName				RuiButton
+		InheritProperties		LoadoutButtonSmall
+		rui						"ui/team_titan_select_button_small.rpak"
+        ypos					0
+        xpos 					0
+        zpos 					10
+        tall 					72
+		wide					72
+        scriptID				14
+
+		pin_to_sibling			TitanButton13
+        pin_corner_to_sibling	TOP_LEFT
+        pin_to_sibling_corner	TOP_RIGHT
+
+        navUp					BtnPlaylistIcon02
+        navDown                 TutorialButton
+    }
 
 	TutorialButton
 	{

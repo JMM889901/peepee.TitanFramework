@@ -193,7 +193,14 @@ void function UpdateTitanLoadout( int loadoutIndex )
 	else
 		Hud_Show( file.loadoutPanel )
 	*/
-
+	if(loadoutIndex > 6 && loadout.titanClass == "")
+	{
+		OverwriteGlobalTitanLoadoutByIndex(loadoutIndex, GetDefaultTitanLoadout(loadoutIndex - 6))
+		print("Overwrote titan loadout with default")
+		print(loadout.titanClass)
+		print("primary is "+loadout.primary)
+		loadout = GetCachedTitanLoadout( loadoutIndex )
+	}
 	SetEditLoadout( "titan", loadoutIndex )
 	UpdateTitanLoadoutPanel( file.loadoutPanel, loadout )
 	array<var> loadoutPanelButtons = GetElementsByClassname( file.menu, "TitanLoadoutPanelButtonClass" )
@@ -384,7 +391,7 @@ void function OnLoadoutButton_LostFocus( var button )
 	int loadoutIndex = expect int ( button.s.rowIndex )
 	TitanLoadoutDef loadout = GetCachedTitanLoadout( loadoutIndex )
 
-	if (!(loadout.titanClass in GetModdedTitansByClassNoPersist()) && !RefHasAnyNewSubitem( player, loadout.titanClass ) && !IsItemNew( player, loadout.primeTitanRef ) )
+	if (!(loadout.name in GetModdedTitansByClassNoPersist()) && !RefHasAnyNewSubitem( player, loadout.titanClass ) && !IsItemNew( player, loadout.primeTitanRef ) )
 		ClearNewStatus( button, loadout.titanClass )
 }
 

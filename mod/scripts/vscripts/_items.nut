@@ -5065,30 +5065,30 @@ array<ItemDisplayData> function GetVisibleItemsOfType( int itemType, string pare
 	Assert( !IsSubItemType( itemType ) || parentRef != "" )
 
 	array<ItemDisplayData> items = []
-	print("parentref is "+parentRef)
+	//print("parentref is "+parentRef)
 	if ( file.globalItemRefsOfType[ itemType ].len() )
 	{
 		array<GlobalItemRef> genericItemData = file.globalItemRefsOfType[ itemType ]
 		foreach ( itemData in genericItemData )
 		{
-			print("GET VISIBLE ITEMS OF TYPE")
-			print(itemData.ref)
-			print("////////////////////")
+			//print("GET VISIBLE ITEMS OF TYPE")
+			//print(itemData.ref)
+			// print("////////////////////")
 			if ( itemData.hidden )
 				continue
-			print("Not hidden")
-			print("IsSubItemType "+IsSubItemType( itemType ))
+			// print("Not hidden")
+			// print("IsSubItemType "+IsSubItemType( itemType ))
 			//print("HasNoSubItem "+!HasSubitem( parentRef, itemData.ref ))
 			if ( IsSubItemType( itemType ) && !HasSubitem( parentRef, itemData.ref ) )
 				continue
 			items.append( GetItemDisplayData( itemData.ref, parentRef ) )
-			print(items.len())
+			//print(items.len())
 		}
 	}
 
 	if ( doSort && !(parentRef in GetModdedTitansByClassNoPersist()))
 		items.sort( SortByUnlockLevelUntyped )
-	print("Returning items "+items.len())
+	//print("Returning items "+items.len())
 	return items
 }
 
@@ -6410,6 +6410,8 @@ bool function IsItemNew( entity player, string ref, string parentRef = "" )
 	if(GetModdedTitanClasses().contains(parentRef)){
 		return false
 	}
+	if(ref == "")
+		return false
 	ItemData itemData = GetItemData( ref )
 	int refType = itemData.itemType
 
@@ -7020,6 +7022,8 @@ bool function ButtonShouldShowNew( int itemType, string ref = "", string parentR
 
 		case eItemTypes.TITAN:
 		case eItemTypes.PRIME_TITAN:
+			if(ref == "")
+				return false
 			return IsItemNew( player, ref ) || RefHasAnyNewSubitem( player, ref )
 
 		case eItemTypes.CAMO_SKIN:

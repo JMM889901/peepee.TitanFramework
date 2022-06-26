@@ -3,21 +3,28 @@
 	"Description": "Pain",
 	"LoadPriority": 50,
 	"RequiredOnClient": true,
-	"Version": "1.0.0",
+	"Version": "0.2.0",
 	"Scripts": [
 		{
 			"Path": "UIStuff.gnut",
 			"RunOn": "UI || SERVER || CLIENT",
 			"ServerCallback": {
-				"Before": "PreInit"
+				"Before": "PreInit",
+				"After": "FrameworkInit"
             },
 			
 			"ClientCallback": {
-				"Before": "PreInit"
+				"Before": "PreInit",
+				"After": "FrameworkInit"
 			},
 			"UICallback": {
-				"Before": "PreInit"
+				"Before": "PreInit",
+				"After": "FrameworkInit"
 			}
+		},
+		{
+			"Path": "FrameworkMenuFunctions.gnut",
+			"RunOn": "UI"
 		}
 	]
 }

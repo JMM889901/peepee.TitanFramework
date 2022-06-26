@@ -23,9 +23,9 @@ PilotLoadoutDef function GetDefaultPilotLoadout( int index )
 
 TitanLoadoutDef function GetDefaultTitanLoadout( int index )
 {
-	if(index < 7)
-		return shGlobal.defaultTitanLoadouts[ index ]
-	return GetModdedTitanByIndexNoPersist(index)
+	//if(index < shGlobal.defaultTitanLoadouts.len())
+	return shGlobal.defaultTitanLoadouts[ index ]
+	//return GetModdedTitanByIndexNoPersist(index)
 }
 
 PilotLoadoutDef[NUM_PERSISTENT_PILOT_LOADOUTS] function GetDefaultPilotLoadouts()
@@ -42,7 +42,7 @@ void function PopulateDefaultPilotLoadouts( PilotLoadoutDef[ NUM_PERSISTENT_PILO
 {
 	var dataTable = GetDataTable( $"datatable/default_pilot_loadouts.rpak" )
 
-	for ( int i = 0; i < NUM_PERSISTENT_PILOT_LOADOUTS-1; i++ )
+	for ( int i = 0; i < NUM_PERSISTENT_PILOT_LOADOUTS; i++ )
 	{
 		PilotLoadoutDef loadout = loadouts[i]
 		loadout.name				= GetDataTableString( dataTable, i, GetDataTableColumnByName( dataTable, "name" ) )
@@ -124,15 +124,17 @@ void function PopulateDefaultTitanLoadouts( TitanLoadoutDef[ NUM_PERSISTENT_TITA
 		//ValidateDefaultLoadoutData( "titan", loadout.passive1 )
 		//ValidateDefaultLoadoutData( "titan", loadout.passive2 )
 	}
-	foreach(int key, TitanLoadoutDef loadout in GetModdedTitansByIndexNoPersist())
+	for ( int i = 7; i < 10; i++ )
 	{
-		#if SERVER
-		foreach ( callbackFunc in svGlobal.onUpdateDerivedTitanLoadoutCallbacks )
-		{
-			callbackFunc( loadout )
-		}
-		#endif
-		OverwriteGlobalTitanLoadoutByIndex(key, loadout)
+		OverwriteDefaultTitanLoadoutByIndex(i, GetDefaultTitanLoadout(i - 7))
+		//PrintTitanLoadout(loadout)
+
+		//ValidateDefaultLoadoutData( "titan", loadout.setFile )
+		////loadout.primaryMod
+		//ValidateDefaultLoadoutData( "titan", loadout.special )
+		//ValidateDefaultLoadoutData( "titan", loadout.antirodeo )
+		//ValidateDefaultLoadoutData( "titan", loadout.passive1 )
+		//ValidateDefaultLoadoutData( "titan", loadout.passive2 )
 	}
 	//foreach( void functionref() pain in GetNewItemInitCallbacks())
 	//{
@@ -226,19 +228,24 @@ void function PopulatePilotLoadoutFromPersistentData( entity player, PilotLoadou
 
 void function PopulateTitanLoadoutFromPersistentData( entity player, TitanLoadoutDef loadout, int loadoutIndex )
 {
-	if(loadoutIndex in GetModdedTitansByIndexNoPersist())
+	loadout.name 				= GetValidatedPersistentLoadoutValue( player, "titan", loadoutIndex, "name" )
+	if(loadout.name in GetModdedTitansByClassNoPersist())
 	{
-		loadout.name 				= GetModdedTitanByIndexNoPersist(loadoutIndex).name
+		
 		//print(loadout.name)
-		loadout.titanClass			= GetModdedTitanByIndexNoPersist(loadoutIndex).titanClass
+		loadout.titanClass			= GetModdedTitanByClassNoPersist(loadout.name).titanClass
 		//print(loadout.titanClass)
-		loadout.primaryMod			= GetModdedTitanByIndexNoPersist(loadoutIndex).primaryMod
-		loadout.special 			= GetModdedTitanByIndexNoPersist(loadoutIndex).special
-		loadout.antirodeo 			= GetModdedTitanByIndexNoPersist(loadoutIndex).antirodeo
+		loadout.primaryMod			= GetModdedTitanByClassNoPersist(loadout.name).primaryMod
+		loadout.special 			= GetModdedTitanByClassNoPersist(loadout.name).special
+		loadout.antirodeo 			= GetModdedTitanByClassNoPersist(loadout.name).antirodeo
+		loadout.coreAbility			= GetModdedTitanByClassNoPersist(loadout.name).coreAbility
+		loadout.ordnance			= GetModdedTitanByClassNoPersist(loadout.name).ordnance
+		//loadout.setFile				= GetModdedTitanByClassNoPersist(loadout.name).setFile
+		loadout.primary				= GetModdedTitanByClassNoPersist(loadout.name).primary
 	}
 	else
 	{
-		loadout.name 				= GetValidatedPersistentLoadoutValue( player, "titan", loadoutIndex, "name" )
+		
 		//print(loadout.name)
 		loadout.titanClass			= GetValidatedPersistentLoadoutValue( player, "titan", loadoutIndex, "titanClass" )
 		//print(loadout.titanClass)
@@ -272,7 +279,7 @@ void function PopulateTitanLoadoutFromPersistentData( entity player, TitanLoadou
 	//print("=======================================================")
 
 	UpdateDerivedTitanLoadoutData( loadout )
-	if(!(loadoutIndex in GetModdedTitansByIndexNoPersist()))
+	if(!(loadout.name in GetModdedTitansByClassNoPersist()))
 		OverwriteLoadoutWithDefaultsForSetFile( loadout )
 	
 }
@@ -310,8 +317,8 @@ string function GetPrimeTitanRefForTitanClass( string titanClass )
 		return titanClass
 	foreach ( loadout in legalLoadouts )
 	{
-		print("titan name"+titanClass)
-		print("Setfile name"+ GetTitanCharacterNameFromSetFile( loadout.setFile ))
+		//print("titan name"+titanClass)
+		//print("Setfile name"+ GetTitanCharacterNameFromSetFile( loadout.setFile ))
 		if ( GetTitanCharacterNameFromSetFile( loadout.setFile ) == titanClass )
 			return loadout.primeTitanRef
 	}
@@ -557,7 +564,8 @@ string function GetRefFromLoadoutTypeIndexPropertyAndValue( entity player, strin
 			if ( !isTitanLoadout )
 				return INVALID_REF
 
-			string titanClass = GetDefaultTitanLoadout( index ).titanClass
+			string titanClass =GetPersistentLoadoutValue( player, "titan", index, "titanClass" )
+			
 			int valueAsInt = ForceCastVarToInt( value )
 			if(GetModdedTitanClasses().contains(titanClass))
 				titanClass = GetModdedTitanClassForMods(titanClass)
@@ -576,8 +584,11 @@ string function GetRefFromLoadoutTypeIndexPropertyAndValue( entity player, strin
 			if ( !isTitanLoadout ) //Only titans have warpaints. White listed skins for pilots should already have been handled earlier
 				return INVALID_REF
 
-			string titanClass = GetDefaultTitanLoadout( index ).titanClass
+			string titanClass = GetPersistentLoadoutValue( player, "titan", index, "name" )
+			if(!GetModdedTitanClasses().contains(titanClass))
+			titanClass = GetPersistentLoadoutValue( player, "titan", index, "titanClass" )
 			int valueAsInt = ForceCastVarToInt( value )
+			print("Skin ref" + GetSkinRefFromTitanClassAndPersistenceValue( titanClass, valueAsInt ))
 			return GetSkinRefFromTitanClassAndPersistenceValue( titanClass, valueAsInt )
 		}
 		break
@@ -737,7 +748,7 @@ bool function FailsLoadoutValidationCheck( entity player, string loadoutType, in
 		return true
 	}
 
-	if ( !IsValueValidForLoadoutTypeIndexAndProperty( loadoutType, loadoutIndex, loadoutProperty, value, ref ) )
+	if ( !IsValueValidForLoadoutTypeIndexAndProperty( loadoutType, loadoutIndex, loadoutProperty, value, ref, player ) )
 	{
 		printt( "!IsValueValidForLoadoutTypeIndexAndProperty, loadoutType: " + loadoutType + ", loadoutIndex: " + loadoutIndex + ", loadoutProperty: " + loadoutProperty + ", value: " + value + " ref: " + ref )
 		return true
@@ -901,7 +912,7 @@ bool function AllowSkinIndexToSkipValidation( string loadoutType, string loadout
 	unreachable
 }
 
-bool function IsValueValidForLoadoutTypeIndexAndProperty( string loadoutType, int loadoutIndex, string loadoutProperty, var value, string ref )
+bool function IsValueValidForLoadoutTypeIndexAndProperty( string loadoutType, int loadoutIndex, string loadoutProperty, var value, string ref, entity player )
 {
 	bool isTitanLoadout = (loadoutType == "titan")
 	bool isPilotLoadout = (loadoutType == "pilot")
@@ -924,7 +935,7 @@ bool function IsValueValidForLoadoutTypeIndexAndProperty( string loadoutType, in
 			return ( (itemType == eItemTypes.PILOT_EXECUTION) && isPilotLoadout )
 
 		case "titanExecution":
-			return ( isTitanLoadout && IsValidTitanExecution( loadoutIndex, loadoutProperty, value, ref ) )
+			return ( isTitanLoadout && IsValidTitanExecution( loadoutIndex, loadoutProperty, value, ref, player ) )
 
 		case "primary": //Only Pilots store their primary in persistence
 			return ( (itemType == eItemTypes.PILOT_PRIMARY) && isPilotLoadout )
@@ -959,20 +970,20 @@ bool function IsValueValidForLoadoutTypeIndexAndProperty( string loadoutType, in
 			}
 			else
 			{
-				return IsValidTitanPassive( loadoutIndex, loadoutProperty, value, ref )
+				return IsValidTitanPassive(player,  loadoutIndex, loadoutProperty, value, ref )
 			}
 
 		case "passive2":
 			if ( isPilotLoadout )
 				return ( itemType == eItemTypes.PILOT_PASSIVE2 )
 			else
-				return IsValidTitanPassive( loadoutIndex, loadoutProperty, value, ref )
+				return IsValidTitanPassive(player,  loadoutIndex, loadoutProperty, value, ref )
 
 		case "passive3":
 		case "passive4":
 		case "passive5":
 		case "passive6":
-			return ( isTitanLoadout && IsValidTitanPassive( loadoutIndex, loadoutProperty, value, ref ) )
+			return ( isTitanLoadout && IsValidTitanPassive(player,  loadoutIndex, loadoutProperty, value, ref ) )
 
 		case "isPrime":
 			return ( isTitanLoadout && PersistenceEnumValueIsValid( "titanIsPrimeTitan", value ) ) //Technically will be covered by enumValue checks before LoadoutValidation checks, but included here for completeness
@@ -992,7 +1003,14 @@ bool function IsValueValidForLoadoutTypeIndexAndProperty( string loadoutType, in
 		case "primeDecalIndex":
 			return true		// assume already validated
 
-		case "titanClass": //Should never be able to set these things normally!
+		case "titanClass": //Should never be able to set these things normally! <- haha lol no
+			if(loadoutIndex < 7)
+			{
+				string defaultValue = GetLoadoutPropertyDefault( loadoutType, loadoutIndex, loadoutProperty )
+				return ( value == defaultValue )
+			}
+			return true
+			//PEEPEE TODO, Must create function to check if class is even real
 		case "primaryMod":
 		case "special":
 		case "antirodeo":
@@ -1152,7 +1170,7 @@ string function GetCorrectCamoProperty( string loadoutProperty ) //HACK HACK: sh
 	return returnValue
 }
 
-bool function IsValidTitanPassive( int loadoutIndex, string loadoutProperty, var value, string ref ) //TODO: Not using all parameters in this function yet, might need them for full validation
+bool function IsValidTitanPassive(entity player, int loadoutIndex, string loadoutProperty, var value, string ref ) //TODO: Not using all parameters in this function yet, might need them for full validation
 {
 	//Should have run IsRefValid(ref already, so fine to do GetItemType( ref ))
 	int itemType = GetItemType( ref )
@@ -1165,10 +1183,16 @@ bool function IsValidTitanPassive( int loadoutIndex, string loadoutProperty, var
 
 		case "passive2":
 		{
-			print(itemType)
-			if(loadoutIndex > 6)
-				return itemType == GetModdedTitanLoadoutPassiveType( GetModdedTitanByIndexNoPersist(loadoutIndex).setFile, "passive2")
-			switch( loadoutIndex ) //TODO: Hard coded, not great!
+			//print(itemType)
+			//if(loadoutIndex)
+			//i had to rewrite this 5 times purely because im unimaginably stupid and forgor to include the default titans the titan array
+			string titanClass = GetPersistentLoadoutValue(player, "titan", loadoutIndex, "name" )
+			print("titanclass "+titanClass)
+			if(GetModdedTitanLoadoutPassiveTypeByClass(titanClass, "passive2") != -1)
+				return itemType == GetModdedTitanLoadoutPassiveTypeByClass(titanClass, "passive2")
+			print("titanclass2 "+GetPersistentLoadoutValue(player, "titan", loadoutIndex, "titanClass" ))
+			return itemType == GetModdedTitanLoadoutPassiveTypeByClass(GetPersistentLoadoutValue(player, "titan", loadoutIndex, "titanClass" ), "passive2")
+/* 			switch( loadoutIndex ) //TODO: Hard coded, not great!
 			{
 				case 0:
 					return itemType == eItemTypes.TITAN_ION_PASSIVE
@@ -1193,7 +1217,7 @@ bool function IsValidTitanPassive( int loadoutIndex, string loadoutProperty, var
 
 				default:
 					return false
-			}
+			} */
 		}
 
 		case "passive3":
@@ -1213,7 +1237,7 @@ bool function IsValidTitanPassive( int loadoutIndex, string loadoutProperty, var
 	unreachable
 }
 
-bool function IsValidTitanExecution( int loadoutIndex, string loadoutProperty, var value, string ref ) //TODO: Not using all parameters in this function yet, might need them for full validation
+bool function IsValidTitanExecution( int loadoutIndex, string loadoutProperty, var value, string ref, entity player ) //TODO: Not using all parameters in this function yet, might need them for full validation
 {
 	//Should have run IsRefValid(ref already, so fine to do GetItemType( ref ))
 	int itemType = GetItemType( ref )
@@ -1223,9 +1247,6 @@ bool function IsValidTitanExecution( int loadoutIndex, string loadoutProperty, v
 	{
 		case "titanExecution":
 		{
-			if(loadoutIndex > 6){
-				return itemType == GetModdedTitanExecutionTypeByIndex(loadoutIndex)
-			}
 			switch( loadoutIndex ) //TODO: Hard coded, not great!
 			{
 				case 0:
@@ -1249,7 +1270,9 @@ bool function IsValidTitanExecution( int loadoutIndex, string loadoutProperty, v
 				case 6:
 					return itemType == eItemTypes.TITAN_VANGUARD_EXECUTION
 				default:
-					return false
+					string titanClass = GetPersistentLoadoutValue(player, "titan", loadoutIndex, "titanClass" )
+					return itemType == GetModdedTitanLoadoutPassiveTypeByClass(titanClass, "titanExecution")
+					
 			}
 		}
 
@@ -1297,20 +1320,24 @@ string function GetParentRefFromLoadoutInfoAndRef( entity player, string loadout
 		case "passive5":
 		case "passive6":
 		{
-			if ( isTitanLoadout && !IsValidTitanPassive( loadoutIndex, property, childRef, childRef ) )
+			if ( isTitanLoadout && !IsValidTitanPassive(player,  loadoutIndex, property, childRef, childRef ) )
 				return ""
 			print("validTitanPassive")
 			string parentProperty = GetParentLoadoutProperty( loadoutType, property )
 			print("parent property "+parentProperty)
-			string loadoutString = BuildPersistentVarAccessorString( loadoutType, loadoutIndex, parentProperty )
+			string loadoutString
+			if(!GetModdedTitanClasses().contains(string(player.GetPersistentVar(BuildPersistentVarAccessorString( loadoutType, loadoutIndex, "name" )))))
+				loadoutString = BuildPersistentVarAccessorString( loadoutType, loadoutIndex, parentProperty )
+			else
+				loadoutString = BuildPersistentVarAccessorString( loadoutType, loadoutIndex, "name" )
 			print("loadout string " + loadoutString)
 			string resultString = string( player.GetPersistentVar( loadoutString ) ) //titanLoadouts[5].titanClass
 			print("Result string "+ resultString)
-			if(loadoutIndex > 6)
-			{
-				//resultString = shGlobal.cachedTitanLoadouts[ loadoutIndex ].titanClass
-				resultString = GetModdedTitanClassForMods(GetModdedTitanByIndexNoPersist(loadoutIndex).titanClass)
-			}
+			//if(loadoutIndex > 6)
+			//{
+			//	//resultString = shGlobal.cachedTitanLoadouts[ loadoutIndex ].titanClass
+			//	resultString = GetModdedTitanClassForMods(GetModdedTitanByClassNoPersist(loadoutIndex).titanClass)
+			//}
 			if ( HasSubitem( resultString, childRef ) )
 				return resultString
 			else
@@ -1444,6 +1471,8 @@ string function GetLoadoutPropertyDefault( string loadoutType, int loadoutIndex,
 			}
 			else if ( isTitanLoadout )
 			{
+				if(loadoutIndex > 6)
+					loadoutIndex = loadoutIndex - 6
 				TitanLoadoutDef defaultPilotLoadout = GetDefaultTitanLoadout( loadoutIndex ) //HACK: note that this can give an invalid default for a child property, e.g. a sight that doesn't exist on this weapon. This is handled later in ResolveInvalidLoadoutChildValues
 				resultString = GetTitanLoadoutValue( defaultPilotLoadout, propertyName )
 			}
@@ -2642,7 +2671,7 @@ int function GetItemTypeFromPilotLoadoutProperty( string loadoutProperty )
 int function GetItemTypeFromTitanLoadoutProperty( string loadoutProperty, string setFile = "" )
 {
 	int itemType
-	print("===========get item type from titan loadout property")
+	//print("===========get item type from titan loadout property")
 	//print(setFile)
 	//setFile = GetModdedTitanSetFileForAnims(setFile)
 	//print(setFile)
@@ -3096,7 +3125,7 @@ void function SetPersistentSpawnLoadoutIndex( entity player, string loadoutType,
 	void function UpdateAllCachedTitanLoadouts()
 	{
 		//int numLoadouts = shGlobal.cachedTitanLoadouts.len()
-		int numLoadouts = 6 + GetModdedTitanClasses().len()
+		int numLoadouts = NUM_PERSISTENT_TITAN_LOADOUTS
 
 		for ( int i = 0; i < numLoadouts; i++ )
 			UpdateCachedTitanLoadout( i )
@@ -3180,7 +3209,9 @@ void function SetPersistentSpawnLoadoutIndex( entity player, string loadoutType,
 
 	asset function GetCachedTitanLoadoutArmBadge( int loadoutIndex )
 	{
-		TitanLoadoutDef cachedTitanLoadout = GetCachedTitanLoadout( loadoutIndex )
+		TitanLoadoutDef cachedTitanLoadout = clone GetCachedTitanLoadout( loadoutIndex )
+		if(GetModdedTitanClasses().contains(cachedTitanLoadout.name))
+			cachedTitanLoadout.titanClass = GetModdedTitanClassForMods(cachedTitanLoadout.titanClass)
 		return GetTitanArmBadgeFromLoadoutAndPrimeStatus( cachedTitanLoadout )
 	}
 
@@ -3239,9 +3270,9 @@ string function Loadouts_GetSetFileForRequestedClass( entity player )
 	void function SetPersistentTitanLoadout( entity player, int loadoutIndex, TitanLoadoutDef loadout )
 	{
 		SetPersistentLoadoutValue( player, "titan", loadoutIndex, "name",				loadout.name )
+		SetPersistentLoadoutValue( player, "titan", loadoutIndex, "setFile",			loadout.setFile )
 		SetPersistentLoadoutValue( player, "titan", loadoutIndex, "titanClass",			GetTitanCharacterNameFromSetFile( loadout.setFile ) )
-		//SetPersistentLoadoutValue( player, "titan", loadoutIndex, "setFile",			loadout.setFile )
-		//SetPersistentLoadoutValue( player, "titan", loadoutIndex, "primaryMod",		loadout.primaryMod )
+		SetPersistentLoadoutValue( player, "titan", loadoutIndex, "primaryMod",		loadout.primaryMod )
 		SetPersistentLoadoutValue( player, "titan", loadoutIndex, "special",			loadout.special )
 		SetPersistentLoadoutValue( player, "titan", loadoutIndex, "antirodeo",			loadout.antirodeo )
 		SetPersistentLoadoutValue( player, "titan", loadoutIndex, "passive1",			loadout.passive1 )
@@ -3835,7 +3866,8 @@ bool function IsTitanClassPrime( entity player, string titanClass )
 	if(titanClass in GetModdedTitansByClassNoPersist()){
 		return false
 	}
-	unreachable
+	return false
+	//unreachable
 }
 
 void function UpdateDerivedTitanLoadoutData( TitanLoadoutDef loadout )

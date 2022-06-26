@@ -522,6 +522,54 @@ resource/ui/menus/team_titan_select.menu
 	        pin_corner_to_sibling	LEFT
 	        pin_to_sibling_corner	LEFT
 	    }
+				TitanButton12
+	    {
+			ControlName				RuiButton
+			InheritProperties		LoadoutButtonSmall
+			rui						"ui/team_titan_select_button.rpak"
+	        ypos					400
+	        xpos 					-25
+	        zpos 					-1
+			tall 					54
+			wide					108
+	        scriptID				12
+
+	        pin_to_sibling			BG
+	        pin_corner_to_sibling	LEFT
+	        pin_to_sibling_corner	LEFT
+	    }
+				TitanButton13
+	    {
+			ControlName				RuiButton
+			InheritProperties		LoadoutButtonSmall
+			rui						"ui/team_titan_select_button.rpak"
+	        ypos					400
+	        xpos 					-25
+	        zpos 					-1
+			tall 					54
+			wide					108
+	        scriptID				13
+
+	        pin_to_sibling			BG
+	        pin_corner_to_sibling	LEFT
+	        pin_to_sibling_corner	LEFT
+	    }
+				TitanButton14
+	    {
+			ControlName				RuiButton
+			InheritProperties		LoadoutButtonSmall
+			rui						"ui/team_titan_select_button.rpak"
+	        ypos					400
+	        xpos 					-25
+	        zpos 					-1
+			tall 					54
+			wide					108
+	        scriptID				14
+
+	        pin_to_sibling			BG
+	        pin_corner_to_sibling	LEFT
+	        pin_to_sibling_corner	LEFT
+	    }
 
 //	    EditTitanButton
 //	    {

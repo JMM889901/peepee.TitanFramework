@@ -1948,6 +1948,8 @@
 			return
 
 		TitanLoadoutDef loadout = clone GetCachedTitanLoadout( loadoutIndex )
+		if(GetModdedTitanClasses().contains(loadout.name))
+			loadout.titanClass = GetModdedTitanClassForMods(loadout.titanClass)
 
 		asset armBadgeModel = GetTitanArmBadgeFromLoadoutAndSkinIndex( loadout, skinIndex )
 

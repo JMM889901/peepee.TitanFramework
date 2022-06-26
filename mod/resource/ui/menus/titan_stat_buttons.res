@@ -171,10 +171,70 @@ resource/ui/menus/loadout_selection_buttons.res
         ypos                    8
         zpos                    99
         navUp					Button9
-        navDown					ButtonLast
+        navDown					Button11
         visible					0
 
         pin_to_sibling          Button9
+        pin_corner_to_sibling   TOP_LEFT
+        pin_to_sibling_corner   BOTTOM_LEFT
+    }
+        Button11
+    {
+        ControlName				RuiButton
+        InheritProperties		RuiLoadoutSelectionButton
+        scriptID				11
+        ypos                    8
+        zpos                    99
+        navUp					Button10
+        navDown					Button12
+        visible					0
+
+        pin_to_sibling          Button10
+        pin_corner_to_sibling   TOP_LEFT
+        pin_to_sibling_corner   BOTTOM_LEFT
+    }
+            Button12
+    {
+        ControlName				RuiButton
+        InheritProperties		RuiLoadoutSelectionButton
+        scriptID				12
+        ypos                    8
+        zpos                    99
+        navUp					Button11
+        navDown					Button13
+        visible					0
+
+        pin_to_sibling          Button11
+        pin_corner_to_sibling   TOP_LEFT
+        pin_to_sibling_corner   BOTTOM_LEFT
+    }
+            Button13
+    {
+        ControlName				RuiButton
+        InheritProperties		RuiLoadoutSelectionButton
+        scriptID				13
+        ypos                    8
+        zpos                    99
+        navUp					Button12
+        navDown					Button14
+        visible					0
+
+        pin_to_sibling          Button12
+        pin_corner_to_sibling   TOP_LEFT
+        pin_to_sibling_corner   BOTTOM_LEFT
+    }
+            Button14
+    {
+        ControlName				RuiButton
+        InheritProperties		RuiLoadoutSelectionButton
+        scriptID				14
+        ypos                    8
+        zpos                    99
+        navUp					Button13
+        navDown					ButtonLast
+        visible					0
+
+        pin_to_sibling          Button13
         pin_corner_to_sibling   TOP_LEFT
         pin_to_sibling_corner   BOTTOM_LEFT
     }

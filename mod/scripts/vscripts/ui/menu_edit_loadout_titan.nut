@@ -13,6 +13,7 @@ struct {
 	var camoSkinButton
 	var noseArtButton
 	var primeTitanButton
+	var ClassSelectButton
 	var titanExecutionButton
 	var fdTitanUpgradeButton
 	var titanPropertiesPanel
@@ -82,6 +83,11 @@ void function InitEditTitanLoadoutMenu()
 	AddButtonEventHandler( file.primeTitanButton, UIE_LOSE_FOCUS, OnEditTitanCamoSkinButton_LoseFocus )
 	AddButtonEventHandler( file.primeTitanButton, UIE_CLICK, OnPrimeTitanButton_Activate )
 
+	file.ClassSelectButton = Hud_GetChild( file.loadoutPanel, "ButtonClass" )
+	//AddButtonEventHandler( file.ClassSelectButton, UIE_GET_FOCUS, OnPrimeTitanButton_Focus )
+	//AddButtonEventHandler( file.ClassSelectButton, UIE_LOSE_FOCUS, OnEditTitanCamoSkinButton_LoseFocus )
+	//AddButtonEventHandler( file.ClassSelectButton, UIE_CLICK, OnPrimeTitanButton_Activate )
+
 	file.titanExecutionButton = Hud_GetChild( file.loadoutPanel, "ButtonTitanExecutions" )
 
 	file.armBadgeButton = Hud_GetChild( file.loadoutPanel, "ButtonShoulderBadge" )
@@ -144,7 +150,7 @@ void function OnOpenEditTitanLoadoutMenu()
 
 		Hud_SetNew( file.noseArtButton, ButtonShouldShowNew( eItemTypes.TITAN_NOSE_ART, "", loadout.titanClass ) )
 
-		Hud_SetNew( file.primeTitanButton, ButtonShouldShowNew( eItemTypes.PRIME_TITAN, loadout.primeTitanRef, "" ) )
+		//Hud_SetNew( file.primeTitanButton, ButtonShouldShowNew( eItemTypes.PRIME_TITAN, loadout.primeTitanRef, "" ) )
 	}
 	UpdateTitanCosmeticButtons()
 
@@ -167,7 +173,14 @@ void function OnOpenEditTitanLoadoutMenu()
 		Hud_SetSelected( file.armBadgeButton, false )
 		RuiSetString( armBadgeRui, "buttonText", "" )
 	}
-
+	if ( uiGlobal.editingLoadoutIndex < 7 )
+	{
+		Hud_Hide( file.ClassSelectButton )
+	}
+	else
+	{
+		Hud_Show( file.ClassSelectButton )
+	}
 	if ( ShouldShowVanguardButtons( loadout.titanClass ) )
 	{
 		Hud_Show( file.upgradeIcon )
@@ -619,7 +632,10 @@ void function OnEditTitanSlotButton_Activate( var button )
 		case "fdTitanUpgrades":
 			AdvanceMenu( GetMenu( "FDTitanUpgradeMenu" ) )
 			break
-
+		case "titanClass":
+			print("Yep")
+			AdvanceMenu( GetMenu( "EditTitanClassMenu" ) )
+			break
 		default:
 			break
 	}

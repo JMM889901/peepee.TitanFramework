@@ -1,0 +1,81 @@
+untyped
+global function FrameworkMenuInit
+global function InitEditTitanClassMenu
+struct{
+	array<var> activateButtons
+} file
+void function FrameworkMenuInit()
+{
+	AddMenu( "EditTitanClassMenu", $"resource/ui/menus/titanClasses.menu", InitEditTitanClassMenu )
+	InitEditTitanClassMenu()
+}
+void function InitEditTitanClassMenu()
+{
+	print("Running titanClass menu init")
+	var menu = GetMenu( "EditTitanClassMenu" )
+	var dataTable = GetDataTable( $"datatable/default_titan_loadouts.rpak" )
+	AddMenuEventHandler( menu, eUIEvent.MENU_OPEN, OnClassSelectMenu_Open )
+	for ( int i = 0; i < 14; i++ )
+	{
+		var activateButton = Hud_GetChild( menu, "Button" + i )
+		activateButton.s.rowIndex <- i
+		Hud_SetVisible( activateButton, true )
+		Hud_AddEventHandler( activateButton, UIE_CLICK, OnClassSelectButton_Activate )
+		file.activateButtons.append(activateButton)
+	}
+}
+void function OnClassSelectButton_Activate(var button)
+{
+	print("Bruh")
+	print(button.s.rowIndex)
+	if(button.s.rowIndex > 6)
+	{
+		int index = expect int(button.s.rowIndex)
+		OverwriteGlobalTitanLoadoutByIndex(uiGlobal.editingLoadoutIndex, GetModdedTitanByClassNoPersist(expect string(button.s.titanClass)), true)
+		shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive2 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(expect string(button.s.titanClass), "passive2"))[0].ref
+		ClientCommand( "SetTitanClass "+uiGlobal.editingLoadoutIndex+" modded " + (button.s.rowIndex-7) )
+	}
+	else if (button.s.rowIndex > -1)
+	{
+		int index = expect int(button.s.rowIndex)
+		OverwriteGlobalTitanLoadoutByIndex(uiGlobal.editingLoadoutIndex, GetDefaultTitanLoadout(expect int(button.s.rowIndex)), true)
+		shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].primeTitanRef = GetPrimeTitanRefForTitanClass( GetCachedTitanLoadout(index).titanClass )
+		shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive2 = GetDefaultTitanLoadout(index).passive2
+
+		ClientCommand( "SetTitanClass "+uiGlobal.editingLoadoutIndex+" default " + button.s.rowIndex )
+	}
+	
+	PrintTitanLoadout(shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex])
+	//uiGlobal.editingLoadoutIndex
+}
+void function OnClassSelectMenu_Open()
+{
+	print("openning class select")
+	var menu = GetMenu( "EditTitanClassMenu" )
+	var dataTable = GetDataTable( $"datatable/default_titan_loadouts.rpak" )
+	for ( int i = 0; i < 7; i++ )
+	{
+		var activateButton = Hud_GetChild( menu, "Button" + i )
+		string name = GetDefaultTitanLoadout(i).name
+		if ( IsTokenLoadoutName( name ) )
+			RHud_SetText( activateButton, Localize( name ) )
+		else
+		RHud_SetText( activateButton, name )
+		Hud_SetVisible( activateButton, true )
+		Hud_SetEnabled( activateButton, true )		
+	}
+	for ( int i = 7; i < 7 + GetModdedTitanClasses().len(); i++)
+	{
+		var activateButton = Hud_GetChild( menu, "Button" + i )
+		RHud_SetText( activateButton, GetModdedTitanClasses()[i-7] )
+		activateButton.s.titanClass <- GetModdedTitanClasses()[i-7]
+		Hud_SetVisible( activateButton, true )
+		Hud_SetEnabled( activateButton, true )
+	}
+	for ( int i = 7 + GetModdedTitanClasses().len(); i < 14; i++)
+	{
+		var activateButton = Hud_GetChild( menu, "Button" + i )
+		Hud_SetVisible( activateButton, false )
+		Hud_SetEnabled( activateButton, false )
+	}
+}
