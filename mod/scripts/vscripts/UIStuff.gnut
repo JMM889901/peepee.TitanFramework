@@ -154,7 +154,7 @@ void function FrameworkInit()
 			OverwriteGlobalTitanLoadoutByIndex(i, GetDefaultTitanLoadout(i - 7))
 		PrintTitanLoadout(GetCachedTitanLoadout(i))
 		#endif
-		#if UI
+		#if UI && MP
 		if(GetValidatedPersistentLoadoutValue( GetLocalClientPlayer(), "titan", i, "titanClass" ) == "")
 		{
 			OverwriteGlobalTitanLoadoutByIndex(i, GetDefaultTitanLoadout( i-7))
