@@ -1270,7 +1270,13 @@ bool function IsValidTitanExecution( int loadoutIndex, string loadoutProperty, v
 				case 6:
 					return itemType == eItemTypes.TITAN_VANGUARD_EXECUTION
 				default:
-					string titanClass = GetPersistentLoadoutValue(player, "titan", loadoutIndex, "titanClass" )
+					print("Type "+itemType)
+					string titanClass
+					if((GetModdedTitanClasses().contains(GetPersistentLoadoutValue(player, "titan", loadoutIndex, "name" ))))
+						titanClass = GetModdedTitanClassForMods(GetPersistentLoadoutValue(player, "titan", loadoutIndex, "name" ))
+					else
+						titanClass = GetPersistentLoadoutValue(player, "titan", loadoutIndex, "titanClass" )
+					print("Type of class "+GetModdedTitanLoadoutPassiveTypeByClass(titanClass, "titanExecution"))
 					return itemType == GetModdedTitanLoadoutPassiveTypeByClass(titanClass, "titanExecution")
 					
 			}

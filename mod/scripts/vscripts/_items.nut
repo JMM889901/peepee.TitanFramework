@@ -4312,7 +4312,7 @@ string function GetPurchasableEntitlementMenu( string ref, string parentRef )
 string function GetItemUnlockReqText( string ref, string parentRef = "", bool alwaysShow = false )
 {
 	if(GetModdedTitanClasses().contains(parentRef) )
-		return "penis"
+		return " "
 	entity player = GetUIPlayer()
 	if ( !IsValid( player ) )
 		return ""

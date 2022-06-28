@@ -107,6 +107,7 @@ void function SetTitanLoadout(entity player, int index, TitanLoadoutDef loadout)
 	{
 		SetPersistentLoadoutValue( player, "titan", index, "name",				loadout.name )
 		SetPersistentLoadoutValue( player, "titan", index, "passive2",			GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.name, "passive2"))[0].ref)
+		SetPersistentLoadoutValue( player, "titan", index, "titanExecution",			GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.name, "titanExecution"))[0].ref)
 	}
 	else if(loadout.titanClass in TitanPassiveTypesByClass)
 	{
@@ -135,7 +136,8 @@ void function PreInit()
 	RegisterTitanPassiveTypes("titan_ogre_minigun", eItemTypes.TITAN_LEGION_PASSIVE,eItemTypes.TITAN_LEGION_EXECUTION, "legion")
 	RegisterTitanPassiveTypes("titan_stryder_sniper", eItemTypes.TITAN_NORTHSTAR_PASSIVE,eItemTypes.TITAN_NORTHSTAR_EXECUTION, "northstar")
 	RegisterTitanPassiveTypes("titan_stryder_leadwall", eItemTypes.TITAN_RONIN_PASSIVE,eItemTypes.TITAN_RONIN_EXECUTION, "ronin")
-	RegisterTitanPassiveTypes("titan_atlas_vanguard", eItemTypes.TITAN_VANGUARD_PASSIVE,eItemTypes.TITAN_VANGUARD_EXECUTION, "vanguard")
+	RegisterTitanPassiveTypes("titan_atlas_vanguard", eItemTypes.TITAN_VANGUARD_PASSIVE,eItemTypes.TITAN_VANGUARD_EXECUTION, "vanguard",
+	 eItemTypes.TITAN_UPGRADE1_PASSIVE, eItemTypes.TITAN_UPGRADE2_PASSIVE, eItemTypes.TITAN_UPGRADE3_PASSIVE)
 	
 }
 void function FrameworkInit()
@@ -180,7 +182,7 @@ void function FrameworkInit()
 		//#endif
 	}
 }
-void function RegisterTitanPassiveTypes(string SetFile, int passive2,int execution, string titanClass)
+void function RegisterTitanPassiveTypes(string SetFile, int passive2,int execution, string titanClass, int passive4 = -1, int passive5 = -1, int passive6 = -1)
 {
 	TitanPassiveTypesBySetFile[SetFile] <- {}
 	TitanPassiveTypesBySetFile[SetFile]["passive3"] <- eItemTypes.TITAN_TITANFALL_PASSIVE
@@ -198,6 +200,21 @@ void function RegisterTitanPassiveTypes(string SetFile, int passive2,int executi
 	TitanPassiveTypesByClass[titanClass]["passive5"] <- eItemTypes.TITAN_GENERAL_PASSIVE
 	TitanPassiveTypesByClass[titanClass]["passive6"] <- eItemTypes.TITAN_GENERAL_PASSIVE
 	TitanPassiveTypesByClass[titanClass]["titanExecution"] <- execution
+	if(passive4 != -1)
+	{
+		TitanPassiveTypesBySetFile[SetFile]["passive4"]		<- passive4
+		TitanPassiveTypesByClass[titanClass]["passive4"]	<- passive4
+	}
+	if(passive5 != -1)
+	{
+		TitanPassiveTypesBySetFile[SetFile]["passive5"]		<- passive5
+		TitanPassiveTypesByClass[titanClass]["passive5"]	<- passive5
+	}
+	if(passive6 != -1)
+	{
+		TitanPassiveTypesBySetFile[SetFile]["passive6"]		<- passive6
+		TitanPassiveTypesByClass[titanClass]["passive6"]	<- passive6
+	}
 }
 void function OverwriteDefaultTitanLoadoutByIndex(int key, TitanLoadoutDef loadout)
 {
@@ -239,6 +256,7 @@ void function OverwriteGlobalTitanLoadoutByIndex(int key, TitanLoadoutDef loadou
 	shGlobal.cachedTitanLoadouts[ key ].passive4 = loadout.passive4
 	shGlobal.cachedTitanLoadouts[ key ].passive5 = loadout.passive5
 	shGlobal.cachedTitanLoadouts[ key ].passive6 = loadout.passive6
+	shGlobal.cachedTitanLoadouts[ key ].titanExecution = loadout.titanExecution
 	if(skins)
 	{
 		shGlobal.cachedTitanLoadouts[ key ].skinIndex = loadout.skinIndex
@@ -271,7 +289,6 @@ void function RegisterModdedTitan(
 	string Primary, 
 	string Left, string Mid, 
 	string Right, string Core, 
-	string SetFile, 
 	string BaseSetFile, 
 	string BaseName, 
 	int difficulty, 
@@ -290,7 +307,7 @@ void function RegisterModdedTitan(
 	TitanLoadoutDef loadout
 	loadout.name				= Name
 	loadout.titanClass			= Name
-	loadout.setFile 			= SetFile
+	loadout.setFile 			= BaseSetFile
 	loadout.special				= Left
 	loadout.antirodeo			= Mid
 	loadout.voice				= Voice
@@ -318,7 +335,6 @@ void function RegisterModdedTitanItems(
 		string Primary, 
 		string Left, string Mid, 
 		string Right, string Core, 
-		string SetFile, 
 		string BaseSetFile, 
 		string BaseName, 
 		int difficulty, 
@@ -331,13 +347,14 @@ void function RegisterModdedTitanItems(
 {
 	//CreateModdedItemType(PassiveTypeName)
 	//Setfile indexing is bad, but still needed for some stuff
-	TitanPassiveTypesBySetFile[SetFile] <- {}
-	TitanPassiveTypesBySetFile[SetFile]["passive3"] <- eItemTypes.TITAN_TITANFALL_PASSIVE
-	TitanPassiveTypesBySetFile[SetFile]["passive1"] <- eItemTypes.TITAN_GENERAL_PASSIVE
-	TitanPassiveTypesBySetFile[SetFile]["passive2"] <- eItemTypes[PassiveTypeName]
-	TitanPassiveTypesBySetFile[SetFile]["passive4"] <- eItemTypes.TITAN_GENERAL_PASSIVE
-	TitanPassiveTypesBySetFile[SetFile]["passive5"] <- eItemTypes.TITAN_GENERAL_PASSIVE
-	TitanPassiveTypesBySetFile[SetFile]["passive6"] <- eItemTypes.TITAN_GENERAL_PASSIVE
+	TitanPassiveTypesBySetFile[BaseSetFile] <- {}
+	TitanPassiveTypesBySetFile[BaseSetFile]["passive3"] <- eItemTypes.TITAN_TITANFALL_PASSIVE
+	TitanPassiveTypesBySetFile[BaseSetFile]["passive1"] <- eItemTypes.TITAN_GENERAL_PASSIVE
+	TitanPassiveTypesBySetFile[BaseSetFile]["passive2"] <- eItemTypes[PassiveTypeName]
+	TitanPassiveTypesBySetFile[BaseSetFile]["passive4"] <- eItemTypes.TITAN_GENERAL_PASSIVE
+	TitanPassiveTypesBySetFile[BaseSetFile]["passive5"] <- eItemTypes.TITAN_GENERAL_PASSIVE
+	TitanPassiveTypesBySetFile[BaseSetFile]["passive6"] <- eItemTypes.TITAN_GENERAL_PASSIVE
+	TitanPassiveTypesBySetFile[BaseSetFile]["titanExecution"] <- ExecutionType
 	
 	TitanPassiveTypesByClass[Name] <- {}
 	TitanPassiveTypesByClass[Name]["passive3"] <- eItemTypes.TITAN_TITANFALL_PASSIVE
@@ -346,7 +363,7 @@ void function RegisterModdedTitanItems(
 	TitanPassiveTypesByClass[Name]["passive4"] <- eItemTypes.TITAN_GENERAL_PASSIVE
 	TitanPassiveTypesByClass[Name]["passive5"] <- eItemTypes.TITAN_GENERAL_PASSIVE
 	TitanPassiveTypesByClass[Name]["passive6"] <- eItemTypes.TITAN_GENERAL_PASSIVE
-
+	TitanPassiveTypesByClass[Name]["titanExecution"] <- ExecutionType
 
 	CreateModdedTitanItem(999, eItemTypes.TITAN, Name, Name, "Whats the deal. with airline food?", "i sure love losing progress", $"ui/temp", 0, false, eItemTypes[PassiveTypeName],expect asset(GetItemData("scorch").i.coreIcon))
 	CreateGenericSubItemData( eItemTypes.TITAN_TITANFALL_PASSIVE, Name, "pas_warpfall" )
