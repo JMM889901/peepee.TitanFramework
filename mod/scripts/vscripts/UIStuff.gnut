@@ -172,9 +172,9 @@ void function FrameworkInit()
 			if(GetValidatedPersistentLoadoutValue( player, "titan", i, "titanClass" ) == "")
 			{
 				TitanLoadoutDef loadout = GetDefaultTitanLoadout( i-7)
-				loadout.passive2 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.name, "passive2"))[0].ref
-				loadout.passive3 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.name, "passive3"))[0].ref
-				loadout.passive1 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.name, "passive1"))[0].ref
+				loadout.passive2 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.titanClass, "passive2"))[0].ref
+				loadout.passive3 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.titanClass, "passive3"))[0].ref
+				loadout.passive1 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.titanClass, "passive1"))[0].ref
 				SetPersistentTitanLoadout(player, i, loadout)
 			}
 		}
