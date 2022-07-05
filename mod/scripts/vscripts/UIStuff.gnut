@@ -108,6 +108,7 @@ void function SetTitanLoadout(entity player, int index, TitanLoadoutDef loadout)
 		SetPersistentLoadoutValue( player, "titan", index, "name",				loadout.name )
 		SetPersistentLoadoutValue( player, "titan", index, "passive2",			GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.name, "passive2"))[0].ref)
 		SetPersistentLoadoutValue( player, "titan", index, "titanExecution",			GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.name, "titanExecution"))[0].ref)
+		//GetSetFileModsForSettingType( "titan", [ loadout.passive1, loadout.passive2, loadout.passive3, loadout.passive4, loadout.passive5, loadout.passive6 ] )
 	}
 	else if(loadout.titanClass in TitanPassiveTypesByClass)
 	{
@@ -170,7 +171,11 @@ void function FrameworkInit()
 		{
 			if(GetValidatedPersistentLoadoutValue( player, "titan", i, "titanClass" ) == "")
 			{
-				SetPersistentTitanLoadout(player, i, GetDefaultTitanLoadout( i-7))
+				TitanLoadoutDef loadout = GetDefaultTitanLoadout( i-7)
+				loadout.passive2 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.name, "passive2"))[0].ref
+				loadout.passive3 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.name, "passive3"))[0].ref
+				loadout.passive1 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.name, "passive1"))[0].ref
+				SetPersistentTitanLoadout(player, i, loadout)
 			}
 		}
 		#endif
@@ -279,9 +284,15 @@ void function OverwriteModdedTitanLoadoutDefaultEquipment(TitanLoadoutDef loadou
 	loadout.antirodeo = Default.antirodeo
 	loadout.coreAbility = Default.coreAbility
 	loadout.difficulty = Default.difficulty
-	loadout.passive4 = "pas_vanguard_core1"
-	loadout.passive5 = "pas_vanguard_core4"
-	loadout.passive6 = "pas_vanguard_core7"
+
+	if(loadout.passive4 == "")
+		loadout.passive4 = "pas_vanguard_core1"
+	if(loadout.passive5 == "")
+		loadout.passive5 = "pas_vanguard_core4"
+	if(loadout.passive6 == "")
+		loadout.passive6 = "pas_vanguard_core7"
+	loadout.setFileMods = GetSetFileModsForSettingType( "titan", [ loadout.passive1, loadout.passive2, loadout.passive3, loadout.passive4, loadout.passive5, loadout.passive6 ] )
+
 }
 array<string> ModdedTitanClasses
 void function RegisterModdedTitan(
@@ -365,7 +376,7 @@ void function RegisterModdedTitanItems(
 	TitanPassiveTypesByClass[Name]["passive6"] <- eItemTypes.TITAN_GENERAL_PASSIVE
 	TitanPassiveTypesByClass[Name]["titanExecution"] <- ExecutionType
 
-	CreateModdedTitanItem(999, eItemTypes.TITAN, Name, Name, "Whats the deal. with airline food?", "i sure love losing progress", $"ui/temp", 0, false, eItemTypes[PassiveTypeName],expect asset(GetItemData("scorch").i.coreIcon))
+	CreateModdedTitanItem(999, eItemTypes.TITAN, Name, Name, "Whats the deal. with airline food?", "i sure love losing progress", $"ui/temp", 0, false, eItemTypes[PassiveTypeName],expect asset(GetItemData(BaseName).i.coreIcon))
 	CreateGenericSubItemData( eItemTypes.TITAN_TITANFALL_PASSIVE, Name, "pas_warpfall" )
 	CreateGenericSubItemData( eItemTypes.TITAN_TITANFALL_PASSIVE, Name, "pas_bubbleshield" )
 	foreach(ItemData item in GetAllItemsOfType(eItemTypes.TITAN_GENERAL_PASSIVE))
