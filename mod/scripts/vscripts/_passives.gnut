@@ -703,7 +703,8 @@ void function ApplyTitanWeaponPassives( entity titan, TitanLoadoutDef loadout )
 	}
 	if( GetModdedTitanClasses().contains( loadout.titanClass ) )
 		return
-	//PEEPEE TODO: Add function go get passive actions, or just leave that to a spawn callback
+	//PEEPEE TODO: Add table function to get passive actions, or just leave that to a spawn callback
+	//Spawn callback because lasy + easier to run custom functions instead of mod applications, maybe functionref table? 
 	foreach ( passive, value in soul.passives )
 	{
 		if ( !value )

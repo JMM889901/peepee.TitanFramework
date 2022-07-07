@@ -228,7 +228,15 @@ void function PopulatePilotLoadoutFromPersistentData( entity player, PilotLoadou
 
 void function PopulateTitanLoadoutFromPersistentData( entity player, TitanLoadoutDef loadout, int loadoutIndex )
 {
+	//bool changed = false
+	//int InitialLoadoutIndex = loadoutIndex
 	loadout.name 				= GetValidatedPersistentLoadoutValue( player, "titan", loadoutIndex, "name" )
+	//if( loadout.name == "" && loadoutIndex > 6 || loadout.name == "fuck")
+	//{
+	//	loadoutIndex = loadoutIndex - 7
+	//	loadout.name 				= GetValidatedPersistentLoadoutValue( player, "titan", loadoutIndex, "name" )
+	//	changed = true
+	//}
 	if(loadout.name in GetModdedTitansByClassNoPersist())
 	{
 		
@@ -281,7 +289,10 @@ void function PopulateTitanLoadoutFromPersistentData( entity player, TitanLoadou
 	UpdateDerivedTitanLoadoutData( loadout )
 	if(!(loadout.name in GetModdedTitansByClassNoPersist()))
 		OverwriteLoadoutWithDefaultsForSetFile( loadout )
-	
+	//#if SERVER
+	//if(changed)
+	//	SetTitanLoadout(player, InitialLoadoutIndex, loadout)
+	//#endif
 }
 
 string function GetSetFileForTitanClassAndPrimeStatus( string titanClass, bool isPrimeTitan = false )
@@ -1009,8 +1020,9 @@ bool function IsValueValidForLoadoutTypeIndexAndProperty( string loadoutType, in
 				string defaultValue = GetLoadoutPropertyDefault( loadoutType, loadoutIndex, loadoutProperty )
 				return ( value == defaultValue )
 			}
-			return true
-			//PEEPEE TODO, Must create function to check if class is even real
+			return (GetModdedTitanLoadoutPassiveTypeByClass(string(value), "passive1") != -1) //Yeah this isnt great, 
+			//but the only function i currently have that returns both default and modded titans
+			//PEEPEE TODO, Must create function to check if class is even real <-Done, do better
 		case "primaryMod":
 		case "special":
 		case "antirodeo":
@@ -3132,7 +3144,7 @@ void function SetPersistentSpawnLoadoutIndex( entity player, string loadoutType,
 	{
 		//int numLoadouts = shGlobal.cachedTitanLoadouts.len()
 		int numLoadouts = NUM_PERSISTENT_TITAN_LOADOUTS
-
+		
 		for ( int i = 0; i < numLoadouts; i++ )
 			UpdateCachedTitanLoadout( i )
  		//foreach( void functionref() pain in GetNewItemInitCallbacks())

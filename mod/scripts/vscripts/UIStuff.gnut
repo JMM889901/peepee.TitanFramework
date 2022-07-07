@@ -100,17 +100,18 @@ void function SetTitanLoadout(entity player, int index, TitanLoadoutDef loadout)
 {
 	if(index < 7)
 	{
+		print("Should not modify default titans. Do so manually if you want to at your own risk")
 		return
-		print("Should not modify existing titans. Do so manually if you want to at your own risk")
+
 	}
-	if(loadout.name in TitanLoadoutByClass)
+	if(loadout.name in TitanLoadoutByClass)//Modded titans
 	{
 		SetPersistentLoadoutValue( player, "titan", index, "name",				loadout.name )
 		SetPersistentLoadoutValue( player, "titan", index, "passive2",			GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.name, "passive2"))[0].ref)
 		SetPersistentLoadoutValue( player, "titan", index, "titanExecution",			GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.name, "titanExecution"))[0].ref)
 		//GetSetFileModsForSettingType( "titan", [ loadout.passive1, loadout.passive2, loadout.passive3, loadout.passive4, loadout.passive5, loadout.passive6 ] )
 	}
-	else if(loadout.titanClass in TitanPassiveTypesByClass)
+	else if(loadout.titanClass in TitanPassiveTypesByClass)//None modded titans
 	{
 		SetPersistentLoadoutValue( player, "titan", index, "isPrime",				loadout.isPrime )
 		SetPersistentTitanLoadout(player, index, loadout)
@@ -143,6 +144,9 @@ void function PreInit()
 }
 void function FrameworkInit()
 {
+	#if SERVER
+	AddCallback_OnClientConnected(ValidatePlayerModdedData)
+	#endif
 	for(int i = 7; i < 10; i++)
 	{//most of this is redundant but im afraid to remove it at this point
 		OverwriteDefaultTitanLoadoutByIndex(i, GetDefaultTitanLoadout(i - 7))
@@ -167,17 +171,21 @@ void function FrameworkInit()
 		#endif
 		#if SERVER
 		AddClientCommandCallback( "SetTitanClass", SetPlayerTitanRemote )
-		foreach(entity player in GetPlayerArray())
-		{
-			if(GetValidatedPersistentLoadoutValue( player, "titan", i, "titanClass" ) == "")
-			{
-				TitanLoadoutDef loadout = GetDefaultTitanLoadout( i-7)
-				loadout.passive2 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.titanClass, "passive2"))[0].ref
-				loadout.passive3 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.titanClass, "passive3"))[0].ref
-				loadout.passive1 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.titanClass, "passive1"))[0].ref
-				SetPersistentTitanLoadout(player, i, loadout)
-			}
-		}
+		//foreach(entity player in GetPlayerArray())
+		//{
+		//	print("titan index "+i+ "name "+GetValidatedPersistentLoadoutValue( player, "titan", i, "name" ))
+		//	if(GetValidatedPersistentLoadoutValue( player, "titan", i, "name" ) == ""
+		//	|| GetValidatedPersistentLoadoutValue( player, "titan", i, "name" ) == "fuck")
+		//	{
+		//		print("Attempting to autofill titan index "+i)
+		//		TitanLoadoutDef loadout = clone GetDefaultTitanLoadout( i-7)
+		//		loadout.passive2 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.titanClass, "passive2"))[0].ref
+		//		loadout.passive3 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.titanClass, "passive3"))[0].ref
+		//		loadout.passive1 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.titanClass, "passive1"))[0].ref
+		//		SetTitanLoadout(player, i, loadout)
+		//	}
+		//}
+		//thread UpdateCachedLoadouts()
 		#endif
 
 		//#if CLIENT
@@ -187,6 +195,25 @@ void function FrameworkInit()
 		//#endif
 	}
 }
+#if SERVER
+void function ValidatePlayerModdedData(entity player)
+{
+	for(int i = 7; i < 10; i++)
+	{
+		print("titan index "+i+ "name "+GetValidatedPersistentLoadoutValue( player, "titan", i, "name" ))
+		if(GetValidatedPersistentLoadoutValue( player, "titan", i, "name" ) == ""
+		|| GetValidatedPersistentLoadoutValue( player, "titan", i, "name" ) == "fuck")
+		{
+			print("Attempting to autofill titan index "+i)
+			TitanLoadoutDef loadout = clone GetDefaultTitanLoadout( i-7)
+			loadout.passive2 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.titanClass, "passive2"))[0].ref
+			loadout.passive3 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.titanClass, "passive3"))[0].ref
+			loadout.passive1 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.titanClass, "passive1"))[0].ref
+			SetTitanLoadout(player, i, loadout)
+		}
+	}
+}
+#endif
 void function RegisterTitanPassiveTypes(string SetFile, int passive2,int execution, string titanClass, int passive4 = -1, int passive5 = -1, int passive6 = -1)
 {
 	TitanPassiveTypesBySetFile[SetFile] <- {}
