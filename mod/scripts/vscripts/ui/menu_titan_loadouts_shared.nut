@@ -366,9 +366,11 @@ void function UpdateTitanItemButton( var button, TitanLoadoutDef loadout )
 
 	string itemRef = GetTitanLoadoutValue( loadout, propertyName )
 	IsTitanLoadoutPrime( loadout )
-	string nonPrimeSetFile = GetSetFileForTitanClassAndPrimeStatus( loadout.titanClass, false )
+
+	string titanclass = loadout.titanClass
 	if(loadout.titanClass in GetModdedTitansByClassNoPersist())
-		nonPrimeSetFile = loadout.setFile
+		titanclass = GetModdedTitanClassForMods(titanclass)
+	string nonPrimeSetFile = GetSetFileForTitanClassAndPrimeStatus( titanclass, false )
 	int itemType = GetItemTypeFromTitanLoadoutProperty( propertyName, nonPrimeSetFile )
 	asset image = GetImage( itemType, itemRef )
 
