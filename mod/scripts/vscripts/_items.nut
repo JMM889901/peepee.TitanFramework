@@ -415,6 +415,11 @@ struct
 
 void function RegisterNewItemInitCallback(void functionref() callback)
 {
+	if(file.PostInitFunctions.contains(callback))
+	{
+		print("postinit allready registered")
+		return
+	}
 	file.PostInitFunctions.append(callback)
 }
 array<void functionref()> function GetNewItemInitCallbacks()
@@ -439,13 +444,13 @@ void function InitItems()
 	print("InitItems")
 	file.itemData = {}
 	file.itemsOfType = {}
-
+	file.globalItemRefsOfType = []
 	file.displayDataCache = {}
 
 	for ( int i = 0; i < eItemTypes.COUNT; i++ )
 	{
 		file.itemsOfType[ i ] <- []
-		file.globalItemRefsOfType[ i ] = []
+		file.globalItemRefsOfType.append( [] )
 	}
 
 	#if SERVER
@@ -1316,10 +1321,11 @@ void function InitItems()
 		#endif
 	#endif
 	print("ITEMDATA LEN = " + file.itemData.len())
-	foreach(void functionref() init in file.PostInitFunctions){
+	foreach(int index, void functionref() init in file.PostInitFunctions){
 		print("Executing a function")
 		init()
 	}
+	print("ITEMDATA LEN = " + file.itemData.len())
 }
 
 void function InitUnlocks()
@@ -4011,15 +4017,19 @@ void function InitUnlockForStatFloat( string ref, string parentRef, float statVa
 		file.unlocks[ ref ] <- unlock
 	}
 }
-bool function CreateModdedItemType(string itemid)
+int function CreateModdedItemType(string itemid)
 {
 	table ItemTypeId = expect table( getconsttable()["eItemTypes"])
 	int ID = eItemTypes.len()
-	ItemTypeId[itemid] <- ID
+	if(itemid in ItemTypeId)
+		ID = expect int(ItemTypeId[itemid])
 	file.itemsOfType[ID] <- []
 	while(file.globalItemRefsOfType.len() <= ID)
 		file.globalItemRefsOfType.append([])
-	return true
+	if(itemid in ItemTypeId)
+		return expect int(ItemTypeId[itemid])
+	ItemTypeId[itemid] <- ID
+	return ID
 }
 ItemData function CreateBaseItemData( int itemType, string ref, bool hidden )
 {
@@ -5318,7 +5328,7 @@ ItemData function CreateGenericItem( int dataTableIndex, int itemType, string re
 
 	return item
 }
-ItemData function CreateModdedTitanItem( int dataTableIndex, int itemType, string ref, string name, string desc, string longdesc, asset image, int cost, bool isHidden, int PassiveID, asset coreIcon )
+ItemData function CreateModdedTitanItem( int dataTableIndex, int itemType, string ref, string name, string desc, string longdesc, asset image, int cost, bool isHidden, array<int> PassiveID, asset coreIcon )
 {
 	ItemData item 			= CreateBaseItemData( itemType, ref, isHidden )
 	item.name               = name
@@ -5328,10 +5338,12 @@ ItemData function CreateModdedTitanItem( int dataTableIndex, int itemType, strin
 	item.imageAtlas			= IMAGE_ATLAS_MENU
 	item.persistenceId      = dataTableIndex
 	item.cost				= cost
-	item.i.passive1Type <- PassiveID
-	item.i.passive2Type <- PassiveID
-	item.i.passive3Type <- PassiveID
-	item.i.passive4Type <- PassiveID
+	item.i.passive1Type <- PassiveID[0]
+	item.i.passive2Type <- PassiveID[1]
+	item.i.passive3Type <- PassiveID[2]
+	item.i.passive4Type <- PassiveID[3]
+	item.i.passive5Type <- PassiveID[4]
+	item.i.passive6Type <- PassiveID[5]
 	item.i.coreIcon <- coreIcon
 	return item
 }

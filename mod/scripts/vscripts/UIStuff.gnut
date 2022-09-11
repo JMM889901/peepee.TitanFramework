@@ -17,6 +17,13 @@ global function OverwriteModdedTitanLoadoutDefaultEquipment
 global function OverwriteDefaultTitanLoadoutByIndex
 global function RegisterModdedTitan
 global function RegisterModdedTitanItems
+global function ModdedTitanHasPassiveSlot
+global function RegisterModdedTitanCustomPassiveType
+global function GenerateModdedTitanPassiveStringForPersistence
+global function GetModdedTitanPassiveStringForPersistence
+global function GetModdedTitanPassiveStringForPersistenceInverted
+global function DevGetPassivePersistentConversionTable
+global function GetModdedTitanPassivePersistentType
 #if SERVER
 global function SetTitanLoadout
 #endif
@@ -28,8 +35,38 @@ table<string, int> TitanPassiveTypesByRef
 table<int, int> TitanExecutionsByIndex
 table<string, table<string, int> > TitanPassiveTypesBySetFile
 table<string, table<string, int> > TitanPassiveTypesByClass
+table<string, int> ModdedTitanExtraPassiveTypes
+table<string, table<string, table <string, string > > > ModdedTitanCustomPassivePersistentNames
+table<string, table<string, table <string, string > > > ModdedTitanCustomPassivePersistentNamesInverted
+table<int, int > ModdedTitanPassivePersistentType
 //Getters
+bool function ModdedTitanHasPassiveSlot(string titanClass, string slot)
+{
+	if(!(GetModdedTitanClasses().contains(titanClass)))
+		return false
+	int extras = ModdedTitanExtraPassiveTypes[titanClass]
+	switch(slot)
+	{
+		case"passive6":
+			return(extras >= 3)
+		case "passive5":
+			return(extras >= 2)
+		case "passive4":
+			return(extras >= 1)
+		default:
+			return false
+	}
+	return false
 
+}
+int function GetModdedTitanPassivePersistentType(int passiveType)
+{
+	if(!(passiveType in ModdedTitanPassivePersistentType))
+	{
+		return passiveType
+	}
+	return ModdedTitanPassivePersistentType[passiveType]
+}
 int function GetModdedTitanLoadoutPassiveType(string ref, string property)
 {
 	if(ref in TitanPassiveTypesBySetFile)
@@ -126,6 +163,75 @@ void function SetTitanLoadout(entity player, int index, TitanLoadoutDef loadout)
 
 }
 #endif
+void function GenerateModdedTitanPassiveStringForPersistence(string titan, string passiveslot, string passive, int masktype = -1)
+{
+	if(!(titan in ModdedTitanCustomPassivePersistentNames))
+		ModdedTitanCustomPassivePersistentNames[titan] <- {}
+
+	if(!(passiveslot in ModdedTitanCustomPassivePersistentNames[titan]))
+		ModdedTitanCustomPassivePersistentNames[titan][passiveslot] <- {}
+	if(passive in ModdedTitanCustomPassivePersistentNames[titan][passiveslot])
+	{
+		print("Already registered that passive")
+		return
+	}
+	print(passiveslot)
+	int ItemType
+
+	if(passiveslot == "passive4")
+		ItemType = eItemTypes.TITAN_UPGRADE1_PASSIVE
+	if(passiveslot == "passive5")
+		ItemType = eItemTypes.TITAN_UPGRADE2_PASSIVE
+	if(passiveslot == "passive6")
+		ItemType = eItemTypes.TITAN_UPGRADE3_PASSIVE
+	if(passiveslot == "passive2")
+		ItemType = masktype
+	print(ItemType)
+	string name = GetAllItemsOfType(ItemType)[ModdedTitanCustomPassivePersistentNames[titan][passiveslot].len()].ref
+	print(name)
+	ModdedTitanCustomPassivePersistentNames[titan][passiveslot][passive] <- name
+}
+string function GetModdedTitanPassiveStringForPersistence(string titan, string passiveslot, string passive)
+{
+	if(!(titan in ModdedTitanCustomPassivePersistentNames))
+	{
+		print("titan not registered with custom to persistent index "+titan)
+		return passive
+	}
+	if(!(passiveslot in ModdedTitanCustomPassivePersistentNames[titan]))
+	{
+		print("passiveslot not registered with custom to persistent index for "+titan)
+		return passive
+	}
+	if(!(passive in ModdedTitanCustomPassivePersistentNames[titan][passiveslot]))
+	{
+		print("passive not registered with custom to persistent index for "+titan +" and "+passive)
+		return passive
+	}
+	return ModdedTitanCustomPassivePersistentNames[titan][passiveslot][passive]
+	
+}
+string function GetModdedTitanPassiveStringForPersistenceInverted(string titan, string passiveslot, string passive)
+{
+	if(!(titan in ModdedTitanCustomPassivePersistentNames))
+		return passive
+	print("titan exists "+titan)
+	if(!(passiveslot in ModdedTitanCustomPassivePersistentNames[titan]))
+		return passive
+	print("passivetype exists "+passiveslot)
+	foreach(string key, string value in ModdedTitanCustomPassivePersistentNames[titan][passiveslot])
+	{
+		if( value == passive )
+			return key
+	}
+	print("Passive not found "+passive )
+	return passive
+	
+}
+table<string, table<string, table<string, string> > > function DevGetPassivePersistentConversionTable()
+{
+	return ModdedTitanCustomPassivePersistentNames
+}
 void function PreInit()
 {
 	#if UI
@@ -220,17 +326,17 @@ void function RegisterTitanPassiveTypes(string SetFile, int passive2,int executi
 	TitanPassiveTypesBySetFile[SetFile]["passive3"] <- eItemTypes.TITAN_TITANFALL_PASSIVE
 	TitanPassiveTypesBySetFile[SetFile]["passive1"] <- eItemTypes.TITAN_GENERAL_PASSIVE
 	TitanPassiveTypesBySetFile[SetFile]["passive2"] <- passive2
-	TitanPassiveTypesBySetFile[SetFile]["passive4"] <- eItemTypes.TITAN_GENERAL_PASSIVE
-	TitanPassiveTypesBySetFile[SetFile]["passive5"] <- eItemTypes.TITAN_GENERAL_PASSIVE
-	TitanPassiveTypesBySetFile[SetFile]["passive6"] <- eItemTypes.TITAN_GENERAL_PASSIVE
+	TitanPassiveTypesBySetFile[SetFile]["passive4"] <- eItemTypes.TITAN_UPGRADE1_PASSIVE
+	TitanPassiveTypesBySetFile[SetFile]["passive5"] <- eItemTypes.TITAN_UPGRADE2_PASSIVE
+	TitanPassiveTypesBySetFile[SetFile]["passive6"] <- eItemTypes.TITAN_UPGRADE3_PASSIVE
 	TitanPassiveTypesBySetFile[SetFile]["titanExecution"] <- execution
 	TitanPassiveTypesByClass[titanClass] <- {}
 	TitanPassiveTypesByClass[titanClass]["passive3"] <- eItemTypes.TITAN_TITANFALL_PASSIVE
 	TitanPassiveTypesByClass[titanClass]["passive1"] <- eItemTypes.TITAN_GENERAL_PASSIVE
 	TitanPassiveTypesByClass[titanClass]["passive2"] <- passive2
-	TitanPassiveTypesByClass[titanClass]["passive4"] <- eItemTypes.TITAN_GENERAL_PASSIVE
-	TitanPassiveTypesByClass[titanClass]["passive5"] <- eItemTypes.TITAN_GENERAL_PASSIVE
-	TitanPassiveTypesByClass[titanClass]["passive6"] <- eItemTypes.TITAN_GENERAL_PASSIVE
+	TitanPassiveTypesByClass[titanClass]["passive4"] <- eItemTypes.TITAN_UPGRADE1_PASSIVE
+	TitanPassiveTypesByClass[titanClass]["passive5"] <- eItemTypes.TITAN_UPGRADE2_PASSIVE
+	TitanPassiveTypesByClass[titanClass]["passive6"] <-	eItemTypes.TITAN_UPGRADE3_PASSIVE
 	TitanPassiveTypesByClass[titanClass]["titanExecution"] <- execution
 	if(passive4 != -1)
 	{
@@ -375,35 +481,40 @@ void function RegisterModdedTitanItems(
 		string Right, string Core, 
 		string BaseSetFile, 
 		string BaseName, 
-		int difficulty, 
 		string PassiveTypeName,
 		int ExecutionType,
+		bool InheritDefault = true,
+		int difficulty = 2,
 		//array<array<var> > Passives,
 		string Melee = "melee_titan_punch_scorch",
 		string Voice = "titanos_bt"
 )
 {
-	//CreateModdedItemType(PassiveTypeName)
+	ModdedTitanExtraPassiveTypes[Name] <- 0
+	int passive4 = CreateModdedItemType(Name+"passive4")
+	int passive5 = CreateModdedItemType(Name+"passive5")
+	int passive6 = CreateModdedItemType(Name+"passive6")
 	//Setfile indexing is bad, but still needed for some stuff
 	TitanPassiveTypesBySetFile[BaseSetFile] <- {}
 	TitanPassiveTypesBySetFile[BaseSetFile]["passive3"] <- eItemTypes.TITAN_TITANFALL_PASSIVE
 	TitanPassiveTypesBySetFile[BaseSetFile]["passive1"] <- eItemTypes.TITAN_GENERAL_PASSIVE
 	TitanPassiveTypesBySetFile[BaseSetFile]["passive2"] <- eItemTypes[PassiveTypeName]
-	TitanPassiveTypesBySetFile[BaseSetFile]["passive4"] <- eItemTypes.TITAN_GENERAL_PASSIVE
-	TitanPassiveTypesBySetFile[BaseSetFile]["passive5"] <- eItemTypes.TITAN_GENERAL_PASSIVE
-	TitanPassiveTypesBySetFile[BaseSetFile]["passive6"] <- eItemTypes.TITAN_GENERAL_PASSIVE
+	TitanPassiveTypesBySetFile[BaseSetFile]["passive4"] <- passive4
+	TitanPassiveTypesBySetFile[BaseSetFile]["passive5"] <- passive5
+	TitanPassiveTypesBySetFile[BaseSetFile]["passive6"] <- passive6
 	TitanPassiveTypesBySetFile[BaseSetFile]["titanExecution"] <- ExecutionType
 	
 	TitanPassiveTypesByClass[Name] <- {}
 	TitanPassiveTypesByClass[Name]["passive3"] <- eItemTypes.TITAN_TITANFALL_PASSIVE
 	TitanPassiveTypesByClass[Name]["passive1"] <- eItemTypes.TITAN_GENERAL_PASSIVE
 	TitanPassiveTypesByClass[Name]["passive2"] <- eItemTypes[PassiveTypeName]
-	TitanPassiveTypesByClass[Name]["passive4"] <- eItemTypes.TITAN_GENERAL_PASSIVE
-	TitanPassiveTypesByClass[Name]["passive5"] <- eItemTypes.TITAN_GENERAL_PASSIVE
-	TitanPassiveTypesByClass[Name]["passive6"] <- eItemTypes.TITAN_GENERAL_PASSIVE
+	TitanPassiveTypesByClass[Name]["passive4"] <- passive4
+	TitanPassiveTypesByClass[Name]["passive5"] <- passive5
+	TitanPassiveTypesByClass[Name]["passive6"] <- passive6
 	TitanPassiveTypesByClass[Name]["titanExecution"] <- ExecutionType
-
-	CreateModdedTitanItem(999, eItemTypes.TITAN, Name, Name, "Whats the deal. with airline food?", "i sure love losing progress", $"ui/temp", 0, false, eItemTypes[PassiveTypeName],expect asset(GetItemData(BaseName).i.coreIcon))
+	array<int> typesarray = [eItemTypes.TITAN_TITANFALL_PASSIVE, eItemTypes.TITAN_GENERAL_PASSIVE, eItemTypes[PassiveTypeName], passive4, passive5, passive6]
+	CreateModdedTitanItem(999, eItemTypes.TITAN, Name, Name, "Whats the deal. with airline food?", "i sure love losing progress", $"ui/temp", 0, false, typesarray,expect asset(GetItemData(BaseName).i.coreIcon))
+	
 	CreateGenericSubItemData( eItemTypes.TITAN_TITANFALL_PASSIVE, Name, "pas_warpfall" )
 	CreateGenericSubItemData( eItemTypes.TITAN_TITANFALL_PASSIVE, Name, "pas_bubbleshield" )
 	foreach(ItemData item in GetAllItemsOfType(eItemTypes.TITAN_GENERAL_PASSIVE))
@@ -420,9 +531,61 @@ void function RegisterModdedTitanItems(
 		ItemData subitem = GetItemData(subitemstuff.ref)
 		CreateGenericSubItemData(subitem.itemType,Name, subitem.ref, 0, subitem.i)
 	}
-	foreach(ItemData item in GetAllItemsOfType( eItemTypes[PassiveTypeName]))
+	if(InheritDefault)
 	{
-	CreateGenericSubItemData(  eItemTypes[PassiveTypeName], Name, item.ref )
+		foreach(ItemData item in GetAllItemsOfType( eItemTypes[PassiveTypeName]))
+		{
+			CreateGenericSubItemData(  eItemTypes[PassiveTypeName], Name, item.ref )
+		}
+	}
+}
+void function RegisterModdedTitanCustomPassiveType(string name, array<ItemData> passives, string slot, int masktype = -1)
+{
+	if(!(name in ModdedTitanExtraPassiveTypes))
+	{
+		print("Modded titan does not exist")
+		return
+	}
+	if(ModdedTitanExtraPassiveTypes[name] == 3)
+	{
+		print("Modded titan already has 3 extra passive types")
+		return
+	}
+	//ModdedTitanExtraPassiveTypes[name] <- ModdedTitanExtraPassiveTypes[name]+1
+	
+		if(slot ==  "passive2" )
+		{
+			int num = eItemTypes[name+"passive2"]
+			ModdedTitanPassivePersistentType[num] <- TitanPassiveTypesByClass[name]["passive2"]
+			TitanPassiveTypesByClass[name]["passive2"] <- num
+			TitanPassiveTypesBySetFile[GetModdedTitanByClassNoPersist(name).setFile]["passive2"] <- num
+		}
+		else if(slot == "passive6" )
+		{
+			if(ModdedTitanExtraPassiveTypes[name] < 3)
+				ModdedTitanExtraPassiveTypes[name] =3
+		}
+		else if(slot == "passive5" )
+		{
+			if(ModdedTitanExtraPassiveTypes[name] < 2)
+				ModdedTitanExtraPassiveTypes[name] =2
+		}
+		else if(slot == "passive4" )
+		{
+			if(ModdedTitanExtraPassiveTypes[name] < 1)
+				ModdedTitanExtraPassiveTypes[name] =1
+		}
+
+
+	string propertyname = name+slot
+	table ePassives = expect table( getconsttable()["ePassives"])
+	table passivesFromEnum = expect table( getconsttable()["_PassiveFromEnum"])
+	foreach(ItemData item in passives)
+	{
+		CreateGenericSubItemData(  eItemTypes[propertyname], name, item.ref )
+		GenerateModdedTitanPassiveStringForPersistence(name, (slot), item.ref, masktype  )
+		ePassives[item.ref] <- ePassives.len()
+		passivesFromEnum[item.ref] <- ePassives[item.ref]
 	}
 }
 array<string> function GetModdedTitanClasses()

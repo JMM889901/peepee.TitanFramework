@@ -130,7 +130,7 @@ void function UpdateTitanLoadoutPanel( var loadoutPanel, TitanLoadoutDef loadout
 		string propertyName = Hud_GetScriptID( elem )
 		string itemRef = GetTitanLoadoutValue( loadout, propertyName )
 		string nonPrimeSetFile = GetSetFileForTitanClassAndPrimeStatus( loadout.titanClass, false )
-		int itemType = GetItemTypeFromTitanLoadoutProperty( propertyName, nonPrimeSetFile )
+		int itemType = GetItemTypeFromTitanLoadoutProperty( propertyName, nonPrimeSetFile, loadout.titanClass )
 		asset image = GetImage( itemType, itemRef )
 
 		var rui = Hud_GetRui( elem )
@@ -371,7 +371,7 @@ void function UpdateTitanItemButton( var button, TitanLoadoutDef loadout )
 	if(loadout.titanClass in GetModdedTitansByClassNoPersist())
 		titanclass = GetModdedTitanClassForMods(titanclass)
 	string nonPrimeSetFile = GetSetFileForTitanClassAndPrimeStatus( titanclass, false )
-	int itemType = GetItemTypeFromTitanLoadoutProperty( propertyName, nonPrimeSetFile )
+	int itemType = GetItemTypeFromTitanLoadoutProperty( propertyName, nonPrimeSetFile, loadout.titanClass )
 	asset image = GetImage( itemType, itemRef )
 
 	var rui = Hud_GetRui( button )
@@ -472,7 +472,7 @@ string function GetTitanButtonBind( string ability )
 
 bool function ShouldDisplayIfVanguardPassive( string titanClass, string propertyName )
 {
-	if ( titanClass == "vanguard" )
+	if ( titanClass == "vanguard" || ModdedTitanHasPassiveSlot(titanClass, propertyName) )
 		return true
 
 	if ( propertyName == "passive4" )
