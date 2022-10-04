@@ -1,18 +1,7 @@
-Venom/Templar stuff is still privated so putting this here as standalone for now, also means other mods can use it (not really recommended for until pdiff is done)
-
-Major update:
-
-Reworked just about everything 
-
-No longer uses setfiles to get over classes.txt limit
-
-No longer directly sets the contents of each loadout, instead gives titans past the default 7 an extra loadout button to choose the titan class, now supports up to 20 titans, if that number is somehow reached it can easily be increased
-
-
 the peepeepoopoo mans TitanFramework
 ==
 Basic framework for adding custom titans, needlessly overcomplicated but rpak and datatables has forced my hand (that and impatience)
-
+Need help with usage or any suggestions just @The peepeepoopoo man#3301 on discord or in the northstar discord
 Example script
 --
 ```
@@ -62,7 +51,7 @@ Function args
 ```
 what is a base titan?
 -----
-A base titan is just the titan from which to get the passives (until pdiff allows custom passives anyway), animations, xp and various other things from.
+A base titan is just the titan from which to get the persistent passives, animations, xp and various other things from.
 
 This will be modified, simplified and improved, but idk here it is for now i guess 
 
@@ -70,4 +59,4 @@ Current known issues
 -------
 Currently lacks authentication for valid titan classes when setting from console, however this wont cause crashes, if a nonexistent titan is selected it should be fine, and loading with a nonexistent titan selected will only result in your titan name being wrong, the loadout should be correct
 
-Due to passives all custom titans must make sure that the weapons and abilities support the mods that will be added by those passives, even if these mods do nothing you must have them or you will get a bitfield issue 
+~~Due to passives all custom titans must make sure that the weapons and abilities support the mods that will be added by those passives, even if these mods do nothing you must have them or you will get a bitfield issue~~ Solved
