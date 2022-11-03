@@ -5,6 +5,7 @@ global function InitUnlock
 
 global function GetNewItemInitCallbacks
 global function RegisterNewItemInitCallback
+global function RegisterModdedTitanData
 
 global function PreInitGlobal
 global function CreateModdedItemType
@@ -385,6 +386,45 @@ global struct ItemData
 
 	table< var, var > i
 }
+
+
+global struct ModdedPassiveData{
+	string Name
+	string description
+	asset image = $"ui/temp"
+}
+global struct ModdedTitanWeaponAbilityData{
+	string displayName
+	string weaponName
+	string description
+	asset image = $"ui/temp"
+	bool custom = false
+}
+global struct ModdedTitanData{
+	string Name
+	ModdedTitanWeaponAbilityData& Primary
+	ModdedTitanWeaponAbilityData& Left 
+	ModdedTitanWeaponAbilityData& Mid
+	ModdedTitanWeaponAbilityData& Right 
+	ModdedTitanWeaponAbilityData& Core
+
+	string Description
+	string BaseSetFile
+	string BaseName
+	
+	asset icon = $"ui/temp"
+
+	array<ModdedPassiveData> passive2Array
+	array<ModdedPassiveData> passive4Array
+	array<ModdedPassiveData> passive5Array
+	array<ModdedPassiveData> passive6Array
+
+	
+	int ExecutionType = 0
+	int difficulty = 3
+	string Melee = "melee_titan_punch_scorch"
+	string Voice = "titanos_bt"
+}
 struct
 {
 	array<GlobalItemRef> allItems
@@ -408,10 +448,19 @@ struct
 
 	array<void functionref()> PostInitFunctions
 
+	array<ModdedTitanData> ModdedTitanDataArray
+
 	table<string, table<int, string> > titanClassAndPersistenceValueToNoseArtRefTable //Primarily used to speed up validation of persistence data
 	table<string, table<int, string> > titanClassAndPersistenceValueToSkinRefTable //Primarily used to speed up validation of persistence data
 	table<string, table<int, string> > weaponRefAndPersistenceValueToSkinRefTable //Primarily used to speed up validation of persistence data
 } file
+
+void function RegisterModdedTitanData(ModdedTitanData titan)
+{
+	if(file.ModdedTitanDataArray.contains(titan))
+		return
+	file.ModdedTitanDataArray.append(titan)
+}
 
 void function RegisterNewItemInitCallback(void functionref() callback)
 {
@@ -1324,6 +1373,10 @@ void function InitItems()
 	foreach(int index, void functionref() init in file.PostInitFunctions){
 		print("Executing a function")
 		init()
+	}
+	foreach(ModdedTitanData titan in file.ModdedTitanDataArray)
+	{
+		RegisterModdedTitanItemsSimple(titan)
 	}
 	print("ITEMDATA LEN = " + file.itemData.len())
 }

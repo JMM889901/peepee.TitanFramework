@@ -24,6 +24,9 @@ global function GetModdedTitanPassiveStringForPersistence
 global function GetModdedTitanPassiveStringForPersistenceInverted
 global function DevGetPassivePersistentConversionTable
 global function GetModdedTitanPassivePersistentType
+global function RegisterModdedTitanItemsSimple
+global function CreateModdedTitanSimple
+
 #if SERVER
 global function SetTitanLoadout
 #endif
@@ -39,6 +42,9 @@ table<string, int> ModdedTitanExtraPassiveTypes
 table<string, table<string, table <string, string > > > ModdedTitanCustomPassivePersistentNames
 table<string, table<string, table <string, string > > > ModdedTitanCustomPassivePersistentNamesInverted
 table<int, int > ModdedTitanPassivePersistentType
+
+
+
 //Getters
 bool function ModdedTitanHasPassiveSlot(string titanClass, string slot)
 {
@@ -591,4 +597,241 @@ void function RegisterModdedTitanCustomPassiveType(string name, array<ItemData> 
 array<string> function GetModdedTitanClasses()
 {
 	return ModdedTitanClasses
+}
+void function CreateModdedTitanSimple( ModdedTitanData Titan )
+{
+	RegisterModdedTitanData(Titan)
+
+	print("Yep")
+	print("/////////////////CREATING CUSOTM TITAN////////////////////")
+	print("/////////////////" + Titan.Name + "//////////////////////////////")
+	//RegisterNewItemInitCallback(SCUFFED_UI_INIT2)
+	//Create loadout
+	TitanLoadoutDef loadout
+	loadout.name				= Titan.Name
+	loadout.titanClass			= Titan.Name
+	loadout.setFile 			= Titan.BaseSetFile
+	loadout.special				= Titan.Left.weaponName
+	loadout.antirodeo			= Titan.Mid.weaponName
+	loadout.voice				= Titan.Voice
+	loadout.primary				= Titan.Primary.weaponName
+	loadout.melee		= Titan.Melee
+	loadout.ordnance	= Titan.Right.weaponName
+	loadout.coreAbility	= Titan.Core.weaponName
+	loadout.difficulty	= Titan.difficulty
+	loadout.isPrime = "titan_is_not_prime"
+	loadout.primeTitanRef = "scorch_prime"
+	loadout.passive4 = "pas_vanguard_core1"
+	loadout.passive5 = "pas_vanguard_core4"
+	loadout.passive6 = "pas_vanguard_core7"
+	
+	TitanClassModsToUse[loadout.titanClass] <- Titan.BaseName
+	//OverwriteDefaultTitanLoadoutByIndex(7 + ModdedTitanClasses.len(), loadout)
+	TitanLoadoutByIndex[7+TitanLoadoutByIndex.len()] <- loadout
+	TitanExecutionsByIndex[7 + TitanExecutionsByIndex.len()] <- Titan.ExecutionType
+	TitanLoadoutByClass[loadout.titanClass] <- loadout
+	ModdedTitanClasses.append(Titan.Name)
+	//TitanSetFilesForAnims[SetFile] <- BaseSetFile
+	#if MP
+		RegisterModdedTitanItemsSimple(Titan)
+	#endif
+
+}
+void function RegisterModdedTitanItemsSimple( ModdedTitanData titan )
+{
+	ModdedTitanExtraPassiveTypes[titan.Name] <- 0
+
+
+
+	// _____              _             _______                    
+	//|  __ \            (_)           |__   __|                   
+	//| |__) |_ _ ___ ___ ___   _____     | |_   _ _ __   ___  ___ 
+	//|  ___/ _` / __/ __| \ \ / / _ \    | | | | | '_ \ / _ \/ __|
+	//| |  | (_| \__ \__ \ |\ V /  __/    | | |_| | |_) |  __/\__ \
+	//|_|   \__,_|___/___/_| \_/ \___|    |_|\__, | .__/ \___||___/
+	//										__/ | |              
+	//									   |___/|_|              
+
+	TitanPassiveTypesBySetFile[titan.BaseSetFile] <- {}
+	TitanPassiveTypesBySetFile[titan.BaseSetFile]["passive3"] <- eItemTypes.TITAN_TITANFALL_PASSIVE
+	TitanPassiveTypesBySetFile[titan.BaseSetFile]["passive1"] <- eItemTypes.TITAN_GENERAL_PASSIVE
+	TitanPassiveTypesBySetFile[titan.BaseSetFile]["passive2"] <- GetModdedTitanLoadoutPassiveTypeByClass(titan.BaseName, "passive2")
+
+	TitanPassiveTypesBySetFile[titan.BaseSetFile]["titanExecution"] <- GetModdedTitanLoadoutPassiveTypeByClass(titan.BaseName, "titanExecution")
+
+	TitanPassiveTypesByClass[titan.Name] <- {}
+	TitanPassiveTypesByClass[titan.Name]["passive3"] <- eItemTypes.TITAN_TITANFALL_PASSIVE
+	TitanPassiveTypesByClass[titan.Name]["passive1"] <- eItemTypes.TITAN_GENERAL_PASSIVE
+	TitanPassiveTypesByClass[titan.Name]["passive2"] <- GetModdedTitanLoadoutPassiveTypeByClass(titan.BaseName, "passive2")
+
+	int passive2 = GetModdedTitanLoadoutPassiveTypeByClass(titan.BaseName, "passive2")
+	if(titan.passive2Array.len() > 0)
+	{
+		passive2 = CreateModdedItemType(titan.Name + "passive2")
+		TitanPassiveTypesBySetFile[titan.BaseSetFile]["passive2"] <- passive2
+		TitanPassiveTypesByClass[titan.Name]["passive2"] <- passive2
+	}
+
+
+	int passive4
+	int passive5
+	int passive6
+
+	if(titan.passive4Array.len() > 0)
+	{
+		ModdedTitanExtraPassiveTypes[titan.Name] <- 1
+		passive4 = CreateModdedItemType(titan.Name+"passive4")
+		TitanPassiveTypesBySetFile[titan.BaseSetFile]["passive4"] <- passive4
+		TitanPassiveTypesByClass[titan.Name]["passive4"] <- passive4
+	}
+	else
+	{
+		passive4 = eItemTypes.TITAN_UPGRADE1_PASSIVE
+		TitanPassiveTypesBySetFile[titan.BaseSetFile]["passive4"] <- passive4
+		TitanPassiveTypesByClass[titan.Name]["passive4"] <- passive4
+	}
+	if(titan.passive5Array.len() > 0)
+	{
+		ModdedTitanExtraPassiveTypes[titan.Name] <- 2
+		passive5 = CreateModdedItemType(titan.Name+"passive5")
+		TitanPassiveTypesBySetFile[titan.BaseSetFile]["passive5"] <- passive5
+		TitanPassiveTypesByClass[titan.Name]["passive5"] <- passive5
+	}
+	else
+	{
+
+		passive5 = eItemTypes.TITAN_UPGRADE2_PASSIVE
+		TitanPassiveTypesBySetFile[titan.BaseSetFile]["passive5"] <- passive5
+		TitanPassiveTypesByClass[titan.Name]["passive5"] <- passive5
+	}
+	if(titan.passive6Array.len() > 0)
+	{
+		ModdedTitanExtraPassiveTypes[titan.Name] <- 3
+		passive6 = CreateModdedItemType(titan.Name+"passive6")
+		TitanPassiveTypesBySetFile[titan.BaseSetFile]["passive6"] <- passive6
+		TitanPassiveTypesByClass[titan.Name]["passive6"] <- passive6
+	}
+	else
+	{
+		passive6 = eItemTypes.TITAN_UPGRADE3_PASSIVE
+		TitanPassiveTypesBySetFile[titan.BaseSetFile]["passive6"] <- passive6
+		TitanPassiveTypesByClass[titan.Name]["passive6"] <- passive6
+	}
+
+	TitanPassiveTypesByClass[titan.Name]["titanExecution"] <- GetModdedTitanLoadoutPassiveTypeByClass(titan.BaseName, "titanExecution")
+
+	/*
+	_______ _ _                _ _                 
+	|__   __(_) |              (_) |                
+		| |   _| |_ __ _ _ __    _| |_ ___ _ __ ___  
+		| |  | | __/ _` | '_ \  | | __/ _ \ '_ ` _ \ 
+		| |  | | || (_| | | | | | | ||  __/ | | | | |
+		|_|  |_|\__\__,_|_| |_| |_|\__\___|_| |_| |_|
+													
+													
+	*/
+
+	array<int> typesarray = [eItemTypes.TITAN_TITANFALL_PASSIVE, eItemTypes.TITAN_GENERAL_PASSIVE, passive2, passive4, passive5, passive6]
+	CreateModdedTitanItem(999, eItemTypes.TITAN, titan.Name, titan.Name, titan.Description, titan.Description, titan.icon, 0, false, typesarray,expect asset(GetItemData(titan.BaseName).i.coreIcon))
+
+
+	/*
+   __          __                            _ _                     
+   \ \        / /                           (_) |                    
+	\ \  /\  / /__  __ _ _ __   ___  _ __    _| |_ ___ _ __ ___  ___ 
+	 \ \/  \/ / _ \/ _` | '_ \ / _ \| '_ \  | | __/ _ \ '_ ` _ \/ __|
+	  \  /\  /  __/ (_| | |_) | (_) | | | | | | ||  __/ | | | | \__ \
+	   \/  \/ \___|\__,_| .__/ \___/|_| |_| |_|\__\___|_| |_| |_|___/
+						| |                                          
+						|_|                                          
+	*/
+
+	if(titan.Mid.custom)
+		CreateGenericItem(999, eItemTypes.TITAN_ANTIRODEO, titan.Mid.weaponName, titan.Mid.displayName,titan.Mid.description, titan.Mid.description, titan.Mid.image, 0, false)
+	if(titan.Primary.custom)
+		CreateGenericItem(999, eItemTypes.TITAN_PRIMARY, titan.Primary.weaponName, titan.Primary.displayName, titan.Primary.description, titan.Primary.description, titan.Primary.image, 0, false)
+	if(titan.Core.custom)
+		CreateGenericItem(999, eItemTypes.TITAN_CORE_ABILITY, titan.Core.weaponName, titan.Core.displayName, titan.Core.description,titan.Description , titan.Core.image , 0, false)
+	if(titan.Right.custom)
+		CreateGenericItem(999, eItemTypes.TITAN_ORDNANCE, titan.Right.weaponName, titan.Right.displayName, titan.Right.description, titan.Right.description, titan.Right.image, 0, false)
+	if(titan.Left.custom)
+		CreateGenericItem(999, eItemTypes.TITAN_SPECIAL, titan.Left.weaponName, titan.Left.displayName, titan.Left.description, titan.Left.description, titan.Left.image, 0, false)
+
+	/*
+			  _       _ _                     
+			 | |     (_) |                    
+	___ _   _| |__    _| |_ ___ _ __ ___  ___ 
+	/ __| | | | '_ \  | | __/ _ \ '_ ` _ \/ __|
+	\__ \ |_| | |_) | | | ||  __/ | | | | \__ \
+	|___/\__,_|_.__/  |_|\__\___|_| |_| |_|___/                                                                                        
+	*/
+
+	CreateGenericSubItemData( eItemTypes.TITAN_TITANFALL_PASSIVE, titan.Name, "pas_warpfall" )
+	CreateGenericSubItemData( eItemTypes.TITAN_TITANFALL_PASSIVE, titan.Name, "pas_bubbleshield" )
+	
+	if(titan.passive4Array.len() > 0)
+	{
+		array<ItemData> passives4
+		foreach(ModdedPassiveData passive in titan.passive4Array)
+		{
+			passives4.append(CreateGenericItem(999, passive4, passive.Name, passive.Name, passive.description, passive.description, passive.image, 0, false))
+		}
+		RegisterModdedTitanCustomPassiveType(titan.Name, passives4, "passive4")
+	}
+	if(titan.passive6Array.len()> 0 )
+	{
+		array<ItemData> passives5
+		foreach(ModdedPassiveData passive in titan.passive5Array)
+		{
+			passives5.append(CreateGenericItem(999, passive5, passive.Name, passive.Name, passive.description, passive.description, passive.image, 0, false))
+		}
+		RegisterModdedTitanCustomPassiveType(titan.Name, passives5, "passive5")
+	}
+
+	if(titan.passive6Array.len() > 0)
+	{
+		array<ItemData> passives6
+		foreach(ModdedPassiveData passive in titan.passive6Array)
+		{
+			passives6.append(CreateGenericItem(999, passive6, passive.Name, passive.Name, passive.description, passive.description, passive.image, 0, false))
+		}
+		RegisterModdedTitanCustomPassiveType(titan.Name, passives6, "passive6")
+	}
+
+	foreach(ItemData item in GetAllItemsOfType(eItemTypes.TITAN_GENERAL_PASSIVE))
+	{
+		CreateGenericSubItemData( eItemTypes.TITAN_GENERAL_PASSIVE, titan.Name, item.ref )
+	}
+	//foreach(array<var> passive in Passives)
+	// {
+		// CreateGenericItem(999, eItemTypes[PassiveTypeName], expect string(passive[0]), expect string(passive[1]), expect string(passive[2]), expect string(passive[3]), expect asset(passive[4]), 0, false)
+	// }
+
+
+	if(titan.passive2Array.len() > 0)
+	{
+		array<ItemData> passives2
+		foreach(ModdedPassiveData passive in titan.passive2Array)
+		{
+			passives2.append(CreateGenericItem(999, passive2, passive.Name, passive.Name, passive.description, passive.description, passive.image, 0, false))
+		}
+		RegisterModdedTitanCustomPassiveType(titan.Name, passives2, "passive2")
+	}
+	else
+	{
+		foreach(ItemData item in GetAllItemsOfType( passive2 ))
+		{
+			CreateGenericSubItemData(  passive2, titan.Name, item.ref )
+		}
+	}
+
+
+
+
+	foreach(string ref, SubItemData subitemstuff in GetItemData(titan.BaseName).subitems)
+	{
+		ItemData subitem = GetItemData(subitemstuff.ref)
+		CreateGenericSubItemData(subitem.itemType,titan.Name, subitem.ref, 0, subitem.i)
+	}
+
 }
