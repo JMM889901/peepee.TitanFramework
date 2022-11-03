@@ -96,7 +96,8 @@ void function PopulateDefaultPilotLoadouts( PilotLoadoutDef[ NUM_PERSISTENT_PILO
 void function PopulateDefaultTitanLoadouts( TitanLoadoutDef[ NUM_PERSISTENT_TITAN_LOADOUTS ] loadouts )
 {
 	var dataTable = GetDataTable( $"datatable/default_titan_loadouts.rpak" )
-	print("POPULATING DEFAULT")
+	if(shouldPrintDevStuff())
+		print("POPULATING DEFAULT")
 	for ( int i = 0; i < 7; i++ )
 	{
 		TitanLoadoutDef loadout = loadouts[i]
@@ -1305,13 +1306,15 @@ bool function IsValidTitanExecution( int loadoutIndex, string loadoutProperty, v
 				case 6:
 					return itemType == eItemTypes.TITAN_VANGUARD_EXECUTION
 				default:
-					print("Type "+itemType)
+					if(shouldPrintDevStuff())
+						print("IsValidTitanExecution Type "+itemType)
 					string titanClass
 					if((GetModdedTitanClasses().contains(GetPersistentLoadoutValue(player, "titan", loadoutIndex, "name" ))))
 						titanClass = GetModdedTitanClassForMods(GetPersistentLoadoutValue(player, "titan", loadoutIndex, "name" ))
 					else
 						titanClass = GetPersistentLoadoutValue(player, "titan", loadoutIndex, "titanClass" )
-					print("Type of class "+GetModdedTitanLoadoutPassiveTypeByClass(titanClass, "titanExecution"))
+					if(shouldPrintDevStuff())
+						print("IsValidTitanExecution Type of class "+GetModdedTitanLoadoutPassiveTypeByClass(titanClass, "titanExecution"))
 					return itemType == GetModdedTitanLoadoutPassiveTypeByClass(titanClass, "titanExecution")
 					
 			}
@@ -1363,17 +1366,21 @@ string function GetParentRefFromLoadoutInfoAndRef( entity player, string loadout
 		{
 			if ( isTitanLoadout && !IsValidTitanPassive(player,  loadoutIndex, property, childRef, childRef ) )
 				return ""
-			print("validTitanPassive")
+			if(shouldPrintDevStuff())
+				print("validTitanPassive")
 			string parentProperty = GetParentLoadoutProperty( loadoutType, property )
-			print("parent property "+parentProperty)
+			if(shouldPrintDevStuff())
+				print("parent property "+parentProperty)
 			string loadoutString
 			if(!GetModdedTitanClasses().contains(string(player.GetPersistentVar(BuildPersistentVarAccessorString( loadoutType, loadoutIndex, "name" )))))
 				loadoutString = BuildPersistentVarAccessorString( loadoutType, loadoutIndex, parentProperty )
 			else
 				loadoutString = BuildPersistentVarAccessorString( loadoutType, loadoutIndex, "name" )
-			print("loadout string " + loadoutString)
+			if(shouldPrintDevStuff())
+				print("loadout string " + loadoutString)
 			string resultString = string( player.GetPersistentVar( loadoutString ) ) //titanLoadouts[5].titanClass
-			print("Result string "+ resultString)
+			if(shouldPrintDevStuff())
+				print("Result string "+ resultString)
 			//if(loadoutIndex > 6)
 			//{
 			//	//resultString = shGlobal.cachedTitanLoadouts[ loadoutIndex ].titanClass
@@ -1631,10 +1638,14 @@ string function GetValidatedPersistentLoadoutValue( entity player, string loadou
 		}
 
 		string getString = BuildPersistentVarAccessorString( loadoutType, loadoutIndex, loadoutProperty )
-		print("GET VALIDATED PERSISTENCE LOADOUT VALUE VAR ACCESSOR STIRNG")
-		print(getString)
+		if(shouldPrintDevStuff())
+		{
+			print("GET VALIDATED PERSISTENCE LOADOUT VALUE VAR ACCESSOR STIRNG")
+			print(getString)
+		}
 		var value = player.GetPersistentVar( getString )
-		print("Persistence var" + value)
+		if(shouldPrintDevStuff())
+			print("Persistence var" + value)
 		if ( value == null )
 			value = ""
 

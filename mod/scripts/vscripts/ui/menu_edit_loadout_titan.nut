@@ -633,7 +633,6 @@ void function OnEditTitanSlotButton_Activate( var button )
 			AdvanceMenu( GetMenu( "FDTitanUpgradeMenu" ) )
 			break
 		case "titanClass":
-			print("Yep")
 			AdvanceMenu( GetMenu( "EditTitanClassMenu" ) )
 			break
 		default:

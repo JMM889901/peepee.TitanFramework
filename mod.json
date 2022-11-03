@@ -3,7 +3,7 @@
 	"Description": "Pain",
 	"LoadPriority": 50,
 	"RequiredOnClient": true,
-	"Version": "0.2.0",
+	"Version": "0.3.0",
 	"Scripts": [
 		{
 			"Path": "UIStuff.gnut",
@@ -26,5 +26,11 @@
 			"Path": "FrameworkMenuFunctions.gnut",
 			"RunOn": "UI"
 		}
+	],
+	"ConVars": [
+        {
+            "Name": "titanFrameworkDevPrintsEnabled",
+            "DefaultValue": "0"
+        }
 	]
 }

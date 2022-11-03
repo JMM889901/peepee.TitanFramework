@@ -5157,8 +5157,11 @@ array<ItemDisplayData> function GetVisibleItemsOfType( int itemType, string pare
 
 array<ItemDisplayData> function GetVisibleItemsOfTypeWithoutEntitlements( entity player, int itemType, string parentRef = "" )
 {
-	print("Parent ref "+parentRef)
-	print("GetVisibleItmesOfTypeWithoutEntitlements")
+	if(shouldPrintDevStuff())
+	{
+		print("Parent ref "+parentRef)
+		print("GetVisibleItmesOfTypeWithoutEntitlements")
+	}
 	array<ItemDisplayData> items = GetVisibleItemsOfType( itemType, parentRef )
 	array<ItemDisplayData> finalItems = []
 

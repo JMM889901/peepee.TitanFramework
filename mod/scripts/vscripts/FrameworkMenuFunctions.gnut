@@ -26,8 +26,8 @@ void function InitEditTitanClassMenu()
 }
 void function OnClassSelectButton_Activate(var button)
 {
-	print("Bruh")
-	print(button.s.rowIndex)
+	if(shouldPrintDevStuff())
+		print(button.s.rowIndex)
 	if(button.s.rowIndex > 6)
 	{
 		int index = expect int(button.s.rowIndex)
@@ -46,8 +46,8 @@ void function OnClassSelectButton_Activate(var button)
 
 		ClientCommand( "SetTitanClass "+uiGlobal.editingLoadoutIndex+" default " + button.s.rowIndex )
 	}
-	
-	PrintTitanLoadout(shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex])
+	if(shouldPrintDevStuff())
+		PrintTitanLoadout(shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex])
 	//uiGlobal.editingLoadoutIndex
 }
 void function OnClassSelectMenu_Open()

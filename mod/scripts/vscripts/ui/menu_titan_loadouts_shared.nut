@@ -88,7 +88,8 @@ void function UpdateTitanLoadoutButtons( int selectedIndex, var[NUM_PERSISTENT_T
 		}
 		if(!(loadout.titanClass in GetModdedTitansByClassNoPersist()))
 		{
-			print("class is "+loadout.titanClass)
+			if(shouldPrintDevStuff())
+				print("updateTitanLoadoutButtons class is "+loadout.titanClass)
 			if ( !IsTitanLoadoutAvailable( player, loadout.titanClass ) )
 			{
 				Hud_SetLocked( button, true )
