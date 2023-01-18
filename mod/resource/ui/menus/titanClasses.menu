@@ -1,0 +1,92 @@
+#base "loadout_selection_buttons.res"
+resource/ui/menus/titanClasses.menu
+{
+	menu
+	{
+		ControlName				Frame
+		xpos					0
+		ypos					0
+		zpos					3
+		wide					f0
+		tall					f0
+		autoResize				0
+		pinCorner				0
+		visible					1
+		enabled					1
+		PaintBackgroundType		0
+		infocus_bgcolor_override	"0 0 0 0"
+		outoffocus_bgcolor_override	"0 0 0 0"
+
+        Vignette
+        {
+            ControlName             ImagePanel
+            InheritProperties       MenuVignette
+        }
+
+		MenuTitle
+		{
+			ControlName				Label
+			InheritProperties		MenuTitle
+			labelText				"#MENU_TITAN_CLASSES"
+		}
+
+		ImgTopBar
+		{
+			ControlName				ImagePanel
+			InheritProperties		MenuTopBar
+		}
+
+		MatchmakingStatus
+		{
+			ControlName				CNestedPanel
+			wide					f0
+			tall					f0
+			visible					1
+			controlSettingsFile		"resource/ui/menus/panels/matchmaking_status.res"
+		}
+
+	    CreditsAvailable
+	    {
+	        ControlName             RuiPanel
+	        InheritProperties       CreditsAvailableProperties
+	    }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		ButtonRowAnchor
+		{
+			ControlName				Label
+			labelText				""
+            wide                    10
+            tall                    0
+			xpos                    132
+			ypos                    160
+		}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+        ModelRotateMouseCapture
+        {
+            ControlName				CMouseMovementCapturePanel
+            xpos                    850
+            zpos					12
+            wide                    1070
+            tall                    764
+        }
+	    ButtonTooltip
+		{
+			ControlName				CNestedPanel
+			InheritProperties		ButtonTooltip
+		}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		FooterButtons
+		{
+			ControlName				CNestedPanel
+			InheritProperties       FooterButtons
+		}
+	}
+}

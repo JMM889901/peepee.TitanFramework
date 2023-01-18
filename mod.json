@@ -1,0 +1,36 @@
+{
+	"Name": "TitanFramework",
+	"Description": "Pain",
+	"LoadPriority": 50,
+	"RequiredOnClient": true,
+	"Version": "0.3.0",
+	"Scripts": [
+		{
+			"Path": "UIStuff.gnut",
+			"RunOn": "UI || SERVER || CLIENT",
+			"ServerCallback": {
+				"Before": "PreInit",
+				"After": "FrameworkInit"
+            },
+			
+			"ClientCallback": {
+				"Before": "PreInit",
+				"After": "FrameworkInit"
+			},
+			"UICallback": {
+				"Before": "PreInit",
+				"After": "FrameworkInit"
+			}
+		},
+		{
+			"Path": "FrameworkMenuFunctions.gnut",
+			"RunOn": "UI"
+		}
+	],
+	"ConVars": [
+        {
+            "Name": "titanFrameworkDevPrintsEnabled",
+            "DefaultValue": "0"
+        }
+	]
+}
