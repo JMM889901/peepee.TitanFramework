@@ -9,9 +9,6 @@ global string INVALID_REF = "INVALID_REF"
 void function InitDefaultLoadouts()
 {
 	
-	//foreach(void functionref() init in GetNewItemInitCallbacks()){
-	//	init()
-	//}
 	PopulateDefaultPilotLoadouts( shGlobal.defaultPilotLoadouts )
 	PopulateDefaultTitanLoadouts( shGlobal.defaultTitanLoadouts )
 }
@@ -23,9 +20,7 @@ PilotLoadoutDef function GetDefaultPilotLoadout( int index )
 
 TitanLoadoutDef function GetDefaultTitanLoadout( int index )
 {
-	//if(index < shGlobal.defaultTitanLoadouts.len())
 	return shGlobal.defaultTitanLoadouts[ index ]
-	//return GetModdedTitanByIndexNoPersist(index)
 }
 
 PilotLoadoutDef[NUM_PERSISTENT_PILOT_LOADOUTS] function GetDefaultPilotLoadouts()
@@ -666,6 +661,10 @@ bool function LoadoutPropertyRequiresItemValidation( string loadoutProperty )
 		return false
 
 	return true
+
+	if ( loadoutProperty == "primarySkinIndex" || loadoutProperty == "secondarySkinIndex" || loadoutProperty == "weapon3SkinIndex")
+		return false
+
 }
 
 // Only checks primary mods and attachments are valid in itemData and the parent isn't locked
@@ -2529,10 +2528,8 @@ bool function IsValidPilotLoadoutProperty( string propertyName )
 		case "weapon3Mod2":
 		case "weapon3Mod3":
 		case "ordnance":
-		case "special":
 		case "passive1":
 		case "passive2":
-		case "melee":
 		case "skinIndex":
 		case "camoIndex":
 		case "primarySkinIndex":
@@ -3177,7 +3174,7 @@ void function SetPersistentSpawnLoadoutIndex( entity player, string loadoutType,
 	void function UpdateAllCachedTitanLoadouts()
 	{
 		//int numLoadouts = shGlobal.cachedTitanLoadouts.len()
-		int numLoadouts = NUM_PERSISTENT_TITAN_LOADOUTS
+		int numLoadouts = shGlobal.cachedTitanLoadouts.len() //IF THIS BREAKS THIS IS WHY
 		
 		for ( int i = 0; i < numLoadouts; i++ )
 			UpdateCachedTitanLoadout( i )
@@ -3429,6 +3426,24 @@ string function Loadouts_GetSetFileForRequestedClass( entity player )
 		return loadout.race
 	}
 
+	#if DEV	
+	// these are #if DEV'd until they work as their function names describe they should
+	// atm these only exist to allow the #if DEV'd calls to them for bot code in this file to compile on retail
+	// bots don't work in retail at all, so this doesn't matter for us really, but these should be unDEV'd and api'd properly once they are functional
+	
+	PilotLoadoutDef function GetRandomPilotLoadout()
+	{
+		PilotLoadoutDef loadout
+		return loadout
+	}
+	TitanLoadoutDef function GetRandomTitanLoadout( string setFile )
+	{
+		TitanLoadoutDef loadout
+		return loadout
+	}
+	#endif
+
+	
 	bool function Loadouts_TryGivePilotLoadout( entity player )
 	{
 		if ( !Loadouts_CanGivePilotLoadout( player ) )
