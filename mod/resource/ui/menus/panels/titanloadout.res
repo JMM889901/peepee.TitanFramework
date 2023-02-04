@@ -514,7 +514,7 @@
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+	
 	ButtonTooltip
 	{
 		ControlName				CNestedPanel
@@ -522,4 +522,24 @@
 		InheritProperties		ButtonTooltip
 		controlSettingsFile		"resource/UI/menus/button_locked_tooltip.res"
 	}
+
+/////////TITANFRAMEWORK////////////////////////////////////////////////////////
+
+    //ButtonTitanChassis
+    //{
+	//	ControlName				RuiButton
+	//	InheritProperties		LoadoutButtonSmall
+    //    classname				TitanLoadoutPanelButtonClass
+    //    xpos					0
+    //    scriptID				"titanchassis"
+//
+	//	navLeft                 ButtonPassive1
+    //    navRight                ButtonCamoSkin
+    //    navDown               	ButtonTitanExecutions
+//
+    //    pin_to_sibling			ButtonShoulderBadge
+    //    pin_corner_to_sibling	TOP_LEFT
+    //    pin_to_sibling_corner	BOTTOM_LEFT
+    //}
+
 }

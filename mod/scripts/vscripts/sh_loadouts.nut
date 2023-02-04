@@ -294,6 +294,7 @@ void function PopulateTitanLoadoutFromPersistentData( entity player, TitanLoadou
 	UpdateDerivedTitanLoadoutData( loadout )
 	if(!(loadout.name in GetModdedTitansByClassNoPersist()))
 		OverwriteLoadoutWithDefaultsForSetFile( loadout )
+
 	//#if SERVER
 	//if(changed)
 	//	SetTitanLoadout(player, InitialLoadoutIndex, loadout)
@@ -315,10 +316,14 @@ string function GetSetFileForTitanClassAndPrimeStatus( string titanClass, bool i
 		}
 	}
 	if(titanClass in GetModdedTitansByClassNoPersist())
-		return GetModdedTitanByClassNoPersist(titanClass).setFile
+		nonPrimeSetFile = GetModdedTitanByClassNoPersist(titanClass).setFile
 
 	if ( !isPrimeTitan )
+	{
 		return nonPrimeSetFile
+	}
+	
+
 
 	string primeSetFile = GetPrimeTitanSetFileFromNonPrimeSetFile( nonPrimeSetFile )
 	Assert( primeSetFile != "" )
@@ -330,7 +335,15 @@ string function GetPrimeTitanRefForTitanClass( string titanClass )
 {
 	array<TitanLoadoutDef> legalLoadouts = GetAllowedTitanLoadouts()
 	if(titanClass in GetModdedTitansByClassNoPersist())
-		return titanClass
+	{
+		foreach ( loadout in legalLoadouts )
+		{
+			//print("titan name"+titanClass)
+			//print("Setfile name"+ GetTitanCharacterNameFromSetFile( loadout.setFile ))
+			if ( GetTitanCharacterNameFromSetFile( loadout.setFile ) == GetModdedTitanClassForMods(titanClass) )
+				return loadout.primeTitanRef
+		}
+	}
 	foreach ( loadout in legalLoadouts )
 	{
 		//print("titan name"+titanClass)
@@ -660,10 +673,12 @@ bool function LoadoutPropertyRequiresItemValidation( string loadoutProperty )
 	if ( loadoutProperty == "showArmBadge" )
 		return false
 
-	return true
-
 	if ( loadoutProperty == "primarySkinIndex" || loadoutProperty == "secondarySkinIndex" || loadoutProperty == "weapon3SkinIndex")
 		return false
+
+	return true
+
+
 
 }
 
@@ -3923,9 +3938,10 @@ void function UpdateDerivedPilotLoadoutData( PilotLoadoutDef loadout, bool doOve
 
 bool function TitanClassHasPrimeTitan( string titanClass )
 {
-	if(titanClass in GetModdedTitansByClassNoPersist())
-		return false
+
 	string nonPrimeSetFile = GetSetFileForTitanClassAndPrimeStatus( titanClass, false )
+	//if(titanClass in GetModdedTitansByClassNoPersist())
+	//	return false
 	string primeSetFile = GetPrimeTitanSetFileFromNonPrimeSetFile( nonPrimeSetFile )
 
 	return primeSetFile != ""
@@ -3960,8 +3976,8 @@ void function UpdateDerivedTitanLoadoutData( TitanLoadoutDef loadout )
 {
 	bool isTitanLoadoutPrime = IsTitanLoadoutPrime( loadout )
 	loadout.setFile = GetSetFileForTitanClassAndPrimeStatus( loadout.titanClass, IsTitanLoadoutPrime( loadout ) )
-	if(!(GetModdedTitanClasses().contains(loadout.titanClass)))
-		loadout.primeTitanRef	= GetPrimeTitanRefForTitanClass( loadout.titanClass )
+	//if(!(GetModdedTitanClasses().contains(loadout.titanClass)))
+	loadout.primeTitanRef	= GetPrimeTitanRefForTitanClass( loadout.titanClass )
 }
 
 void function PrintPilotLoadoutIndex( entity player, int index )

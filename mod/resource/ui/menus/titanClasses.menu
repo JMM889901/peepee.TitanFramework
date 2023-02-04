@@ -1,4 +1,4 @@
-#base "loadout_selection_buttons.res"
+#base "more_selection_buttons.res"
 resource/ui/menus/titanClasses.menu
 {
 	menu

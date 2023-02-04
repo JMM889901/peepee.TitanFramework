@@ -2283,6 +2283,12 @@
 
 	string function GetTitanLoadoutPrimary( int loadoutIndex )
 	{
+		if(GetModdedTitanClasses().contains(GetCachedTitanLoadout( loadoutIndex ).name))
+		{
+			ModdedTitanData data = GetModdedTitanData(GetCachedTitanLoadout( loadoutIndex ).name)
+			if(data.Primary.scriptHandled)
+				return data.Primary.MenuModelWeapon
+		}
 		return GetCachedTitanLoadout( loadoutIndex ).primary
 	}
 

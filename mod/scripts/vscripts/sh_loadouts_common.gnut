@@ -395,11 +395,24 @@ void function GiveTitanLoadout( entity titan, TitanLoadoutDef loadout )
 	//PrintTitanLoadout( loadout )
 
 	entity soul = titan.GetTitanSoul()
-
+	bool scriptHandledPrimary = false
+	bool scriptHandledOrdnance = false
+	bool scriptHandledAntirodeo = false
+	bool scriptHandledSpecial = false
+	bool scriptHandledCore = false
+	if(GetModdedTitanClasses().contains(loadout.name))
+	{
+		ModdedTitanData data = GetModdedTitanData(loadout.name)
+		scriptHandledPrimary = data.Primary.scriptHandled
+		scriptHandledOrdnance = data.Right.scriptHandled
+		scriptHandledAntirodeo = data.Mid.scriptHandled
+		scriptHandledSpecial = data.Left.scriptHandled
+		scriptHandledCore = data.Core.scriptHandled
+	}
 	array<string> primaryMods = loadout.primaryMods
 	primaryMods.removebyvalue( "" )
 
-	if ( loadout.primary != "" )
+	if ( loadout.primary != "" && !scriptHandledPrimary )
 	{
 		entity weapon = titan.GiveWeapon( loadout.primary, primaryMods )
 
@@ -419,13 +432,13 @@ void function GiveTitanLoadout( entity titan, TitanLoadoutDef loadout )
 		}
 	}
 
-	if ( loadout.ordnance != "" )
+	if ( loadout.ordnance != "" && !scriptHandledOrdnance)
 		titan.GiveOffhandWeapon( loadout.ordnance, OFFHAND_ORDNANCE, loadout.ordnanceMods )
 
-	if ( loadout.special != "" )
+	if ( loadout.special != "" && !scriptHandledSpecial )
 		titan.GiveOffhandWeapon( loadout.special, OFFHAND_SPECIAL, loadout.specialMods )
 
-	if ( loadout.antirodeo != "" )
+	if ( loadout.antirodeo != "" && !scriptHandledAntirodeo )
 		titan.GiveOffhandWeapon( loadout.antirodeo, OFFHAND_ANTIRODEO, loadout.antirodeoMods )
 
 	if ( loadout.melee != "" )

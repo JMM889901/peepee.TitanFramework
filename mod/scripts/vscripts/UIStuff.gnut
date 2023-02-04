@@ -29,6 +29,7 @@ global function CreateModdedTitanSimple
 global function shouldPrintDevStuff
 
 
+
 #if SERVER
 global function SetTitanLoadout
 #endif
@@ -157,6 +158,8 @@ void function SetTitanLoadout(entity player, int index, TitanLoadoutDef loadout)
 	if(loadout.name in TitanLoadoutByClass)//Modded titans
 	{
 		SetPersistentLoadoutValue( player, "titan", index, "name",				loadout.name )
+		SetPersistentLoadoutValue( player, "titan", index, "isPrime",				loadout.isPrime )
+		SetPersistentLoadoutValue( player, "titan", index, "titanClass",		GetModdedTitanClassForMods(loadout.name) )
 		SetPersistentLoadoutValue( player, "titan", index, "passive2",			GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.name, "passive2"))[0].ref)
 		SetPersistentLoadoutValue( player, "titan", index, "passive4",			GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.name, "passive4"))[0].ref)
 		SetPersistentLoadoutValue( player, "titan", index, "passive5",			GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.name, "passive5"))[0].ref)
@@ -767,7 +770,7 @@ void function RegisterModdedTitanItemsSimple( ModdedTitanData titan )
 	if(titan.Primary.custom)
 		CreateGenericItem(999, eItemTypes.TITAN_PRIMARY, titan.Primary.weaponName, titan.Primary.displayName, titan.Primary.description, titan.Primary.description, titan.Primary.image, 0, false)
 	if(titan.Core.custom)
-		CreateGenericItem(999, eItemTypes.TITAN_CORE_ABILITY, titan.Core.weaponName, titan.Core.displayName, titan.Core.description,titan.Description , titan.Core.image , 0, false)
+		CreateGenericItem(999, eItemTypes.TITAN_CORE_ABILITY, titan.Core.weaponName, titan.Core.displayName, titan.Core.description,titan.Core.description , titan.Core.image , 0, false)
 	if(titan.Right.custom)
 		CreateGenericItem(999, eItemTypes.TITAN_ORDNANCE, titan.Right.weaponName, titan.Right.displayName, titan.Right.description, titan.Right.description, titan.Right.image, 0, false)
 	if(titan.Left.custom)
@@ -857,5 +860,14 @@ void function RegisterModdedTitanItemsSimple( ModdedTitanData titan )
 		ItemData subitem = GetItemData(subitemstuff.ref)
 		CreateGenericSubItemData(subitem.itemType,titan.Name, subitem.ref, 0, subitem.i)
 	}
-
+	/*
+	  _______ _ _                __  __           _      _     
+	 |__   __(_) |              |  \/  |         | |    | |    
+		| |   _| |_ __ _ _ __   | \  / | ___   __| | ___| |___ 
+		| |  | | __/ _` | '_ \  | |\/| |/ _ \ / _` |/ _ \ / __|
+		| |  | | || (_| | | | | | |  | | (_) | (_| |  __/ \__ \
+		|_|  |_|\__\__,_|_| |_| |_|  |_|\___/ \__,_|\___|_|___/
+															
+															
+	*/
 }

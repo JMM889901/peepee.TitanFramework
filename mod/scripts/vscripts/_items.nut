@@ -6,6 +6,7 @@ global function InitUnlock
 global function GetNewItemInitCallbacks
 global function RegisterNewItemInitCallback
 global function RegisterModdedTitanData
+global function GetModdedTitanData
 
 global function PreInitGlobal
 global function CreateModdedItemType
@@ -388,6 +389,24 @@ global struct ItemData
 }
 
 
+global enum ModdedTitanAltChassisMethod
+{
+	NO_ALT,
+	PRIME_TITAN,
+	ALT_CHASSIS
+}
+global enum ModdedTitanChassisType
+{
+	setFile,
+	modelKey //Unimplemented
+}
+global struct FrameworkChassisStruct
+{
+	string setFile
+	string Name
+	asset icon
+	int ModdedTitanChassisType = ModdedTitanChassisType.setFile
+}
 global struct ModdedPassiveData{
 	string Name
 	string description
@@ -398,7 +417,9 @@ global struct ModdedTitanWeaponAbilityData{
 	string weaponName
 	string description
 	asset image = $"ui/temp"
+	string MenuModelWeapon
 	bool custom = false
+	bool scriptHandled = false
 }
 global struct ModdedTitanData{
 	string Name
@@ -407,6 +428,10 @@ global struct ModdedTitanData{
 	ModdedTitanWeaponAbilityData& Mid
 	ModdedTitanWeaponAbilityData& Right 
 	ModdedTitanWeaponAbilityData& Core
+
+	int AltTitanMethod
+
+	array<FrameworkChassisStruct> altChassis
 
 	string Description
 	string BaseSetFile
@@ -425,6 +450,9 @@ global struct ModdedTitanData{
 	string Melee = "melee_titan_punch_scorch"
 	string Voice = "titanos_bt"
 }
+
+
+
 struct
 {
 	array<GlobalItemRef> allItems
@@ -461,7 +489,17 @@ void function RegisterModdedTitanData(ModdedTitanData titan)
 		return
 	file.ModdedTitanDataArray.append(titan)
 }
-
+ModdedTitanData function GetModdedTitanData(string name)
+{
+	foreach(ModdedTitanData data in file.ModdedTitanDataArray)
+	{
+		if(data.Name == name)
+			return data
+	}
+	//ModdedTitanData failed 
+	//failed.Name = "Failed"
+	unreachable
+}
 void function RegisterNewItemInitCallback(void functionref() callback)
 {
 	if(file.PostInitFunctions.contains(callback))
