@@ -140,7 +140,7 @@ int function GetModdedTitanPassive1TypeByRef(string ref){
 bool function SetPlayerTitanRemote(entity player, array<string> args)
 {
 	if(args[1] == "modded")
-		SetTitanLoadout(player, args[0].tointeger(), GetModdedTitanByClassNoPersist(GetModdedTitanClasses()[args[2].tointeger()]))
+		SetTitanLoadout(player, args[0].tointeger(), GetModdedTitanByClassNoPersist(args[2]))
 	else if(args[1] == "default")
 		SetTitanLoadout(player, args[0].tointeger(), GetDefaultTitanLoadout(args[2].tointeger()))	
 
@@ -160,7 +160,9 @@ void function SetTitanLoadout(entity player, int index, TitanLoadoutDef loadout)
 		SetPersistentLoadoutValue( player, "titan", index, "name",				loadout.name )
 		SetPersistentLoadoutValue( player, "titan", index, "isPrime",				loadout.isPrime )
 		SetPersistentLoadoutValue( player, "titan", index, "titanClass",		GetModdedTitanClassForMods(loadout.name) )
+		SetPersistentLoadoutValue( player, "titan", index, "passive1",			GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.name, "passive1"))[0].ref)
 		SetPersistentLoadoutValue( player, "titan", index, "passive2",			GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.name, "passive2"))[0].ref)
+		SetPersistentLoadoutValue( player, "titan", index, "passive3",			GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.name, "passive3"))[0].ref)
 		SetPersistentLoadoutValue( player, "titan", index, "passive4",			GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.name, "passive4"))[0].ref)
 		SetPersistentLoadoutValue( player, "titan", index, "passive5",			GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.name, "passive5"))[0].ref)
 		SetPersistentLoadoutValue( player, "titan", index, "passive6",			GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.name, "passive6"))[0].ref)
@@ -354,7 +356,7 @@ void function ValidatePlayerModdedData(entity player)
 #endif
 void function RegisterTitanPassiveTypes(string SetFile, int passive2,int execution, string titanClass, int passive4 = -1, int passive5 = -1, int passive6 = -1)
 {
-	TitanPassiveTypesBySetFile[SetFile] <- {}
+	TitanPassiveTypesBySetFile[SetFile] <- {} //THIS SHOULD NEVER EVER BE USED, CUSTOM SETFILES ARE RETIRED, but just incase :)
 	TitanPassiveTypesBySetFile[SetFile]["passive3"] <- eItemTypes.TITAN_TITANFALL_PASSIVE
 	TitanPassiveTypesBySetFile[SetFile]["passive1"] <- eItemTypes.TITAN_GENERAL_PASSIVE
 	TitanPassiveTypesBySetFile[SetFile]["passive2"] <- passive2
@@ -402,6 +404,10 @@ void function OverwriteDefaultTitanLoadoutByIndex(int key, TitanLoadoutDef loado
 	shGlobal.defaultTitanLoadouts[ key ].primary = loadout.primary
 	shGlobal.defaultTitanLoadouts[ key ].primeTitanRef = loadout.primeTitanRef
 	shGlobal.defaultTitanLoadouts[ key ].difficulty = loadout.difficulty
+	shGlobal.defaultTitanLoadouts[ key ].titanExecution = loadout.titanExecution
+	shGlobal.defaultTitanLoadouts[ key ].passive1 = loadout.passive1
+	shGlobal.defaultTitanLoadouts[ key ].passive2 = loadout.passive2
+	shGlobal.defaultTitanLoadouts[ key ].passive3 = loadout.passive3
 	shGlobal.defaultTitanLoadouts[ key ].passive4 = loadout.passive4
 	shGlobal.defaultTitanLoadouts[ key ].passive5 = loadout.passive5
 	shGlobal.defaultTitanLoadouts[ key ].passive6 = loadout.passive6
@@ -663,6 +669,7 @@ void function CreateModdedTitanSimple( ModdedTitanData Titan )
 }
 void function RegisterModdedTitanItemsSimple( ModdedTitanData titan )
 {
+	//AddPrivateMatchModeSettingEnum("#MODE_SETTING_CATEGORY_TITANFRAMEWORK", titan.Name, ["#SETTING_DISABLED", "#SETTING_ENABLED"], "1") Unimplemented
 	ModdedTitanExtraPassiveTypes[titan.Name] <- 0
 
 

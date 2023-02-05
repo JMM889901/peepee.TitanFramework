@@ -191,7 +191,7 @@
     ButtonShoulderBadge
     {
 		ControlName				RuiButton
-		ypos                    16
+		ypos                    3
 
 		wide					318
 		tall					40
@@ -277,16 +277,21 @@
     ButtonClass
     {
 		ControlName				RuiButton
-		InheritProperties		LoadoutButtonSmall
+		ypos                    3
+
+		wide					318
+		tall					40
+		rui						"ui/badge_button.rpak"
+		labelText 				""
+
 		xpos					0
-		classname				TitanLoadoutPanelButtonClass
 		scriptID				"titanClass"
         navLeft                 ButtonPrimeTitan
         navRight                ButtonPassive1
         navDown               	ButtonShoulderBadge
         navUp               	ButtonPassive6
 
-        pin_to_sibling			ButtonPrimeTitan
+        pin_to_sibling			ButtonShoulderBadge
         pin_corner_to_sibling	TOP_LEFT
         pin_to_sibling_corner	BOTTOM_LEFT
     }

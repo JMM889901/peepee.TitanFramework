@@ -6501,7 +6501,13 @@ int function GetItemPersistenceId( string ref, string parentRef = "" )
 string function GetItemPersistenceStruct( string ref )
 {
 	Assert( ref in file.itemData )
-	return file.itemData[ref].persistenceStruct
+	string id = file.itemData[ref].persistenceStruct
+	if(id == "")
+	{
+		if(GetAllItemRefsOfType( eItemTypes.TITAN_PRIMARY ).contains(ref))	
+			id = "titanWeapons[" + 0 + "]"
+	}
+	return id
 }
 
 ItemData ornull function GetItemFromPersistenceStruct( string persistenceStruct )

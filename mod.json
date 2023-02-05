@@ -3,7 +3,7 @@
 	"Description": "Pain",
 	"LoadPriority": 50,
 	"RequiredOnClient": true,
-	"Version": "0.3.0",
+	"Version": "0.3.2",
 	"Scripts": [
 		{
 			"Path": "UIStuff.gnut",
@@ -32,5 +32,8 @@
             "Name": "titanFrameworkDevPrintsEnabled",
             "DefaultValue": "0"
         }
+	],
+	"Localisation": [
+		"resource/TitanFramework_localisation_%language%.txt"
 	]
 }

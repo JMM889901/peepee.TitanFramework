@@ -233,6 +233,7 @@ void function PopulateTitanLoadoutFromPersistentData( entity player, TitanLoadou
 	//	loadout.name 				= GetValidatedPersistentLoadoutValue( player, "titan", loadoutIndex, "name" )
 	//	changed = true
 	//}
+	
 	if(loadout.name in GetModdedTitansByClassNoPersist())
 	{
 		
@@ -1524,6 +1525,7 @@ string function GetLoadoutPropertyDefault( string loadoutType, int loadoutIndex,
 
 		default:
 		{
+			
 			bool isTitanLoadout = (loadoutType == "titan")
 			bool isPilotLoadout = (loadoutType == "pilot")
 			if ( isPilotLoadout )
@@ -1533,8 +1535,7 @@ string function GetLoadoutPropertyDefault( string loadoutType, int loadoutIndex,
 			}
 			else if ( isTitanLoadout )
 			{
-				if(loadoutIndex > 6)
-					loadoutIndex = loadoutIndex - 6
+				//loadoutIndex = loadoutIndex%7 TODO, do i even need this
 				TitanLoadoutDef defaultPilotLoadout = GetDefaultTitanLoadout( loadoutIndex ) //HACK: note that this can give an invalid default for a child property, e.g. a sight that doesn't exist on this weapon. This is handled later in ResolveInvalidLoadoutChildValues
 				resultString = GetTitanLoadoutValue( defaultPilotLoadout, propertyName )
 			}
@@ -3334,7 +3335,7 @@ string function Loadouts_GetSetFileForRequestedClass( entity player )
 	void function SetPersistentTitanLoadout( entity player, int loadoutIndex, TitanLoadoutDef loadout )
 	{
 		SetPersistentLoadoutValue( player, "titan", loadoutIndex, "name",				loadout.name )
-		SetPersistentLoadoutValue( player, "titan", loadoutIndex, "setFile",			loadout.setFile )
+		//SetPersistentLoadoutValue( player, "titan", loadoutIndex, "setFile",			loadout.setFile )
 		SetPersistentLoadoutValue( player, "titan", loadoutIndex, "titanClass",			GetTitanCharacterNameFromSetFile( loadout.setFile ) )
 		SetPersistentLoadoutValue( player, "titan", loadoutIndex, "primaryMod",		loadout.primaryMod )
 		SetPersistentLoadoutValue( player, "titan", loadoutIndex, "special",			loadout.special )

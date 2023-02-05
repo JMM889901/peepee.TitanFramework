@@ -38,7 +38,7 @@ void function OnClassSelectButton_Activate(var button)
 		shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive6 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(expect string(button.s.titanClass), "passive6"))[0].ref
 		shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].titanExecution = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(expect string(button.s.titanClass), "titanExecution"))[0].ref
 
-		ClientCommand( "SetTitanClass "+uiGlobal.editingLoadoutIndex+" modded " + (button.s.rowIndex-7) )
+		ClientCommand( "SetTitanClass "+uiGlobal.editingLoadoutIndex+" modded " + (button.s.titanClass) )
 	}
 	else if (button.s.rowIndex > -1)
 	{

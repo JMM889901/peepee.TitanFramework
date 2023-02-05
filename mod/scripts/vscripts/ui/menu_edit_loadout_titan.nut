@@ -159,7 +159,7 @@ void function OnOpenEditTitanLoadoutMenu()
 	Hud_SetText( file.appearanceLabel, "" )
 
 	RefreshCreditsAvailable()
-
+	
 	var armBadgeRui = Hud_GetRui( file.armBadgeButton )
 	if ( CanEquipArmBadge( loadout.titanClass ) )
 	{
@@ -179,6 +179,8 @@ void function OnOpenEditTitanLoadoutMenu()
 	}
 	else
 	{
+		var ClassSelectRui = Hud_GetRui(file.ClassSelectButton)
+		RuiSetString( ClassSelectRui, "buttonText", "#SELECT_TITAN" )
 		Hud_Show( file.ClassSelectButton )
 	}
 	if ( ShouldShowVanguardButtons( loadout.titanClass ) )
