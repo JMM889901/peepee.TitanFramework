@@ -3,7 +3,7 @@
 	"Description": "Pain",
 	"LoadPriority": 50,
 	"RequiredOnClient": true,
-	"Version": "0.3.2",
+	"Version": "1.0.0",
 	"Scripts": [
 		{
 			"Path": "UIStuff.gnut",

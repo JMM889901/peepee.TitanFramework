@@ -221,17 +221,20 @@ string function GetModdedTitanPassiveStringForPersistence(string titan, string p
 {
 	if(!(titan in ModdedTitanCustomPassivePersistentNames))
 	{
-		print("titan not registered with custom to persistent index "+titan)
+		if(shouldPrintDevStuff())
+			print("titan not registered with custom to persistent index "+titan)
 		return passive
 	}
 	if(!(passiveslot in ModdedTitanCustomPassivePersistentNames[titan]))
 	{
-		print("passiveslot not registered with custom to persistent index for "+titan)
+		if(shouldPrintDevStuff())
+			print("passiveslot not registered with custom to persistent index for "+titan)
 		return passive
 	}
 	if(!(passive in ModdedTitanCustomPassivePersistentNames[titan][passiveslot]))
 	{
-		print("passive not registered with custom to persistent index for "+titan +" and "+passive)
+		if(shouldPrintDevStuff())
+			print("passive not registered with custom to persistent index for "+titan +" and "+passive)
 		return passive
 	}
 	return ModdedTitanCustomPassivePersistentNames[titan][passiveslot][passive]

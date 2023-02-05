@@ -739,8 +739,8 @@ bool function IsLoadoutSubitemValid( entity player, string loadoutType, int load
 void function SetPlayerPersistentVarWithoutValidation( entity player, string loadoutType, int loadoutIndex, string propertyName, string value )
 {
 	string persistentLoadoutString = BuildPersistentVarAccessorString( loadoutType, loadoutIndex, propertyName )
-	print("value "+value)
-	print("persistent string " + persistentLoadoutString)
+	//print("value "+value)
+	//print("persistent string " + persistentLoadoutString)
 	if ( GetPersistentLoadoutPropertyType( propertyName ) == "int" )
 		player.SetPersistentVar( persistentLoadoutString, int( value ) )
 	else
@@ -1237,11 +1237,13 @@ bool function IsValidTitanPassive(entity player, int loadoutIndex, string loadou
 			//if(loadoutIndex)
 			//i had to rewrite this 5 times purely because im unimaginably stupid and forgor to include the default titans the titan array
 			string titanClass = GetPersistentLoadoutValue(player, "titan", loadoutIndex, "name" )
-			print("titanclass "+titanClass)
+			if(shouldPrintDevStuff())
+				print("titanclass "+titanClass)
 			
 			if(GetModdedTitanLoadoutPassiveTypeByClass(titanClass, "passive2") != -1)
 				return itemType == GetModdedTitanPassivePersistentType(GetModdedTitanLoadoutPassiveTypeByClass(titanClass, "passive2"))
-			print("titanclass2 "+GetPersistentLoadoutValue(player, "titan", loadoutIndex, "titanClass" ))
+			if(shouldPrintDevStuff())
+				print("titanclass2 "+GetPersistentLoadoutValue(player, "titan", loadoutIndex, "titanClass" ))
 			return itemType == GetModdedTitanLoadoutPassiveTypeByClass(GetPersistentLoadoutValue(player, "titan", loadoutIndex, "titanClass" ), "passive2")
 /* 			switch( loadoutIndex ) //TODO: Hard coded, not great!
 			{

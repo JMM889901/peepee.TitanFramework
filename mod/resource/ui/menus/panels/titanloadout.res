@@ -283,7 +283,7 @@
 		tall					40
 		rui						"ui/badge_button.rpak"
 		labelText 				""
-
+		classname				TitanLoadoutPanelButtonClass
 		xpos					0
 		scriptID				"titanClass"
         navLeft                 ButtonPrimeTitan
