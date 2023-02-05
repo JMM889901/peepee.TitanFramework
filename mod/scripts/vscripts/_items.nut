@@ -5530,6 +5530,8 @@ void function CreateTitanData( int dataTableIndex, string titanRef, int cost, as
 
 asset function GetIconForTitanClass( string titanClass )
 {
+	if(GetModdedTitanClasses().contains(titanClass))
+		titanClass = GetModdedTitanClassForMods(titanClass) //TODO, Add custom icon support
 	var dataTable = GetDataTable( $"datatable/titan_properties.rpak" )
 	int loadoutIconCol = GetDataTableColumnByName( dataTable, "loadoutIcon" )
 	int titanCol = GetDataTableColumnByName( dataTable, "titanRef" )
