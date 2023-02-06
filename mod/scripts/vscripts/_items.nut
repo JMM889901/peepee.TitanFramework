@@ -10489,6 +10489,7 @@ string function GetNoseArtRefFromTitanClassAndPersistenceValue( string titanClas
 
 string function GetSkinRefFromTitanClassAndPersistenceValue( string titanClass, int persistenceValue )
 {
+	titanClass = GetModdedTitanClassForMods(titanClass)
 	if ( !( titanClass in file.titanClassAndPersistenceValueToSkinRefTable ) )
 		return INVALID_REF
 
