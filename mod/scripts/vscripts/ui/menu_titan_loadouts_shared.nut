@@ -360,7 +360,10 @@ void function AddDefaultTitanElementsToTitanLoadoutMenu( var menu )
 void function UpdateTitanItemButton( var button, TitanLoadoutDef loadout )
 {
 	string propertyName = Hud_GetScriptID( button )
-	if ( !ShouldDisplayIfVanguardPassive( loadout.titanClass, propertyName ) )
+	if(propertyName == "internalButton")
+		propertyName = Hud_GetScriptID( Hud_GetParent(button) )
+	bool useAltView = ModdedTitanPassiveHasCustomAssets(loadout.name, propertyName)
+	if ( useAltView == (Hud_GetHudName(button) != "PassiveButton") || !ShouldDisplayIfVanguardPassive( loadout.titanClass, propertyName ))
 		DisableButton( button )
 	else
 		EnableButton( button )
@@ -375,9 +378,19 @@ void function UpdateTitanItemButton( var button, TitanLoadoutDef loadout )
 	int itemType = GetItemTypeFromTitanLoadoutProperty( propertyName, nonPrimeSetFile, loadout.titanClass )
 	asset image = GetImage( itemType, itemRef )
 
+	print(image + " Image "+Hud_GetHudName(button))
 	var rui = Hud_GetRui( button )
-	RuiSetImage( rui, "buttonImage", image )
+	if(Hud_GetHudName(button) == "PassiveButton")
+	{
+		rui = Hud_GetRui(Hud_GetChild(Hud_GetParent(button), "PassiveImage"))
+			
+		if ( useAltView)
+			Hud_Show( Hud_GetChild(Hud_GetParent(button), "PassiveImage") )
+		else
+			Hud_Hide( Hud_GetChild(Hud_GetParent(button), "PassiveImage") )
+	}
 
+	RuiSetImage( rui, "buttonImage", image )
 	// TODO: Finish new indicators for all appropriate item types
 		//Hud_SetNew( button, HasAnyNewItem( itemType ) )
 

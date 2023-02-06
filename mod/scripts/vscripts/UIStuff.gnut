@@ -29,7 +29,8 @@ global function CreateModdedTitanSimple
 global function shouldPrintDevStuff
 global function GetmoddedPassiveTypeDisplayName
 global function GetModdedTitanReadyMessage
-
+global function ModdedTitanPassiveHasCustomAssets
+global function GetModdedTitanPassiveHasAsset
 
 #if SERVER
 global function SetTitanLoadout
@@ -47,12 +48,25 @@ table<string, table<string, table <string, string > > > ModdedTitanCustomPassive
 table<string, table<string, table <string, string > > > ModdedTitanCustomPassivePersistentNamesInverted
 table<int, int > ModdedTitanPassivePersistentType
 table<int, string> ModdedPassiveTypeDisplayNames
+table<string, table<string, bool> > ModdedTitanPassiveHasAsset
 table<string, string> ModdedTitanReadyMessage
 bool function shouldPrintDevStuff()
 {
 	return GetConVarInt("titanFrameworkDevPrintsEnabled") ==1
 }
 //Getters
+bool function ModdedTitanPassiveHasCustomAssets(string titan, string itemType)
+{
+	if(titan in ModdedTitanPassiveHasAsset && itemType in ModdedTitanPassiveHasAsset[titan])
+		return ModdedTitanPassiveHasAsset[titan][itemType]
+	if(shouldPrintDevStuff())
+		print("not in")
+	return false
+}
+table<string, table<string, bool> > function GetModdedTitanPassiveHasAsset()
+{
+	return ModdedTitanPassiveHasAsset
+}
 string function GetModdedTitanReadyMessage(string titan)
 {
 	if(titan in ModdedTitanReadyMessage)
@@ -677,6 +691,7 @@ void function CreateModdedTitanSimple( ModdedTitanData Titan )
 	TitanLoadoutByClass[loadout.titanClass] <- loadout
 	ModdedTitanClasses.append(Titan.Name)
 	ModdedTitanReadyMessage[Titan.Name] <- Titan.titanReadyMessageOverride
+	ModdedTitanPassiveHasAsset[Titan.Name] <- {}
 	//TitanSetFilesForAnims[SetFile] <- BaseSetFile
 	#if MP
 		RegisterModdedTitanItemsSimple(Titan)
@@ -820,6 +835,8 @@ void function RegisterModdedTitanItemsSimple( ModdedTitanData titan )
 			if(shouldPrintDevStuff())
 				print("Creating passive4 data for "+passive.Name)
 			passives4.append(CreateGenericItem(999, passive4, passive.Name, passive.Name, passive.description, passive.description, passive.image, 0, false))
+			if(passive.customIcon)
+				ModdedTitanPassiveHasAsset[titan.Name]["passive4"] <- true
 		}
 		RegisterModdedTitanCustomPassiveType(titan.Name, passives4, "passive4")
 	}
@@ -831,6 +848,8 @@ void function RegisterModdedTitanItemsSimple( ModdedTitanData titan )
 			if(shouldPrintDevStuff())
 				print("Creating passive5 data for "+passive.Name)
 			passives5.append(CreateGenericItem(999, passive5, passive.Name, passive.Name, passive.description, passive.description, passive.image, 0, false))
+			if(passive.customIcon)
+				ModdedTitanPassiveHasAsset[titan.Name]["passive5"] <- true
 		}
 		RegisterModdedTitanCustomPassiveType(titan.Name, passives5, "passive5")
 	}
@@ -843,6 +862,8 @@ void function RegisterModdedTitanItemsSimple( ModdedTitanData titan )
 			if(shouldPrintDevStuff())
 				print("Creating passive6 data for "+passive.Name)
 			passives6.append(CreateGenericItem(999, passive6, passive.Name, passive.Name, passive.description, passive.description, passive.image, 0, false))
+			if(passive.customIcon)
+				ModdedTitanPassiveHasAsset[titan.Name]["passive6"] <- true
 		}
 		RegisterModdedTitanCustomPassiveType(titan.Name, passives6, "passive6")
 	}
@@ -865,6 +886,8 @@ void function RegisterModdedTitanItemsSimple( ModdedTitanData titan )
 			if(shouldPrintDevStuff())
 				print("Creating passive2 data for "+passive.Name)
 			passives2.append(CreateGenericItem(999, eItemTypes[titan.Name+"passive2"], passive.Name, passive.Name, passive.description, passive.description, passive.image, 0, false))
+			if(passive.customIcon)
+				ModdedTitanPassiveHasAsset[titan.Name]["passive2"] <- true
 		}
 		RegisterModdedTitanCustomPassiveType(titan.Name, passives2, "passive2", GetModdedTitanLoadoutPassiveTypeByClass(titan.BaseName, "passive2"))
 	}

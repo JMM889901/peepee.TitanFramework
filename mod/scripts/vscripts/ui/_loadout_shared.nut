@@ -19,6 +19,8 @@ global function OnPassiveSelectButton_Focused
 global function OnPassiveSelectButton_LostFocus
 global function OnAbilityOrPassiveSelectButton_Activate
 
+global function SetupLoadoutItemButtonsAlt
+
 global function ShowItemPanel
 global function HideItemPanel
 
@@ -179,6 +181,125 @@ void function OnModSelectBGScreen_Activate( var button )
 	CloseActiveMenu()
 }
 
+
+//Modified passives panel for custom icons because rui is dumb
+void function SetupLoadoutItemButtonsAlt( array<var> buttons, array<ItemDisplayData> items, string currentItemRef, array<ItemDisplayData> unavailableItems = [], string parentItemRef = "" )
+{
+	entity player = GetUIPlayer()
+	if ( player == null )
+		return
+
+	//printt( "SetupLoadoutItemButtons() | currentItemRef:", currentItemRef, "item count:", items.len() )
+	//foreach ( item in items )
+	//	printt( item.ref )
+
+	SetButtonItemData( buttons, items )
+
+	// Disable buttons first because otherwise disabling the currently active button will cause code to set a new focus which interferes with script setting it
+	foreach ( buttonPanel in buttons )
+	{
+		if ( file.buttonItemData[ buttonPanel ].ref == "" )
+		{
+			var button = Hud_GetChild(buttonPanel, "PassiveButton")
+			Hud_SetNew( button, false )
+			Hud_SetText( button, "" )
+			Hud_SetEnabled( button, false )
+			Hud_SetLocked( button, false )
+			Hud_SetSelected( button, false )
+
+			//RuiSetBool( Hud_GetRui( Hud_GetChild(buttonPanel, "PassiveImage") ), "isVisible", false )
+			Hud_Hide(buttonPanel)
+			//RuiSetBool( Hud_GetRui( button ), "isVisible", false )
+		}
+	}
+
+	var newFocus = buttons[0]
+
+	foreach ( index, buttonPanel in buttons )
+	{
+		var button = Hud_GetChild(buttonPanel, "PassiveButton")
+		var imageScreen = Hud_GetChild(buttonPanel, "PassiveImage")
+		ItemDisplayData item = file.buttonItemData[ buttonPanel ]
+		if ( item.ref == "" )
+			continue
+
+		string itemRef = item.ref
+		int itemType = item.itemType
+		asset image
+
+		//RuiSetBool( Hud_GetRui( button ), "isVisible", true )
+		//RuiSetBool( Hud_GetRui( imageScreen ), "isVisible", true )
+		Hud_Show(buttonPanel)
+		image = GetImage( itemType, itemRef )
+
+
+
+		var rui = Hud_GetRui( imageScreen )
+
+		if ( image == $"" )
+		{
+			Hud_Hide(imageScreen)
+		}
+		else
+		{
+			Hud_Show(imageScreen)
+			RuiSetImage( rui, "buttonImage", image )
+		}
+
+		bool isEnabled = true
+		if ( unavailableItems.contains( item ) )
+			isEnabled = false
+
+		bool isLocked
+		if ( item.ref == "none" )
+		{
+			isLocked = false
+		}
+		else if ( GetItemRequiresPrime( item.ref ) == true && !HasPrimeToMatchExecutionType( player, item.itemType ) )
+		{
+			isLocked = true
+		}
+		else
+		{
+			if ( IsSubItemType( itemType ) )
+				isLocked = IsSubItemLocked( player, item.ref, parentItemRef )
+			else
+				isLocked = IsItemLocked( player, item.ref )
+		}
+
+		Hud_SetEnabled( button, isEnabled )
+		Hud_SetLocked( button, isLocked )
+		Hud_SetVisible( button, true )
+
+		//printt( "if (", item.ref, "==", currentItemRef, ") is", item.ref == currentItemRef )
+		if ( item.ref == currentItemRef )
+		{
+			Hud_SetSelected( button, true )
+			newFocus = button
+		}
+		else
+		{
+			Hud_SetSelected( button, false )
+		}
+
+		if ( isLocked )
+			continue
+
+
+
+	}
+
+
+	if ( items.len() != unavailableItems.len() ) // don't try to set focus if there are no available items at all
+	{
+		var lastFocus = GetFocus()
+		Assert( Hud_IsEnabled( newFocus ) )
+		Hud_SetFocused( newFocus )
+	}
+}
+
+
+
 void function SetupLoadoutItemButtons( array<var> buttons, array<ItemDisplayData> items, string currentItemRef, array<ItemDisplayData> unavailableItems = [], string parentItemRef = "" )
 {
 	entity player = GetUIPlayer()
@@ -313,7 +434,7 @@ void function SetupLoadoutItemButtons( array<var> buttons, array<ItemDisplayData
 
 	foreach ( button, data in file.buttonItemData )
 	{
-		RefreshButtonCost( button, data.ref, data.parentRef )
+		//RefreshButtonCost( button, data.ref, data.parentRef )
 	}
 
 	if ( items.len() != unavailableItems.len() ) // don't try to set focus if there are no available items at all
@@ -641,6 +762,9 @@ void function OnPassiveSelectMenu_Open()
 
 	RefreshCreditsAvailable()
 }
+
+
+
 
 void function OnPassiveSelectMenu_Close()
 {
@@ -1063,7 +1187,6 @@ void function OnAbilityOrPassiveSelectButton_Activate( var button )
 		OpenBuyItemDialog( buttons, button, GetItemLongName( ref ), ref, parentRef, AbilityOrPassive_Equip )
 		return
 	}
-
 	AbilityOrPassive_Equip( button )
 	CloseActiveMenu()
 }
@@ -1072,9 +1195,11 @@ void function AbilityOrPassive_Equip( var button)
 {
 	Assert( uiGlobal.editingLoadoutType == "pilot" || uiGlobal.editingLoadoutType == "titan" )
 	Assert( uiGlobal.editingLoadoutProperty != "" )
-
-	string itemRef = file.buttonItemData[ button ].ref
-	int itemType = file.buttonItemData[ button ].itemType
+	var buttonIndex = button
+	if(Hud_GetScriptID(button) == "internalButton" )
+		buttonIndex = Hud_GetParent(button)
+	string itemRef = file.buttonItemData[ buttonIndex ].ref
+	int itemType = file.buttonItemData[ buttonIndex ].itemType
 	entity player = GetUIPlayer()
 
 	TryUnlockLoadoutAchievement( itemRef )
@@ -1106,7 +1231,10 @@ void function AbilityOrPassive_Equip( var button)
 		RunMenuClientFunction( "SavePilotCharacterPreview" )
 
 	ButtonsSetSelected( GetElementsByClassname( uiGlobal.activeMenu, "AbilitySelectClass" ), false )
-	ButtonsSetSelected( GetElementsByClassname( uiGlobal.activeMenu, "PassiveSelectClass" ), false )
+	if(Hud_GetScriptID(button) == "internalButton" )
+		ButtonsSetSelected( GetElementsByClassname( uiGlobal.activeMenu, "PassiveButton" ), false )
+	else
+		ButtonsSetSelected( GetElementsByClassname( uiGlobal.activeMenu, "PassiveSelectClass" ), false )
 	Hud_SetSelected( button, true )
 }
 
@@ -1297,12 +1425,15 @@ void function OnAbilitySelectButton_LostFocus( var button )
 
 void function OnPassiveSelectButton_Focused( var button )
 {
-	string itemRef = file.buttonItemData[ button ].ref
-	string parentRef = file.buttonItemData[ button ].parentRef
-	int itemType = file.buttonItemData[ button ].itemType
+	var buttonIndex = button
+	if(Hud_GetScriptID(button) == "internalButton" )
+		buttonIndex = Hud_GetParent(button)
+	string itemRef = file.buttonItemData[ buttonIndex ].ref
+	string parentRef = file.buttonItemData[ buttonIndex ].parentRef
+	int itemType = file.buttonItemData[ buttonIndex ].itemType
 
 	ShowItemPanel( "ItemDetails" )
-	var menu = Hud_GetParent( button )
+	var menu = Hud_GetParent( buttonIndex )
 	string name = GetItemName( itemRef )
 	string description = GetItemLongDescription( itemRef )
 

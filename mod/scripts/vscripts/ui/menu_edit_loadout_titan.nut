@@ -610,6 +610,8 @@ void function OnEditTitanSlotButton_OnFocus( var button )
 void function OnEditTitanSlotButton_Activate( var button )
 {
 	string loadoutProperty = Hud_GetScriptID( button )
+	if(loadoutProperty == "internalButton")
+		loadoutProperty = Hud_GetScriptID( Hud_GetParent(button) )
 	uiGlobal.editingLoadoutProperty = loadoutProperty
 
 	switch ( loadoutProperty )
@@ -620,7 +622,11 @@ void function OnEditTitanSlotButton_Activate( var button )
 		case "passive4":
 		case "passive5":
 		case "passive6":
-			AdvanceMenu( GetMenu( "PassiveSelectMenu" ) )
+			TitanLoadoutDef loadout = GetCachedTitanLoadout( uiGlobal.editingLoadoutIndex )
+			if(ModdedTitanPassiveHasCustomAssets(loadout.name, loadoutProperty))
+				AdvanceMenu( GetMenu( "PassiveSelectMenuAlt" ) )
+			else
+				AdvanceMenu( GetMenu( "PassiveSelectMenu" ) )
 			break
 
 		case "decal":

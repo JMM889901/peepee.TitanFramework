@@ -2,9 +2,11 @@
 {
     ButtonPassive1
     {
-		ControlName				RuiButton
-		InheritProperties		LoadoutButtonMedium
-        classname				TitanLoadoutPanelButtonClass
+		ControlName				CNestedPanel
+		controlSettingsFile		"resource/ui/menus/panels/PassiveSelectButtonCombined.res"
+		wide 96
+		tall 96
+        classname				TitanLoadoutPassiveCombinedButtonClass
         scriptID				"passive1"
         tabPosition				1
 
@@ -50,9 +52,11 @@
 	}
     ButtonPassive2
     {
-		ControlName				RuiButton
-		InheritProperties		LoadoutButtonMedium
-        classname				TitanLoadoutPanelButtonClass
+		ControlName				CNestedPanel
+		controlSettingsFile		"resource/ui/menus/panels/PassiveSelectButtonCombined.res"
+		wide 96
+		tall 96
+        classname				TitanLoadoutPassiveCombinedButtonClass
         scriptID				"passive2"
         ypos					6
 
@@ -65,6 +69,7 @@
         pin_corner_to_sibling	TOP_RIGHT
         pin_to_sibling_corner	BOTTOM_RIGHT
     }
+	
     Passive2Type
 	{
 		ControlName				Label
@@ -117,9 +122,11 @@
 
     ButtonPassive3
     {
-		ControlName				RuiButton
-		InheritProperties		LoadoutButtonMedium
-        classname				TitanLoadoutPanelButtonClass
+		ControlName				CNestedPanel
+		controlSettingsFile		"resource/ui/menus/panels/PassiveSelectButtonCombined.res"
+		wide 96
+		tall 96
+        classname				TitanLoadoutPassiveCombinedButtonClass
         scriptID				"passive3"
 		xpos					0//-400
 		ypos					6
@@ -382,9 +389,11 @@
 
     ButtonPassive4
     {
-		ControlName				RuiButton
-		InheritProperties		LoadoutButtonMedium
-        classname				TitanLoadoutPanelButtonClass
+		ControlName				CNestedPanel
+		controlSettingsFile		"resource/ui/menus/panels/PassiveSelectButtonCombined.res"
+		wide 96
+		tall 96
+        classname				TitanLoadoutPassiveCombinedButtonClass
         scriptID				"passive4"
 		xpos					-400
 		ypos					0
@@ -400,9 +409,11 @@
     }
     ButtonPassive5
     {
-		ControlName				RuiButton
-		InheritProperties		LoadoutButtonMedium
-        classname				TitanLoadoutPanelButtonClass
+		ControlName				CNestedPanel
+		controlSettingsFile		"resource/ui/menus/panels/PassiveSelectButtonCombined.res"
+		wide 96
+		tall 96
+        classname				TitanLoadoutPassiveCombinedButtonClass
         scriptID				"passive5"
 		xpos					20//-400
 		ypos					0
@@ -418,9 +429,11 @@
     }
     ButtonPassive6
     {
-		ControlName				RuiButton
-		InheritProperties		LoadoutButtonMedium
-        classname				TitanLoadoutPanelButtonClass
+		ControlName				CNestedPanel
+		controlSettingsFile		"resource/ui/menus/panels/PassiveSelectButtonCombined.res"
+		wide 96
+		tall 96
+        classname				TitanLoadoutPassiveCombinedButtonClass
         scriptID				"passive6"
 		xpos					20//-400
 		ypos					0

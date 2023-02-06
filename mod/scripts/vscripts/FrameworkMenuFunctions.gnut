@@ -7,7 +7,49 @@ struct{
 void function FrameworkMenuInit()
 {
 	AddMenu( "EditTitanClassMenu", $"resource/ui/menus/titanClasses.menu", InitEditTitanClassMenu )
+	AddMenu( "PassiveSelectMenuAlt", $"resource/ui/menus/passiveselectAlt.menu", InitPassiveSelectMenuAlt )
 	InitEditTitanClassMenu()
+}
+void function InitPassiveSelectMenuAlt()
+{
+	var menu = GetMenu( "PassiveSelectMenuAlt" )
+
+	AddMenuEventHandler( menu, eUIEvent.MENU_OPEN, OnPassiveSelectMenuAlt_Open )
+	//AddMenuEventHandler( menu, eUIEvent.MENU_CLOSE, OnPassiveSelectMenu_Close )
+
+	AddEventHandlerToButtonClass( menu, "PassiveButton", UIE_GET_FOCUS, OnPassiveSelectButton_Focused )
+	AddEventHandlerToButtonClass( menu, "PassiveButton", UIE_CLICK, OnAbilityOrPassiveSelectButton_Activate )
+	//AddEventHandlerToButtonClass( menu, "PassiveSelectClass", UIE_LOSE_FOCUS, OnPassiveSelectButton_LostFocus )
+
+	AddMenuFooterOption( menu, BUTTON_A, "#A_BUTTON_SELECT" )
+	AddMenuFooterOption( menu, BUTTON_B, "#B_BUTTON_BACK", "#BACK" )
+}
+void function OnPassiveSelectMenuAlt_Open()
+{
+	Assert( uiGlobal.editingLoadoutType == "pilot" || uiGlobal.editingLoadoutType == "titan" )
+	Assert( uiGlobal.editingLoadoutProperty == "passive1" || uiGlobal.editingLoadoutProperty == "passive2" || uiGlobal.editingLoadoutProperty == "passive3" || uiGlobal.editingLoadoutProperty == "passive4" || uiGlobal.editingLoadoutProperty == "passive5" || uiGlobal.editingLoadoutProperty == "passive6" )
+
+	array<ItemDisplayData> unavailableItems
+
+	string parentItemRef
+
+		TitanLoadoutDef editLoadout = GetTitanEditLoadout()
+		parentItemRef = editLoadout.titanClass
+		string nonPrimeSetFile = GetSetFileForTitanClassAndPrimeStatus( editLoadout.titanClass, false )
+		uiGlobal.editingItemType = GetItemTypeFromTitanLoadoutProperty( uiGlobal.editingLoadoutProperty, nonPrimeSetFile, editLoadout.titanClass )
+		uiGlobal.editingItemRef = GetTitanLoadoutValue( editLoadout, uiGlobal.editingLoadoutProperty )
+
+	var menu = GetMenu( "PassiveSelectMenuAlt" )
+	var menuTitle = Hud_GetChild( menu, "MenuTitle" )
+	array<var> buttons = GetElementsByClassname( menu, "PassiveSelectClass" )
+	array<ItemDisplayData> items
+	items = GetVisibleItemsOfType( uiGlobal.editingItemType, parentItemRef )
+
+	Hud_SetText( menuTitle, GetDisplayNameFromItemType( uiGlobal.editingItemType ) )
+
+	SetupLoadoutItemButtonsAlt( buttons, items, uiGlobal.editingItemRef, unavailableItems, parentItemRef )
+
+	RefreshCreditsAvailable()
 }
 void function InitEditTitanClassMenu()
 {
@@ -84,3 +126,4 @@ void function OnClassSelectMenu_Open()
 		Hud_SetEnabled( activateButton, false )
 	}
 }
+

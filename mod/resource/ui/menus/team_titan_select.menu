@@ -337,6 +337,8 @@ resource/ui/menus/team_titan_select.menu
 	        scriptID				0
 	        tabPosition				1
 
+			visible 				0
+			
 	        pin_to_sibling			BG
 	        pin_corner_to_sibling	LEFT
 	        pin_to_sibling_corner	LEFT
@@ -353,6 +355,8 @@ resource/ui/menus/team_titan_select.menu
 			tall 					54
 			wide					108
 	        scriptID				1
+
+			visible 				0
 
 	        pin_to_sibling			BG
 	        pin_corner_to_sibling	LEFT
@@ -371,6 +375,8 @@ resource/ui/menus/team_titan_select.menu
 			wide					108
 	        scriptID				2
 
+			visible 				0
+
 	        pin_to_sibling			BG
 	        pin_corner_to_sibling	LEFT
 	        pin_to_sibling_corner	LEFT
@@ -387,6 +393,9 @@ resource/ui/menus/team_titan_select.menu
 			tall 					54
 			wide					108
 	        scriptID				3
+			
+			visible 				0
+			
 	        pin_to_sibling			BG
 	        pin_corner_to_sibling	LEFT
 	        pin_to_sibling_corner	LEFT
@@ -403,6 +412,8 @@ resource/ui/menus/team_titan_select.menu
 			tall 					54
 			wide					108
 	        scriptID				4
+
+			visible 				0
 
 	        pin_to_sibling			BG
 	        pin_corner_to_sibling	LEFT
@@ -421,6 +432,8 @@ resource/ui/menus/team_titan_select.menu
 			wide					108
 	        scriptID				5
 
+			visible 				0
+
 	        pin_to_sibling			BG
 	        pin_corner_to_sibling	LEFT
 	        pin_to_sibling_corner	LEFT
@@ -438,6 +451,8 @@ resource/ui/menus/team_titan_select.menu
 			wide					108
 	        scriptID				6
 
+			visible 				0
+
 	        pin_to_sibling			BG
 	        pin_corner_to_sibling	LEFT
 	        pin_to_sibling_corner	LEFT
@@ -453,6 +468,8 @@ resource/ui/menus/team_titan_select.menu
 			tall 					54
 			wide					108
 	        scriptID				7
+
+			visible 				0
 
 	        pin_to_sibling			BG
 	        pin_corner_to_sibling	LEFT
@@ -470,6 +487,8 @@ resource/ui/menus/team_titan_select.menu
 			wide					108
 	        scriptID				8
 
+			visible 				0
+
 	        pin_to_sibling			BG
 	        pin_corner_to_sibling	LEFT
 	        pin_to_sibling_corner	LEFT
@@ -485,6 +504,8 @@ resource/ui/menus/team_titan_select.menu
 			tall 					54
 			wide					108
 	        scriptID				9
+
+			visible 				0
 
 	        pin_to_sibling			BG
 	        pin_corner_to_sibling	LEFT
@@ -502,6 +523,8 @@ resource/ui/menus/team_titan_select.menu
 			wide					108
 	        scriptID				10
 
+			visible 				0
+
 	        pin_to_sibling			BG
 	        pin_corner_to_sibling	LEFT
 	        pin_to_sibling_corner	LEFT
@@ -517,6 +540,8 @@ resource/ui/menus/team_titan_select.menu
 			tall 					54
 			wide					108
 	        scriptID				11
+
+			visible 				0
 
 	        pin_to_sibling			BG
 	        pin_corner_to_sibling	LEFT
@@ -534,6 +559,8 @@ resource/ui/menus/team_titan_select.menu
 			wide					108
 	        scriptID				12
 
+			visible 				0
+			
 	        pin_to_sibling			BG
 	        pin_corner_to_sibling	LEFT
 	        pin_to_sibling_corner	LEFT
@@ -550,6 +577,8 @@ resource/ui/menus/team_titan_select.menu
 			wide					108
 	        scriptID				13
 
+			visible 				0
+			
 	        pin_to_sibling			BG
 	        pin_corner_to_sibling	LEFT
 	        pin_to_sibling_corner	LEFT
@@ -565,6 +594,8 @@ resource/ui/menus/team_titan_select.menu
 			tall 					54
 			wide					108
 	        scriptID				14
+
+			visible 				0
 
 	        pin_to_sibling			BG
 	        pin_corner_to_sibling	LEFT

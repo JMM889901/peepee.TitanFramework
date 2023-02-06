@@ -411,6 +411,7 @@ global struct ModdedPassiveData{
 	string Name
 	string description
 	asset image = $"ui/temp"
+	bool customIcon = false
 }
 global struct ModdedTitanWeaponAbilityData{
 	string displayName
