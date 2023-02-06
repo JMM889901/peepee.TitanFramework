@@ -72,9 +72,10 @@ void function InitTeamTitanSelectMenu()
 	float startPos = (bgWidth*0.5 - totalWidth*0.5) * -1
 	for ( int i=0; i<NUM_PERSISTENT_TITAN_LOADOUTS; i++ )
 	{
+		
 		var button = file.titanButtons[i]
 		Hud_SetPos( button, startPos + Hud_GetX( button ), Hud_GetY( button ) )
-
+		Hud_Show(button)
 		Hud_AddEventHandler( button, UIE_CLICK, TitanButton_OnClick )
 		Hud_AddEventHandler( button, UIE_GET_FOCUS, TitanButton_OnFocused )
 	}
@@ -444,6 +445,7 @@ void function TitanButton_OnFocused( var button )
 
 	TitanLoadoutDef loadout = GetCachedTitanLoadout( scriptID )
 
+	print(GetTitanLoadoutName( loadout ))
 	RuiSetString( rui, "titanName", GetTitanLoadoutName( loadout ) )
 	RuiSetString( rui, "titanLevelString", "" )
 	RuiSetString( rui, "titanRole", "" )
@@ -495,7 +497,10 @@ void function TitanButton_OnFocused( var button )
 	SetLabelRuiText( Hud_GetChild( file.menu, "TitanSelectTitle" ), GetTitanAvailableText( player, loadout.titanClass) )
 
 	RunMenuClientFunction( "UpdateTitanModel", scriptID )
-	RunClientScript( "TTS_UpdateLocalPlayerTitan", loadout.setFile, loadout.primary, loadout.passive1, loadout.passive2 )
+	if(GetModdedTitanClasses().contains(loadout.name) )
+		RunClientScript( "TTS_UpdateLocalPlayerTitan", loadout.name, loadout.primary, loadout.passive1, loadout.passive2, true )
+	else
+		RunClientScript( "TTS_UpdateLocalPlayerTitan", loadout.setFile, loadout.primary, loadout.passive1, loadout.passive2 )
 }
 
 string function GetTitanAvailableText( entity player, string titanClass )

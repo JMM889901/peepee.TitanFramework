@@ -72,7 +72,7 @@ void function OnClassSelectMenu_Open()
 	for ( int i = 7; i < 7 + GetModdedTitanClasses().len(); i++)
 	{
 		var activateButton = Hud_GetChild( menu, "Button" + i )
-		RHud_SetText( activateButton, GetModdedTitanClasses()[i-7] )
+		RHud_SetText( activateButton, Localize(GetModdedTitanClasses()[i-7]) )
 		activateButton.s.titanClass <- GetModdedTitanClasses()[i-7]
 		Hud_SetVisible( activateButton, true )
 		Hud_SetEnabled( activateButton, true )

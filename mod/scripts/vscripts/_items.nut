@@ -423,6 +423,8 @@ global struct ModdedTitanWeaponAbilityData{
 }
 global struct ModdedTitanData{
 	string Name
+	string passiveDisplayNameOverride = "#TITAN_KIT_DEFAULT"
+	string titanReadyMessageOverride = "#TITAN_READY_DEFAULT"
 	ModdedTitanWeaponAbilityData& Primary
 	ModdedTitanWeaponAbilityData& Left 
 	ModdedTitanWeaponAbilityData& Mid
@@ -5416,7 +5418,7 @@ ItemData function CreateGenericItem( int dataTableIndex, int itemType, string re
 	item.desc               = desc
 	item.longdesc           = longdesc
 	item.image              = image
-	item.imageAtlas			= IMAGE_ATLAS_MENU
+	item.imageAtlas			= -1
 	item.persistenceId      = dataTableIndex
 	item.cost				= cost
 
@@ -5432,9 +5434,9 @@ ItemData function CreateModdedTitanItem( int dataTableIndex, int itemType, strin
 	item.imageAtlas			= IMAGE_ATLAS_MENU
 	item.persistenceId      = dataTableIndex
 	item.cost				= cost
-	item.i.passive1Type <- PassiveID[0]
-	item.i.passive2Type <- PassiveID[1]
-	item.i.passive3Type <- PassiveID[2]
+	item.i.passive1Type <- PassiveID[1]
+	item.i.passive2Type <- PassiveID[2]
+	item.i.passive3Type <- PassiveID[0]
 	item.i.passive4Type <- PassiveID[3]
 	item.i.passive5Type <- PassiveID[4]
 	item.i.passive6Type <- PassiveID[5]
@@ -9069,7 +9071,8 @@ string function GetDisplayNameFromItemType( int itemType )
 			break
 
 		default:
-			Assert( false, "Invalid item itemType!" )
+			displayName = GetmoddedPassiveTypeDisplayName(itemType)
+			Assert( displayName != "", "Invalid item itemType!" )
 	}
 
 	return displayName
