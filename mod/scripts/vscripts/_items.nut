@@ -426,6 +426,10 @@ global struct ModdedTitanData{
 	string Name
 	string passiveDisplayNameOverride = "#TITAN_KIT_DEFAULT"
 	string titanReadyMessageOverride = "#TITAN_READY_DEFAULT"
+	array<string> titanHints
+
+
+
 	ModdedTitanWeaponAbilityData& Primary
 	ModdedTitanWeaponAbilityData& Left 
 	ModdedTitanWeaponAbilityData& Mid
@@ -437,6 +441,12 @@ global struct ModdedTitanData{
 	array<FrameworkChassisStruct> altChassis
 
 	string Description
+	int dashStat = 2
+	int healthStat = 2
+	int damageStat = 2
+	int speedStat = 2
+	int difficulty = 3
+
 	string BaseSetFile
 	string BaseName
 	
@@ -449,7 +459,6 @@ global struct ModdedTitanData{
 
 	
 	int ExecutionType = 0
-	int difficulty = 3
 	string Melee = "melee_titan_punch_scorch"
 	string Voice = "titanos_bt"
 }
@@ -5007,7 +5016,7 @@ int function GetTitanStat( string ref, int statType )
 			statValue = expect int( file.itemData[ref].i.statDash )
 			break
 	}
-
+	print(statValue + ref + statType)
 	return statValue
 }
 

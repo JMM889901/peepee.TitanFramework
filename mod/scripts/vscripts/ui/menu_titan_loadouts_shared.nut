@@ -378,7 +378,7 @@ void function UpdateTitanItemButton( var button, TitanLoadoutDef loadout )
 	int itemType = GetItemTypeFromTitanLoadoutProperty( propertyName, nonPrimeSetFile, loadout.titanClass )
 	asset image = GetImage( itemType, itemRef )
 
-	print(image + " Image "+Hud_GetHudName(button))
+	//print(image + " Image "+Hud_GetHudName(button))
 	var rui = Hud_GetRui( button )
 	if(Hud_GetHudName(button) == "PassiveButton")
 	{

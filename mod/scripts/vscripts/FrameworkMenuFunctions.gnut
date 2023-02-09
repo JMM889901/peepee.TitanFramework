@@ -8,6 +8,7 @@ void function FrameworkMenuInit()
 {
 	AddMenu( "EditTitanClassMenu", $"resource/ui/menus/titanClasses.menu", InitEditTitanClassMenu )
 	AddMenu( "PassiveSelectMenuAlt", $"resource/ui/menus/passiveselectAlt.menu", InitPassiveSelectMenuAlt )
+	
 	InitEditTitanClassMenu()
 }
 void function InitPassiveSelectMenuAlt()

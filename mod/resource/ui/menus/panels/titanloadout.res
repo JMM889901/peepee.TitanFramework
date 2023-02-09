@@ -358,7 +358,7 @@
 	{
 		ControlName				RuiPanel
 		xpos					-400
-		ypos 					-40
+		ypos 					-54
 		wide					400
 		tall					150
 		visible					0

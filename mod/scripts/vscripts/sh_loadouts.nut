@@ -247,6 +247,7 @@ void function PopulateTitanLoadoutFromPersistentData( entity player, TitanLoadou
 		loadout.ordnance			= GetModdedTitanByClassNoPersist(loadout.name).ordnance
 		//loadout.setFile				= GetModdedTitanByClassNoPersist(loadout.name).setFile
 		loadout.primary				= GetModdedTitanByClassNoPersist(loadout.name).primary
+		loadout.difficulty			= GetModdedTitanByClassNoPersist(loadout.name).difficulty
 	}
 	else
 	{
@@ -1065,6 +1066,11 @@ bool function IsValueValidForLoadoutTypeIndexAndProperty( string loadoutType, in
 		case "special":
 		case "antirodeo":
 			string defaultValue = GetLoadoutPropertyDefault( loadoutType, loadoutIndex, loadoutProperty )
+			if(loadoutIndex > 6)
+			{
+				string Name  = GetPersistentLoadoutValue(player, "titan", loadoutIndex, "titanClass")
+				defaultValue = GetTitanLoadoutValue(GetBaseTitanByClassNoPersist(Name), loadoutProperty)
+			}
 			return ( value == defaultValue )
 
 		default:

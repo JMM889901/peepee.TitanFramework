@@ -157,8 +157,25 @@ A base titan is just the titan from which to get the persistent passives, animat
 
 This will be modified, simplified and improved, but idk here it is for now i guess 
 
-Current known issues
+Changelog ish
 -------
-Currently lacks authentication for valid titan classes when setting from console, however this wont cause crashes, if a nonexistent titan is selected it should be fine, and loading with a nonexistent titan selected will only result in your titan name being wrong, the loadout should be the basetitans.
 
-~~Due to passives all custom titans must make sure that the weapons and abilities support the mods that will be added by those passives, even if these mods do nothing you must have them or you will get a bitfield issue~~ Solved
+
+Simplified registering titans using fancy structs instead of a comically long function
+Titan names appear above heads correctly
+Prints behind convar
+More control for custom items, can create "fake" items that are not given to the player to allow you to give through script
+Titans can now be prime titans
+Index differences between server/client no longer make it impossible to select the correct titan and equip passives
+Select titan button is more obvious
+No longer tries to assign bubbleshield in the kit slot on first startup
+Populating default titans from resetpersistence should work now
+Populating default titans no longer leaves titanfall and titan general passive slots empty
+Aegis upgrades mode no longer causes a crash due to no icon (hopefully)
+LTS no longer crashes from having a teammate select a modded titan
+LTS now displays titan names correctly 
+Added support for custom hints, stat pips (difficulty, health, damage etc.) and titan descriptions
+settitanloadoutremote now validates that the titan does infact exist before allowing players to select it
+Titan loadouts now generate correctly from first time use instead of waiting until you join a server
+
+Special thanks to Dinorush and GalacticMoblin for creating the titans used to test as well as feature suggestions, and Spoon for actually understanding how ui and persistence works unlike myself 

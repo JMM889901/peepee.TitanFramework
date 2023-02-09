@@ -5,6 +5,7 @@ global function Menu_CreateTeamTitanSelectionScreen
 global function LTS_CreateTeamTitanSelectionScreen
 global function DestroyTeamTitanSelectionScreen
 global function ServerCallback_UpdateTeamTitanSelection
+global function ServerCallback_UpdateTeamTitanSelectionString
 global function TTS_UpdateLocalPlayerTitan
 
 global function ShowTTSPanel
@@ -213,7 +214,8 @@ asset function GetTitanImageFromName( string name )
 			return $"rui/menu/postgame/vanguard_icon"
 
 		default:
-			printt( "Warning, titan is not supported for Team Selection Display" )
+			if(shouldPrintDevStuff())	
+				printt( "Warning, titan is not supported for Team Selection Display a"+name )
 			return $"rui/hud/titanImages/placeholder_ronin"
 	}
 	unreachable
@@ -245,7 +247,8 @@ string function GetLocalizedTitanName( string name )
 			return Localize( "#TITAN_VANGUARD" )
 
 		default:
-			printt( "Warning, titan is not supported for Team Selection Display" )
+			if(shouldPrintDevStuff())	
+				printt( "Warning, titan is not supported for Team Selection Display b`"+name )
 			return Localize(name)
 	}
 	unreachable
@@ -253,21 +256,32 @@ string function GetLocalizedTitanName( string name )
 
 void function ServerCallback_UpdateTeamTitanSelection( int playerEntIndex, int suitIndex, int weaponIndex, int kitIndex, int kitIndex2 )
 {
+	//Stub, i dont want to edit the registered functions list so this is just a dummy function
+}
+void function ServerCallback_UpdateTeamTitanSelectionString( array<string> args )
+{
+	int playerEntIndex = args[0].tointeger()
+
 	entity teamMate = GetEntityFromEncodedEHandle( playerEntIndex )
+
+	string Name = args[1]
+	int weaponIndex = args[2].tointeger()
+	int kitIndex = args[3].tointeger()
+	int kitIndex2 = args[4].tointeger()
 
 	if ( !IsValid( teamMate ) )
 		return
 
-	string titanRef = GetItemRefOfTypeByIndex( eItemTypes.TITAN, suitIndex )
+	string titanRef = Name
 
 	var dataTable = GetDataTable( $"datatable/titan_properties.rpak" )
-	int row = GetDataTableRowMatchingStringValue( dataTable, GetDataTableColumnByName( dataTable, "titanRef" ), titanRef )
-	string setFile = GetDataTableString( dataTable, row, GetDataTableColumnByName( dataTable, "setFile" ) )
+	//int row = GetDataTableRowMatchingStringValue( dataTable, GetDataTableColumnByName( dataTable, "titanRef" ), titanRef )
+	//string setFile = GetDataTableString( dataTable, row, GetDataTableColumnByName( dataTable, "setFile" ) )
 
 
 	string weaponRef = GetItemRefOfTypeByIndex( eItemTypes.TITAN_PRIMARY, weaponIndex )
-	string kitRef = GetItemRefOfTypeByIndex( GetTitanLoadoutPropertyPassiveType( setFile, "passive1" ), kitIndex )
-	string kit2Ref = GetItemRefOfTypeByIndex( GetTitanLoadoutPropertyPassiveType( setFile, "passive2" ), kitIndex2 )
+	string kitRef = GetItemRefOfTypeByIndex( GetModdedTitanLoadoutPassiveTypeByClass( Name, "passive1" ), kitIndex )
+	string kit2Ref = GetItemRefOfTypeByIndex( GetModdedTitanLoadoutPassiveTypeByClass( Name, "passive2" ), kitIndex2 )
 
 	if( !( teamMate in file.teamInfo ) )
 	{
@@ -276,7 +290,7 @@ void function ServerCallback_UpdateTeamTitanSelection( int playerEntIndex, int s
 	}
 	file.teamInfo[teamMate].player = teamMate
 	file.teamInfo[teamMate].playerName = teamMate.GetPlayerName()
-	file.teamInfo[teamMate].titanName = GetTitanCharacterNameFromSetFile( setFile ).toupper()
+	file.teamInfo[teamMate].titanName = Name.toupper()
 	file.teamInfo[teamMate].weaponImage = GetItemImage( weaponRef )
 	file.teamInfo[teamMate].kitName = GetItemName( kitRef )
 	file.teamInfo[teamMate].kitImage = GetItemImage( kitRef )
@@ -343,7 +357,7 @@ void function PlayerUpdateTeamTitanSelectionThink( entity player )
 			int weaponIndex = GetItemIndexOfTypeByRef( GetItemType( loadout.primary ), loadout.primary )
 			int kitIndex = GetItemIndexOfTypeByRef( GetItemType( loadout.passive1 ), loadout.passive1 )
 			int kitIndex2 = GetItemIndexOfTypeByRef( GetItemType( loadout.passive2 ), loadout.passive2 )
-			Remote_CallFunction_NonReplay( player, "ServerCallback_UpdateTeamTitanSelection", entityHandle, suitIndex, weaponIndex, kitIndex, kitIndex2 )
+			ServerToClientStringCommand( player, "UpdateTeamTitanSelectionString" + " " + entityHandle + " " + loadout.titanClass + " " + weaponIndex + " " + kitIndex + " " + kitIndex2 )
 		}
 
 		wait 0.1

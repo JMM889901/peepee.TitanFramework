@@ -225,10 +225,11 @@ void function UpdateTitanXP( var panel, int loadoutIndex, bool useWeaponHints = 
 
 	elem = Hud_GetChild( panel, "TitanLevelPips" )
 	rui = Hud_GetRui( elem )
+	string titanClassPersist = loadout.titanClass
 	string titanClass = loadout.titanClass
 	if(titanClass in GetModdedTitansByClassNoPersist())
 	{
-		titanClass = GetModdedTitanClassForMods(titanClass)
+		titanClassPersist = GetModdedTitanClassForMods(titanClass)
 	}
 	int xp = TitanGetXP( player, titanClass )
 	RuiSetInt( rui, "numPips", TitanGetNumPipsForXP( titanClass, xp ) )
@@ -246,14 +247,14 @@ void function UpdateTitanXP( var panel, int loadoutIndex, bool useWeaponHints = 
 	if ( locked )
 	{
 		//elem.SetText( GetItemUnlockReqText( loadout.titanClass ) )
-		elem.SetText( "#HUD_TITAN_LEVEL", TitanGetDisplayGenAndLevelForXP( titanClass, xp ) )
+		elem.SetText( "#HUD_TITAN_LEVEL", TitanGetDisplayGenAndLevelForXP( titanClassPersist, xp ) )
 		Hud_SetColor( elem, 254, 184, 0, 255 )
 
 		RHud_SetText( file.unlockReq, GetItemUnlockReqText( loadout.titanClass ) )
 	}
 	else
 	{
-		elem.SetText( "#HUD_TITAN_LEVEL", TitanGetDisplayGenAndLevelForXP( titanClass, xp ) )
+		elem.SetText( "#HUD_TITAN_LEVEL", TitanGetDisplayGenAndLevelForXP( titanClassPersist, xp ) )
 		Hud_SetColor( elem, 255, 255, 255, 255 )
 
 		RHud_SetText( file.unlockReq, "" )
@@ -265,7 +266,10 @@ void function UpdateTitanXP( var panel, int loadoutIndex, bool useWeaponHints = 
 	Hud_SetAlpha( elem, 200 )
 	if ( useWeaponHints )
 	{
-		elem.SetText( GetHintForTitanLoadout( loadout ) )
+		string text = GetHintForTitanLoadout( loadout )
+		if(text == "")
+			text = Localize(GetHintForModdedTitanLoadout(loadout.name))
+		elem.SetText( text )
 		thread CycleWeaponLoadouts( elem, loadout )
 	}
 	else
@@ -282,7 +286,7 @@ void function UpdateTitanXP( var panel, int loadoutIndex, bool useWeaponHints = 
 	{
 		elem = Hud_GetChild( panel, "HintIcon" )
 		rui = Hud_GetRui( elem )
-		RuiSetImage( rui, "basicImage", GetItemImage( titanClass ) )
+		RuiSetImage( rui, "basicImage", GetItemImage( titanClassPersist ) ) //TODO FOR TITAN ICONS
 	}
 
 	if ( Hud_HasChild( panel, "UpgradeIcon" ) )
@@ -324,7 +328,10 @@ void function CycleWeaponLoadouts( var elem, TitanLoadoutDef loadout )
 		wait 5.0
 		Hud_FadeOverTime( elem, 0, 1 )
 		wait 1.0
-		elem.SetText( GetHintForTitanLoadout( loadout ) )
+		string text = GetHintForTitanLoadout( loadout )
+		if(text == "")
+			text = Localize(GetHintForModdedTitanLoadout(loadout.name))
+		elem.SetText( text )
 		Hud_FadeOverTime( elem, 200, 1 )
 		wait 1.0
 	}
