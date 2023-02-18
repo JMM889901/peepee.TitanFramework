@@ -1632,6 +1632,8 @@ bool function LoadoutIsLocked( entity player, string loadoutType, int loadoutInd
 string function GetValidatedPersistentLoadoutValue( entity player, string loadoutType, int loadoutIndex, string loadoutProperty )
 {
 	#if SERVER
+		if(DevForceNoValidation())
+			GetPersistentLoadoutValue( player, loadoutType, loadoutIndex, loadoutProperty )
 		Assert( loadoutType == "pilot" || loadoutType == "titan" )
 		Assert( loadoutIndex < PersistenceGetArrayCount( loadoutType + "Loadouts" ), "Invalid loadoutIndex: " + loadoutIndex )
 

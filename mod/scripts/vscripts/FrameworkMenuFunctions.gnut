@@ -75,7 +75,9 @@ void function OnClassSelectButton_Activate(var button)
 	{
 		int index = expect int(button.s.rowIndex)
 		OverwriteGlobalTitanLoadoutByIndex(uiGlobal.editingLoadoutIndex, GetModdedTitanByClassNoPersist(expect string(button.s.titanClass)), true)
+		shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive1 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(expect string(button.s.titanClass), "passive1"))[0].ref
 		shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive2 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(expect string(button.s.titanClass), "passive2"))[0].ref
+		shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive3 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(expect string(button.s.titanClass), "passive3"))[0].ref
 		shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive4 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(expect string(button.s.titanClass), "passive4"))[0].ref
 		shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive5 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(expect string(button.s.titanClass), "passive5"))[0].ref
 		shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive6 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(expect string(button.s.titanClass), "passive6"))[0].ref
@@ -87,8 +89,14 @@ void function OnClassSelectButton_Activate(var button)
 	{
 		int index = expect int(button.s.rowIndex)
 		OverwriteGlobalTitanLoadoutByIndex(uiGlobal.editingLoadoutIndex, GetDefaultTitanLoadout(expect int(button.s.rowIndex)), true)
-		shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].primeTitanRef = GetPrimeTitanRefForTitanClass( GetCachedTitanLoadout(index).titanClass )
+		shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive1 = GetDefaultTitanLoadout(index).passive1
 		shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive2 = GetDefaultTitanLoadout(index).passive2
+		shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive3 = GetDefaultTitanLoadout(index).passive3
+		shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive4 = GetDefaultTitanLoadout(index).passive4
+		shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive5 = GetDefaultTitanLoadout(index).passive5
+		shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive6 = GetDefaultTitanLoadout(index).passive6
+		shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].titanExecution = GetDefaultTitanLoadout(index).titanExecution
+
 
 		ClientCommand( "SetTitanClass "+uiGlobal.editingLoadoutIndex+" default " + button.s.rowIndex )
 	}

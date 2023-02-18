@@ -445,7 +445,7 @@ void function TitanButton_OnFocused( var button )
 
 	TitanLoadoutDef loadout = GetCachedTitanLoadout( scriptID )
 
-	print(GetTitanLoadoutName( loadout ))
+	//print(GetTitanLoadoutName( loadout ))
 	RuiSetString( rui, "titanName", GetTitanLoadoutName( loadout ) )
 	RuiSetString( rui, "titanLevelString", "" )
 	RuiSetString( rui, "titanRole", "" )

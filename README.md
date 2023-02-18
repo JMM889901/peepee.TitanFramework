@@ -1,14 +1,18 @@
 the peepeepoopoo mans TitanFramework
 ==
-Basic framework for adding custom titans
 
+This is an experimnetal mod and any crash logs will be appreciated, i will aim to keep backwards compatability as much as possible to make updating optional
 
-Need help with usage or any suggestions just @The peepeepoopoo man#3301 on discord or in the northstar discord
+Confused with how to use the mod, have suggestions or found a bug, please DM me @The peepeepoopoo man#3301 on discord
 
+framework for adding custom titans
+
+Using the mod
+--
+To use the mod, install a compatible titan mod such as Archon or Chimera, Go to the titan loadout selection menu and select one of the last 3 titans in your list (10 should be visibile), Click the "Select Titan" button and choose the titan to use in this slot
 
 Example script
 --
-```
 	ModdedTitanData Chimera
 	Chimera.Name = "Chimera"
 	Chimera.Description = "This is the description for Chimera"
@@ -17,17 +21,21 @@ Example script
 
 	ModdedTitanWeaponAbilityData GenericWeaponMount
 	GenericWeaponMount.custom = true //when this is false titanframework will not create items, useful if you want to use default items
+	GenericWeaponMount.scriptHandled = true //When this is true weapons are not given in the onspawn callback
+	//useful if you set titan weapons in a custom callback, also allows you to set nonexistent weapons in weaponName
 	GenericWeaponMount.displayName = "Generic weapon mount"
-	GenericWeaponMount.weaponName = "mp_titanweapon_xo16_vanguard" //Custom weapons can actually use default weapons as the item
+	GenericWeaponMount.weaponName = "GenericWeaponMount" //Custom weapons can actually use default weapons as the item
     // the rest of these just effect descriptions and such, this is ideal if you want to create a generic slot, which chimera does
     //However when doing so with the weapon remember that this weapon is what will be displayed in the menu
+	GenericWeaponMount.MenuModelWeapon = "mp_titanweapon_xo16_vanguard" //Still needed for menu models
 	GenericWeaponMount.description = "You have hands, hands hold things, things include: guns"
 	Chimera.Primary = GenericWeaponMount
 
 	ModdedTitanWeaponAbilityData GenericDefensiveMount
 	GenericDefensiveMount.custom = true
+	GenericDefensiveMount.scriptHandled = true
 	GenericDefensiveMount.displayName = "Generic Defensive mount"
-	GenericDefensiveMount.weaponName = "mp_titanability_particle_wall"
+	GenericDefensiveMount.weaponName = "GenericDefensiveMount"
 	GenericDefensiveMount.description = "Chimera has a number of defensive options at its disposal"
 	Chimera.Left = GenericDefensiveMount
 
@@ -38,15 +46,17 @@ Example script
 
 	ModdedTitanWeaponAbilityData GenericOffensiveMount
 	GenericOffensiveMount.custom = true
+	GenericOffensiveMount.scriptHandled = true
 	GenericOffensiveMount.displayName = "Generic Offensive mount"
-	GenericOffensiveMount.weaponName = "mp_titanweapon_flame_wall"
+	GenericOffensiveMount.weaponName = "GenericOffensiveMount"
 	GenericOffensiveMount.description = "A multipurpose mount designed for a variety of weapons"
 	Chimera.Right = GenericOffensiveMount
 
 	ModdedTitanWeaponAbilityData GenricUtilityMount
 	GenricUtilityMount.custom = true
+	GenricUtilityMount.scriptHandled = true
 	GenricUtilityMount.displayName = "Genric Utility Mount"
-	GenricUtilityMount.weaponName = "mp_titanability_phase_dash"
+	GenricUtilityMount.weaponName = "GenricUtilityMount"
 	GenricUtilityMount.description = "A variety of utility options are available to chimeras adaptive systems"
 	Chimera.Mid = GenricUtilityMount
 
@@ -149,33 +159,69 @@ Example script
 
 	CreateModdedTitanSimple(Chimera)//Ah yes """"""""""""Simple""""""""""""
 ```
-Function args
---
+
+
 what is a base titan?
 -----
 A base titan is just the titan from which to get the persistent passives, animations, xp and various other things from.
 
-This will be modified, simplified and improved, but idk here it is for now i guess 
+Does framework break basegame persistence?
+---------
+No, framework will only ever modify the last 3 titans on the titan menu, which are not checked by basegame persistence, similarly removing a modded titan from framework will also not break persistence, instead the titan will return to its base titan, however the name may appear to be that of the modded titan you uninstalled
+
+
+Debugging
+--
+To help debugging broken persistence data it can be helpful to run the command 
+
+`script_client DevPrintTitanLoadoutPersistentDebug(GetLocalClientPlayer(), LoadoutIndex(number between 0 and 9))` 
+
 
 Changelog ish
 -------
 
 
 Simplified registering titans using fancy structs instead of a comically long function
+
 Titan names appear above heads correctly
+
 Prints behind convar
+
 More control for custom items, can create "fake" items that are not given to the player to allow you to give through script
+
 Titans can now be prime titans
+
 Index differences between server/client no longer make it impossible to select the correct titan and equip passives
+
 Select titan button is more obvious
+
 No longer tries to assign bubbleshield in the kit slot on first startup
+
 Populating default titans from resetpersistence should work now
+
 Populating default titans no longer leaves titanfall and titan general passive slots empty
+
 Aegis upgrades mode no longer causes a crash due to no icon (hopefully)
+
 LTS no longer crashes from having a teammate select a modded titan
-LTS now displays titan names correctly 
+
+LTS now displays titan names correctly
+
 Added support for custom hints, stat pips (difficulty, health, damage etc.) and titan descriptions
+
 settitanloadoutremote now validates that the titan does infact exist before allowing players to select it
+
 Titan loadouts now generate correctly from first time use instead of waiting until you join a server
+
+Changing titan loadouts now correctly resets cosmetics 
+
+Corrected not setting persistend values to match base titan where neccecary 
+
+added some debugging functions
+
+added forceskipvalidation convar, dont enable this if you dont want to suffer greatly 
+
+Fixed titan stats screen crashing
+
 
 Special thanks to Dinorush and GalacticMoblin for creating the titans used to test as well as feature suggestions, and Spoon for actually understanding how ui and persistence works unlike myself 

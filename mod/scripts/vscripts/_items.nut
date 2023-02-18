@@ -5016,7 +5016,7 @@ int function GetTitanStat( string ref, int statType )
 			statValue = expect int( file.itemData[ref].i.statDash )
 			break
 	}
-	print(statValue + ref + statType)
+	//print(statValue + ref + statType)
 	return statValue
 }
 
@@ -9162,7 +9162,6 @@ int function SortByUnlockLevelUntyped( ItemDisplayData a, ItemDisplayData b )
 		aUnlockLevel = GetUnlockLevelReq( a.ref )
 		bUnlockLevel = GetUnlockLevelReq( b.ref )
 	}
-
 	if ( aUnlockLevel == 0 && bUnlockLevel > 0 )
 		return 1
 	else if ( aUnlockLevel > 0 && bUnlockLevel == 0 )
@@ -9172,7 +9171,10 @@ int function SortByUnlockLevelUntyped( ItemDisplayData a, ItemDisplayData b )
 		return 1
 	else if ( aUnlockLevel < bUnlockLevel )
 		return -1
-
+	if(a.persistenceId == 999) //Represents modded items
+		return -1
+	else if(b.persistenceId == 999)
+		return -1
 	int aUnlockType = CheckItemUnlockType( a.ref, a.parentRef )
 	int bUnlockType = CheckItemUnlockType( b.ref, b.parentRef )
 

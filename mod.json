@@ -1,9 +1,9 @@
 {
-	"Name": "TitanFrameworkAutoUpdateProto",
+	"Name": "Peepee.TitanFramework",
 	"Description": "Pain",
 	"LoadPriority": 50,
 	"RequiredOnClient": true,
-	"Version": "1.1.2",
+	"Version": "1.1.5",
 	"Scripts": [
 		{
 			"Path": "UIStuff.gnut",
@@ -31,7 +31,11 @@
         {
             "Name": "titanFrameworkDevPrintsEnabled",
             "DefaultValue": "0"
-        }
+        },
+		{
+			"Name": "titanFrameworkSkipVal",
+			"DefaultValue": "0"
+		}
 	],
 	"Localisation": [
 		"resource/TitanFramework_localisation_%language%.txt"

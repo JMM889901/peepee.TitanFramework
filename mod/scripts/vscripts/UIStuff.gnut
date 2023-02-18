@@ -3,6 +3,7 @@ global function FrameworkInit
 global function GetModdedTitanClasses
 global function GetModdedTitanByClassNoPersist
 global function GetBaseTitanByClassNoPersist
+global function IsBaseTitan
 global function GetAllTitanByClassNoPersist
 //global function GetModdedTitanByIndexNoPersist
 //global function GetModdedTitansByIndexNoPersist
@@ -29,11 +30,13 @@ global function GetModdedTitanPassivePersistentType
 global function RegisterModdedTitanItemsSimple
 global function CreateModdedTitanSimple
 global function shouldPrintDevStuff
+global function DevForceNoValidation
 global function GetmoddedPassiveTypeDisplayName
 global function GetModdedTitanReadyMessage
 global function ModdedTitanPassiveHasCustomAssets
 global function GetModdedTitanPassiveHasAsset
 global function GetHintForModdedTitanLoadout
+global function DevPrintTitanLoadoutPersistentDebug
 
 #if SERVER
 global function SetTitanLoadout
@@ -58,7 +61,56 @@ table<string, string> ModdedTitanReadyMessage
 table<string, array<string> > ModdedTitanHints
 bool function shouldPrintDevStuff()
 {
-	return GetConVarInt("titanFrameworkDevPrintsEnabled") ==1
+	return GetConVarInt("titanFrameworkDevPrintsEnabled") >=1
+}
+bool function DevForceNoValidation()
+{
+	return GetConVarInt("titanFrameworkSkipVal") == 1
+}
+void function DevPrintTitanLoadoutPersistentDebug(entity player, int index)
+{
+	TitanLoadoutDef loadout
+	PopulateTitanLoadoutFromPersistentData(player, loadout, index)
+	printt          ( "TITAN LOADOUT:"                                                            )
+	printt          ( "    PERSISTENT DATA:                                           GAME DATA:" )
+	printt          ( "        name               " + GetPersistentLoadoutValue( player, "titan", index, "name" ) + "                     \"" + loadout.name + "\""                     )
+	printt          ( "        titanClass         " + GetPersistentLoadoutValue( player, "titan", index, "titanClass" ) + "                              \"" + loadout.titanClass + "\""               )
+	printt          ( "        setFile                                                  \"" + loadout.setFile + "\""                  )
+	printt          ( "        primeTitanRef                                            \"" + loadout.primeTitanRef + "\""            )
+	printt          ( "        primaryMod         " + GetPersistentLoadoutValue( player, "titan", index, "primaryMod" ) + "               \"" + loadout.primaryMod + "\""               )
+	printt          ( "        special            " + GetPersistentLoadoutValue( player, "titan", index, "special" ) + "         \"" + loadout.special + "\""                  )
+	printt          ( "        antirodeo          " + GetPersistentLoadoutValue( player, "titan", index, "antirodeo" ) + "                 \"" + loadout.antirodeo + "\""                )
+	printt          ( "        passive1           " + GetPersistentLoadoutValue( player, "titan", index, "passive1" ) + "                 \"" + loadout.passive1 + "\""                 )
+	printt          ( "        passive2           " + GetPersistentLoadoutValue( player, "titan", index, "passive2" ) + "                 \"" + loadout.passive2 + "\""                 )
+	printt          ( "        passive3           " + GetPersistentLoadoutValue( player, "titan", index, "passive3" ) + "                 \"" + loadout.passive3 + "\""                 )
+	printt          ( "        passive4           " + GetPersistentLoadoutValue( player, "titan", index, "passive4" ) + "                 \"" + loadout.passive4 + "\""                 )
+	printt          ( "        passive5           " + GetPersistentLoadoutValue( player, "titan", index, "passive5" ) + "                 \"" + loadout.passive5 + "\""                 )
+	printt          ( "        passive6           " + GetPersistentLoadoutValue( player, "titan", index, "passive6" ) + "                 \"" + loadout.passive6 + "\""                 )
+	printt          ( "        skinIndex          " + GetPersistentLoadoutValue( player, "titan", index, "skinIndex" ) + "                 " + loadout.skinIndex                         )
+	printt          ( "        camoIndex          " + GetPersistentLoadoutValue( player, "titan", index, "camoIndex" ) + "                 " + loadout.camoIndex                         )
+	printt          ( "        decalIndex         " + GetPersistentLoadoutValue( player, "titan", index, "decalIndex" ) + "                 " + loadout.decalIndex                        )
+	printt          ( "        primarySkinIndex   " + GetPersistentLoadoutValue( player, "titan", index, "primarySkinIndex" ) + "           " + loadout.primarySkinIndex                  )
+	printt          ( "        primaryCamoIndex   " + GetPersistentLoadoutValue( player, "titan", index, "primaryCamoIndex" ) + "           " + loadout.primaryCamoIndex                  )
+	printt          ( "        isPrime            " + GetPersistentLoadoutValue( player, "titan", index, "isPrime" ) + "   \"" + loadout.isPrime + "\""                  )
+	printt          ( "        primeSkinIndex     " + GetPersistentLoadoutValue( player, "titan", index, "primeSkinIndex" ) + "            " + loadout.primeSkinIndex                    )
+	printt          ( "        primeCamoIndex     " + GetPersistentLoadoutValue( player, "titan", index, "primeCamoIndex" ) + "            " + loadout.primeCamoIndex                    )
+	printt          ( "        primeDecalIndex    " + GetPersistentLoadoutValue( player, "titan", index, "primeDecalIndex" ) + "            " + loadout.primeDecalIndex                   )
+	printt          ( "    DERIVED DATA:"         )
+	print           ( "        setFileMods        " )
+	PrintStringArray( loadout.setFileMods          )
+	printt          ( "        melee                 \"" + loadout.melee + "\""                    )
+	printt          ( "        coreAbility           \"" + loadout.coreAbility + "\""              )
+	printt          ( "        primary               \"" + loadout.primary + "\""                  )
+	printt          ( "        primaryAttachment     \"" + loadout.primaryAttachment + "\""        )
+	print           ( "        primaryMods        "  )
+	PrintStringArray( loadout.primaryMods                                                         )
+	printt          ( "        ordnance           \"" + loadout.ordnance + "\""                 )
+	print           ( "        ordnanceMods         "                                             )
+	PrintStringArray( loadout.ordnanceMods                                                        )
+	print           ( "        specialMods          "                                             )
+	PrintStringArray( loadout.specialMods                                                         )
+	print           ( "        antirodeoMods        "                                             )
+	PrintStringArray( loadout.antirodeoMods                                                       )
 }
 //Getters
 string function GetHintForModdedTitanLoadout(string name)
@@ -148,6 +200,10 @@ TitanLoadoutDef function GetBaseTitanByClassNoPersist(string titanClass)
 {
 	return BaseTitanLoadoutByClass[titanClass]
 }
+bool function IsBaseTitan(string titanClass)
+{
+	return titanClass in BaseTitanLoadoutByClass
+}
 TitanLoadoutDef function GetAllTitanByClassNoPersist(string titanClass)
 {
 	return TitanLoadoutByClass[titanClass]
@@ -229,6 +285,9 @@ void function SetTitanLoadout(entity player, int index, TitanLoadoutDef loadout)
 		SetPersistentLoadoutValue( player, "titan", index, "passive5",			GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.name, "passive5"))[0].ref)
 		SetPersistentLoadoutValue( player, "titan", index, "passive6",			GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.name, "passive6"))[0].ref)
 		SetPersistentLoadoutValue( player, "titan", index, "titanExecution",			GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.name, "titanExecution"))[0].ref)
+		TitanLoadoutDef loadout2 = GetBaseTitanByClassNoPersist(GetModdedTitanClassForMods(loadout.name))
+		SetPersistentLoadoutValue( player, "titan", index, "special",			loadout2.special)
+		SetPersistentLoadoutValue( player, "titan", index, "antirodeo",			loadout2.antirodeo)
 		ResetLoadoutPropertyToDefault( player, "titan", index, "skinIndex" )
 		ResetLoadoutPropertyToDefault( player, "titan", index, "camoIndex" )
 		ResetLoadoutPropertyToDefault( player, "titan", index, "decalIndex" )
@@ -358,14 +417,14 @@ void function PreInit()
 	RegisterTitanPassiveTypes("titan_stryder_leadwall", eItemTypes.TITAN_RONIN_PASSIVE,eItemTypes.TITAN_RONIN_EXECUTION, "ronin")
 	RegisterTitanPassiveTypes("titan_atlas_vanguard", eItemTypes.TITAN_VANGUARD_PASSIVE,eItemTypes.TITAN_VANGUARD_EXECUTION, "vanguard",
 	 eItemTypes.TITAN_UPGRADE1_PASSIVE, eItemTypes.TITAN_UPGRADE2_PASSIVE, eItemTypes.TITAN_UPGRADE3_PASSIVE)
-	RegisterTitanPassiveTypes("titan_ogre_meteor", eItemTypes.TITAN_SCORCH_PASSIVE,eItemTypes.TITAN_SCORCH_EXECUTION, "#DEFAULT_TITAN_7")
-	RegisterTitanPassiveTypes("titan_atlas_stickybomb", eItemTypes.TITAN_ION_PASSIVE, eItemTypes.TITAN_ION_EXECUTION, "DEFAULT_TITAN_5")
-	RegisterTitanPassiveTypes("titan_atlas_tracker", eItemTypes.TITAN_TONE_PASSIVE,eItemTypes.TITAN_TONE_EXECUTION, "DEFAULT_TITAN_4")
-	RegisterTitanPassiveTypes("titan_ogre_minigun", eItemTypes.TITAN_LEGION_PASSIVE,eItemTypes.TITAN_LEGION_EXECUTION, "DEFAULT_TITAN_8")
-	RegisterTitanPassiveTypes("titan_stryder_sniper", eItemTypes.TITAN_NORTHSTAR_PASSIVE,eItemTypes.TITAN_NORTHSTAR_EXECUTION, "DEFAULT_TITAN_3")
-	RegisterTitanPassiveTypes("titan_stryder_leadwall", eItemTypes.TITAN_RONIN_PASSIVE,eItemTypes.TITAN_RONIN_EXECUTION, "DEFAULT_TITAN_2")
-	RegisterTitanPassiveTypes("titan_atlas_vanguard", eItemTypes.TITAN_VANGUARD_PASSIVE,eItemTypes.TITAN_VANGUARD_EXECUTION, "DEFAULT_TITAN_10",
-	eItemTypes.TITAN_UPGRADE1_PASSIVE, eItemTypes.TITAN_UPGRADE2_PASSIVE, eItemTypes.TITAN_UPGRADE3_PASSIVE)
+	//RegisterTitanPassiveTypes("titan_ogre_meteor", eItemTypes.TITAN_SCORCH_PASSIVE,eItemTypes.TITAN_SCORCH_EXECUTION, "#DEFAULT_TITAN_7")
+	//RegisterTitanPassiveTypes("titan_atlas_stickybomb", eItemTypes.TITAN_ION_PASSIVE, eItemTypes.TITAN_ION_EXECUTION, "DEFAULT_TITAN_5")
+	//RegisterTitanPassiveTypes("titan_atlas_tracker", eItemTypes.TITAN_TONE_PASSIVE,eItemTypes.TITAN_TONE_EXECUTION, "DEFAULT_TITAN_4")
+	//RegisterTitanPassiveTypes("titan_ogre_minigun", eItemTypes.TITAN_LEGION_PASSIVE,eItemTypes.TITAN_LEGION_EXECUTION, "DEFAULT_TITAN_8")
+	//RegisterTitanPassiveTypes("titan_stryder_sniper", eItemTypes.TITAN_NORTHSTAR_PASSIVE,eItemTypes.TITAN_NORTHSTAR_EXECUTION, "DEFAULT_TITAN_3")
+	//RegisterTitanPassiveTypes("titan_stryder_leadwall", eItemTypes.TITAN_RONIN_PASSIVE,eItemTypes.TITAN_RONIN_EXECUTION, "DEFAULT_TITAN_2")
+	//RegisterTitanPassiveTypes("titan_atlas_vanguard", eItemTypes.TITAN_VANGUARD_PASSIVE,eItemTypes.TITAN_VANGUARD_EXECUTION, "DEFAULT_TITAN_10",
+	//eItemTypes.TITAN_UPGRADE1_PASSIVE, eItemTypes.TITAN_UPGRADE2_PASSIVE, eItemTypes.TITAN_UPGRADE3_PASSIVE)
 	 
 	
 }
@@ -374,9 +433,14 @@ void function FrameworkInit()
 	//#if SERVER
 	//AddCallback_OnClientConnected(ValidatePlayerModdedData)
 	//#endif
+	#if MP
+	PopulateDefaultTitanLoadouts( shGlobal.defaultTitanLoadouts )
+	#endif
 	for(int i = 7; i < 10; i++)
 	{//most of this is redundant but im afraid to remove it at this point
-		OverwriteDefaultTitanLoadoutByIndex(i, GetDefaultTitanLoadout(i - 7))
+		#if SERVER
+		AddClientCommandCallback( "SetTitanClass", SetPlayerTitanRemote )
+		#endif
 		if(shouldPrintDevStuff())
 		{
 			print("Default titan loadout "+(i-7) + "======")
@@ -384,12 +448,23 @@ void function FrameworkInit()
 			print("Custom titan loadout "+i +"========")
 			PrintTitanLoadout(GetDefaultTitanLoadout(i))
 		}
+
+		//if(GetCachedTitanLoadout( i ).titanClass == "")
+		//{
+		//	OverwriteGlobalTitanLoadoutByIndex(i, GetDefaultTitanLoadout(i - 7))
+		//}
+
 		#if CLIENT
-		if(GetCachedTitanLoadout( i ).titanClass == "")
-		{
-			OverwriteGlobalTitanLoadoutByIndex(i, GetDefaultTitanLoadout(i - 7))
-		}
-		#if UI
+		if(shouldPrintDevStuff())
+			PrintTitanLoadout(GetCachedTitanLoadout(i))
+		#endif
+		#if UI && MP
+		//if(GetValidatedPersistentLoadoutValue( GetLocalClientPlayer(), "titan", i, "titanClass" ) == "")
+		//{
+		//	OverwriteGlobalTitanLoadoutByIndex(i, GetDefaultTitanLoadout( i-7))
+		//}
+		//else
+		//{
 		if(GetValidatedPersistentLoadoutValue( GetLocalClientPlayer(), "titan", i, "name" ) == ""
 		|| GetValidatedPersistentLoadoutValue( GetLocalClientPlayer(), "titan", i, "name" ) == "fuck")
 		{
@@ -401,38 +476,10 @@ void function FrameworkInit()
 
 			ClientCommand( "SetTitanClass "+ i +" default " + (i-7) )
 		}
-		#endif
-		if(shouldPrintDevStuff())
-			PrintTitanLoadout(GetCachedTitanLoadout(i))
-		#endif
-		#if UI && MP
-		if(GetValidatedPersistentLoadoutValue( GetLocalClientPlayer(), "titan", i, "titanClass" ) == "")
-		{
-			OverwriteGlobalTitanLoadoutByIndex(i, GetDefaultTitanLoadout( i-7))
-		}
-		else
-		{
-			OverwriteGlobalTitanLoadoutByIndex(i, GetTitanLoadoutFromPersistentData(GetLocalClientPlayer(), i))
-		}
-		#endif
-		#if SERVER
-		AddClientCommandCallback( "SetTitanClass", SetPlayerTitanRemote )
-		//foreach(entity player in GetPlayerArray())
-		//{
-		//	print("titan index "+i+ "name "+GetValidatedPersistentLoadoutValue( player, "titan", i, "name" ))
-		//	if(GetValidatedPersistentLoadoutValue( player, "titan", i, "name" ) == ""
-		//	|| GetValidatedPersistentLoadoutValue( player, "titan", i, "name" ) == "fuck")
-		//	{
-		//		print("Attempting to autofill titan index "+i)
-		//		TitanLoadoutDef loadout = clone GetDefaultTitanLoadout( i-7)
-		//		loadout.passive2 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.titanClass, "passive2"))[0].ref
-		//		loadout.passive3 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.titanClass, "passive3"))[0].ref
-		//		loadout.passive1 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.titanClass, "passive1"))[0].ref
-		//		SetTitanLoadout(player, i, loadout)
-		//	}
+		OverwriteGlobalTitanLoadoutByIndex(i, GetTitanLoadoutFromPersistentData(GetLocalClientPlayer(), i))
 		//}
-		//thread UpdateCachedLoadouts()
 		#endif
+
 
 		//#if CLIENT
 		//if(GetTitanLoadoutFromPersistentData(GetLocalClientPlayer(), i).name == "")
@@ -440,12 +487,14 @@ void function FrameworkInit()
 			//GetLocalClientPlayer().SetPersistentVar( "titanLoadouts[" + i + "].titanClass", GetDefaultTitanLoadout(i-7).titanClass)
 		//#endif
 	}
+	#if MP
 	for(int i = 0; i < 7; i++)
 	{
 		TitanLoadoutDef loadout = GetDefaultTitanLoadout(i)
 		TitanLoadoutByClass[loadout.titanClass] <- loadout
 		BaseTitanLoadoutByClass[loadout.titanClass] <- loadout
 	}
+	#endif
 }
 #if SERVER
 void function ValidatePlayerModdedData(entity player)
@@ -460,9 +509,9 @@ void function ValidatePlayerModdedData(entity player)
 		{
 			print("Attempting to autofill titan index "+i)
 			TitanLoadoutDef loadout = clone GetDefaultTitanLoadout( i-7)
-			loadout.passive2 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.titanClass, "passive2"))[0].ref
-			loadout.passive3 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.titanClass, "passive3"))[0].ref
-			loadout.passive1 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.titanClass, "passive1"))[0].ref
+			//loadout.passive2 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.titanClass, "passive2"))[0].ref
+			//loadout.passive3 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.titanClass, "passive3"))[0].ref
+			//loadout.passive1 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(loadout.titanClass, "passive1"))[0].ref
 			SetTitanLoadout(player, i, loadout)
 		}
 	}

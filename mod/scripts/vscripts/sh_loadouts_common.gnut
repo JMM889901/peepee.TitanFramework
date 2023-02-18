@@ -446,22 +446,22 @@ void function GiveTitanLoadout( entity titan, TitanLoadoutDef loadout )
 
 	if ( IsValid( soul ) )
 	{
-		if ( loadout.passive1 != "" )
+		if ( loadout.passive1 != "" && loadout.passive1 != "null" )
 			GivePassive( soul, PassiveBitfieldFromEnum( loadout.passive1 ) )
 
-		if ( loadout.passive2 != "" )
+		if ( loadout.passive2 != "" && loadout.passive2 != "null" )
 			GivePassive( soul, PassiveBitfieldFromEnum( loadout.passive2 ) )
 
-		if ( loadout.passive3 != "" )
+		if ( loadout.passive3 != "" && loadout.passive3 != "null" )
 			GivePassive( soul, PassiveBitfieldFromEnum( loadout.passive3 ) )
 
-		if ( loadout.passive4 != "" )
+		if ( loadout.passive4 != "" && loadout.passive4 != "null" )
 			GivePassive( soul, PassiveBitfieldFromEnum( loadout.passive4 ) )
 
-		if ( loadout.passive5 != "" )
+		if ( loadout.passive5 != "" && loadout.passive5 != "null" )
 			GivePassive( soul, PassiveBitfieldFromEnum( loadout.passive5 ) )
 
-		if ( loadout.passive6 != "" )
+		if ( loadout.passive6 != "" && loadout.passive6 != "null" )
 			GivePassive( soul, PassiveBitfieldFromEnum( loadout.passive6 ) )
 
 
