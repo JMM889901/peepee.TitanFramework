@@ -1,7 +1,7 @@
 the peepeepoopoo mans TitanFramework
 ==
 
-This is an experimnetal mod and any crash logs will be appreciated, i will aim to keep backwards compatability as much as possible to make updating optional
+This is an experimental mod and any crash logs will be appreciated, i will aim to keep backwards compatability as much as possible to make updating optional
 
 Confused with how to use the mod, have suggestions or found a bug, please DM me @The peepeepoopoo man#3301 on discord
 
@@ -158,7 +158,7 @@ Example script
 	Chimera.passive6Array.append(Laser)
 
 	CreateModdedTitanSimple(Chimera)//Ah yes """"""""""""Simple""""""""""""
-```
+``
 
 
 what is a base titan?
