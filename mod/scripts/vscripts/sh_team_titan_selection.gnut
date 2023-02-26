@@ -162,7 +162,7 @@ void function CreateTTSRui( bool showOverMenu, bool showScore = true )
 
 			RuiSetBool( rui, "showOverMenu", showOverMenu )
 			RuiSetString( rui, "playerName", memberInfo.playerName )
-			RuiSetString( rui, "titanName", GetLocalizedTitanName( memberInfo.titanName ) )
+			RuiSetString( rui, "titanName", GetLocalizedTitanName( memberInfo.titanName.toupper() ) )
 			RuiSetImage( rui, "kitImage", memberInfo.kitImage )
 			RuiSetImage( rui, "kit2Image", memberInfo.kit2Image )
 			RuiSetImage( rui, "titanImage", GetTitanImageFromName( memberInfo.titanName ) )
@@ -216,7 +216,7 @@ asset function GetTitanImageFromName( string name )
 		default:
 			if(shouldPrintDevStuff())	
 				printt( "Warning, titan is not supported for Team Selection Display a"+name )
-			return $"rui/hud/titanImages/placeholder_ronin"
+			return GetItemImage(name)
 	}
 	unreachable
 }
@@ -290,7 +290,7 @@ void function ServerCallback_UpdateTeamTitanSelectionString( array<string> args 
 	}
 	file.teamInfo[teamMate].player = teamMate
 	file.teamInfo[teamMate].playerName = teamMate.GetPlayerName()
-	file.teamInfo[teamMate].titanName = Name.toupper()
+	file.teamInfo[teamMate].titanName = Name
 	file.teamInfo[teamMate].weaponImage = GetItemImage( weaponRef )
 	file.teamInfo[teamMate].kitName = GetItemName( kitRef )
 	file.teamInfo[teamMate].kitImage = GetItemImage( kitRef )
@@ -311,7 +311,7 @@ void function TTS_UpdateLocalPlayerTitan( string setFileOrName, string weaponRef
 	}
 	file.teamInfo[teamMate].player = teamMate
 	file.teamInfo[teamMate].playerName = teamMate.GetPlayerName()
-	file.teamInfo[teamMate].titanName = titanName.toupper()
+	file.teamInfo[teamMate].titanName = titanName
 	file.teamInfo[teamMate].weaponImage = GetItemImage( weaponRef )
 	file.teamInfo[teamMate].kitName = GetItemName( kitRef )
 	file.teamInfo[teamMate].kitImage = GetItemImage( kitRef )

@@ -1,0 +1,122 @@
+global function AddTitanLoadoutToSelectionList //How the fuck did i go from a stupid organisational thing to a shitty bootleg file system without files
+global function AddTitanLoadoutToSelectionListSimple
+global function AddTitanGroupToSelectionList
+global function GetTitanCollection
+global function IsTitanCollection
+global struct TitanCollectionOrEntryStruct
+{ //I am too sleep deprived to do this better, and if it aint broke
+    bool IsCollection = true
+    string Name = "base" //Titans are gotten from GetModdedTitanData(Name)
+    //Collection vars
+    bool showName = true
+	bool showTagAsPrefix = false
+	bool showTagAsSuffix = false
+    TitanCollectionOrEntryStruct ornull Parent = null
+    table<string, TitanCollectionOrEntryStruct> content = {}
+}
+TitanCollectionOrEntryStruct baseCollection
+bool function IsTitanCollection(string Name, array<string> path, bool createPathNoFind = false)
+{
+    //print(Name + path.len())
+    if(Name == "base" && path.len() == 0)
+    {
+        return true
+    }
+    TitanCollectionOrEntryStruct activeStruct = baseCollection
+    foreach(string subFolder in path)
+    {
+        if(!(subFolder in activeStruct.content))
+        {
+            if(!createPathNoFind && Name in activeStruct.content)
+            {
+                return activeStruct.content[Name].IsCollection
+            }
+            return false
+        }
+        
+        activeStruct = activeStruct.content[subFolder]
+    }
+    //print(activeStruct.Name)
+    return Name in activeStruct.content && activeStruct.content[Name].IsCollection
+}
+TitanCollectionOrEntryStruct function GetTitanCollection(string Name, array<string> path, bool createPathNoFind = false)
+{
+    print(Name)
+    if(Name == "base" && path.len() == 0)
+    {
+        return baseCollection
+    }
+    TitanCollectionOrEntryStruct activeStruct = baseCollection
+    foreach(string subFolder in path)
+    {
+        print(subFolder)
+        if(!(subFolder in activeStruct.content))
+        {
+            if(!createPathNoFind && Name in activeStruct.content)
+            {
+                return activeStruct.content[Name]
+            }
+            unreachable
+        }
+        
+        activeStruct = activeStruct.content[subFolder]
+    }
+    if(Name == "") //Passing a path without name returns parent dir
+        return activeStruct
+    return activeStruct.content[Name]
+}
+void function AddTitanLoadoutToSelectionListSimple(string Collection, array<string> path, string Name, bool createPathNoFind = false)
+{
+    TitanCollectionOrEntryStruct activeStruct = GetTitanCollection(Collection, path)
+    TitanCollectionOrEntryStruct titan 
+    titan.IsCollection = false
+    titan.Name = Name
+    activeStruct.content[Name] <- titan
+}
+void function AddTitanLoadoutToSelectionList(ModdedTitanData Titan)
+{
+    print(Titan.Name)
+    TitanCollectionOrEntryStruct activeStruct = GetTitanCollection(Titan.groupSettings.Name, Titan.groupSettings.path)
+    TitanCollectionOrEntryStruct titan 
+    titan.IsCollection = false
+    titan.Name = Titan.Name
+    activeStruct.content[Titan.Name] <- titan
+}
+void function AddTitanGroupToSelectionList(ModdedTitanGroupSettings group)
+{
+    print(group.Name)
+    if(group.Name == "base" && group.path.len() == 0)
+    {
+        return
+    }
+    TitanCollectionOrEntryStruct activeStruct = baseCollection
+    TitanCollectionOrEntryStruct final
+    final.Name = group.Name
+    final.showName = group.showName
+    final.showTagAsPrefix = group.showTagAsPrefix
+    final.showTagAsSuffix = group.showTagAsSuffix
+    foreach(string subFolder in group.path)
+    {
+        if(!(subFolder in activeStruct.content))
+        {
+            if(group.createPathOnNoneFound)
+            {
+                TitanCollectionOrEntryStruct temp
+                temp.Name = subFolder
+                temp.Parent = activeStruct
+                activeStruct.content[subFolder] <- temp
+            }
+            else
+            {
+                final.Parent = activeStruct
+                activeStruct.content[group.Name] <- final
+                return
+            }
+        }
+        
+        activeStruct = activeStruct.content[subFolder]
+    }
+    print(activeStruct.Name)
+    final.Parent = activeStruct
+    activeStruct.content[group.Name] <- final
+}

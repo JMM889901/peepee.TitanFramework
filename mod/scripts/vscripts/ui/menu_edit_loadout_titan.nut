@@ -137,9 +137,11 @@ void function OnOpenEditTitanLoadoutMenu()
 	AddDefaultTitanElementsToTitanLoadoutMenu( menu )
 
 	TitanLoadoutDef loadout = GetCachedTitanLoadout( uiGlobal.editingLoadoutIndex )
-
+	
 	Hud_SetUTF8Text( file.menuTitle, GetTitanLoadoutName( loadout ) )
 	file.menuClosing = false
+
+	RunMenuClientFunction( "UpdateTitanModel", uiGlobal.editingLoadoutIndex )
 
 	UpdateTitanLoadoutPanel( file.loadoutPanel, loadout )
 	UpdateTitanXP( file.xpPanel, uiGlobal.editingLoadoutIndex )

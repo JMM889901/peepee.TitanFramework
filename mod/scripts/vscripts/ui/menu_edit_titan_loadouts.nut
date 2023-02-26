@@ -165,8 +165,8 @@ void function UpdateFDPanel( var panel, int index, bool compactMode = true )
 		RuiSetString( rui, "titanLevelString", Localize( "#FD_TITAN_LEVEL", titanLevel ) )
 	}
 
-	array<ItemDisplayData> titanUpgrades = FD_GetUpgradesForTitanClass( titanClass )
-	foreach ( index, item in titanUpgrades )
+	array<ItemDisplayData> titanUpgrades = FD_GetUpgradesForTitanClass( loadout.titanClass )
+	foreach ( index, item in titanUpgrades )//TODO FD ICONS ARE HERE DIPSHIT
 	{
 		var button = Hud_GetChild( panel, "BtnSub" + index )
 		var upgradeRui = Hud_GetRui( button )
@@ -286,7 +286,7 @@ void function UpdateTitanXP( var panel, int loadoutIndex, bool useWeaponHints = 
 	{
 		elem = Hud_GetChild( panel, "HintIcon" )
 		rui = Hud_GetRui( elem )
-		RuiSetImage( rui, "basicImage", GetItemImage( titanClassPersist ) ) //TODO FOR TITAN ICONS
+		RuiSetImage( rui, "basicImage", GetItemImage( titanClass ) ) //TODO FOR TITAN ICONS
 	}
 
 	if ( Hud_HasChild( panel, "UpgradeIcon" ) )

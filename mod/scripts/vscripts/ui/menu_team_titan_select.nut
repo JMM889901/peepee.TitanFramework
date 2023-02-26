@@ -305,12 +305,16 @@ void function OnTeamTitanSelectMenu_Open()
 		var button = file.titanButtons[i]
 		TitanLoadoutDef loadout = GetCachedTitanLoadout( i )
 		int row
+		asset icon
 		if(i > 6)
-			row = GetDataTableRowMatchingStringValue( dataTable, titanCol,  GetModdedTitanClassForMods(loadout.titanClass) )
+			icon = GetItemImage(loadout.titanClass)
 		else
+		{
 			row = GetDataTableRowMatchingStringValue( dataTable, titanCol,  loadout.titanClass )
+			icon = GetDataTableAsset( dataTable, row, loadoutIconCol )
+		}
 
-		asset icon = GetDataTableAsset( dataTable, row, loadoutIconCol )
+		 
 		var rui = Hud_GetRui( button )
 
 		RuiSetImage( rui, "buttonImage", icon )
@@ -466,21 +470,27 @@ void function TitanButton_OnFocused( var button )
 	{
 		RuiSetString( rui, "titanLevelString", Localize( "#FD_TITAN_LEVEL", titanLevel ) )
 		RuiSetString( rui, "titanRole", Localize( "#FD_ROLE", Localize(role) ) )
-
+		int i = 0
+		foreach ( button in file.titanUpgradeButtons )
+		{
+			Hud_Hide(button)
+		}
 		foreach ( index, item in titanUpgrades )
 		{
 			var button = file.titanUpgradeButtons[index]
 			var upgradeRui = Hud_GetRui( button )
 
 			bool locked = IsSubItemLocked( GetUIPlayer(), item.ref, item.parentRef )
-
+			//print(item.image + " " + index)
+			Hud_Show(button)
 			if ( locked )
 				RuiSetImage( upgradeRui, "buttonImage", expect asset( item.i.lockedImage ) )
 			else
 				RuiSetImage( upgradeRui, "buttonImage", item.image )
 
 			Hud_SetLocked( button, locked )
-		}
+			i++
+		}		
 	}
 
 	if ( !Hud_IsLocked( button ) )

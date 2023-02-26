@@ -181,47 +181,23 @@ Changelog ish
 -------
 
 
-Simplified registering titans using fancy structs instead of a comically long function
+Titan groups now implemented to support packs, variants and other collections of titans, including Tag option for titans to allow titans to have a different selection name to the in game name
 
-Titan names appear above heads correctly
+Initial titan icon support implementation
 
-Prints behind convar
+Limited FD icon support (RUI limitations make it impossible for custom icons to render with most default ui elements)
 
-More control for custom items, can create "fake" items that are not given to the player to allow you to give through script
+Added option for titans to default to being prime
 
-Titans can now be prime titans
+Added additional functionality for script handled weapons to specify a function for menu models 
 
-Index differences between server/client no longer make it impossible to select the correct titan and equip passives
+Fixed titan loadous appearing empty on first use (again)
 
-Select titan button is more obvious
+Added some extra debug stuff 
 
-No longer tries to assign bubbleshield in the kit slot on first startup
+Refactor part 1
 
-Populating default titans from resetpersistence should work now
-
-Populating default titans no longer leaves titanfall and titan general passive slots empty
-
-Aegis upgrades mode no longer causes a crash due to no icon (hopefully)
-
-LTS no longer crashes from having a teammate select a modded titan
-
-LTS now displays titan names correctly
-
-Added support for custom hints, stat pips (difficulty, health, damage etc.) and titan descriptions
-
-settitanloadoutremote now validates that the titan does infact exist before allowing players to select it
-
-Titan loadouts now generate correctly from first time use instead of waiting until you join a server
-
-Changing titan loadouts now correctly resets cosmetics 
-
-Corrected not setting persistend values to match base titan where neccecary 
-
-added some debugging functions
-
-added forceskipvalidation convar, dont enable this if you dont want to suffer greatly 
-
-Fixed titan stats screen crashing
+Added support for moreskins
 
 
 Special thanks to Dinorush and GalacticMoblin for creating the titans used to test as well as feature suggestions, and Spoon for actually understanding how ui and persistence works unlike myself 

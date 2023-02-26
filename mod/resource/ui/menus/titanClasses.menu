@@ -30,6 +30,18 @@ resource/ui/menus/titanClasses.menu
 			labelText				"#MENU_TITAN_CLASSES"
 		}
 
+		FolderTitle
+		{
+			ControlName				Label
+			InheritProperties		MenuTitle
+			font					DefaultBold_44
+			allcaps					1
+			fgcolor_override		"255 255 255 255"
+			xpos					600 // include n pixels for the combo button inset
+			ypos					60
+			labelText				"test"
+		}
+
 		ImgTopBar
 		{
 			ControlName				ImagePanel

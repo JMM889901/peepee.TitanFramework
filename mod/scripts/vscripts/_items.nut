@@ -252,6 +252,21 @@ global function GenerateValidateDataTableCRCText
 global function GenerateAllValidateDataTableCRCCheckText
 #endif
 
+// northstar additional global funcs, some of these are new, some are preexisting ones i'm making global for modularity reasons
+global function AddCallback_OnRegisterCustomItems
+
+global function CreateModData
+global function CreatePassiveData
+global function CreatePilotSuitData
+global function CreateTitanExecutionData
+global function CreateTitanData
+global function CreatePrimeTitanData
+global function CreateNoseArtData
+global function CreateSkinData
+global function CreateFDTitanUpgradeData
+global function CreateBaseItemData
+global function CreateWeaponSkinData
+
 global const MOD_ICON_NONE = $"ui/menu/items/mod_icons/none"
 
 global enum eUnlockType
@@ -400,6 +415,10 @@ global enum ModdedTitanChassisType
 	setFile,
 	modelKey //Unimplemented
 }
+global enum ModdedTitanGroupType{
+	Collection,//Organisational, display names function as normal, just exists to keep list organised
+	Variant //Name and 
+}
 global struct FrameworkChassisStruct
 {
 	string setFile
@@ -409,6 +428,7 @@ global struct FrameworkChassisStruct
 }
 global struct ModdedPassiveData{
 	string Name
+	string Type //For FD
 	string description
 	asset image = $"ui/temp"
 	bool customIcon = false
@@ -418,17 +438,28 @@ global struct ModdedTitanWeaponAbilityData{
 	string weaponName
 	string description
 	asset image = $"ui/temp"
-	string MenuModelWeapon
+	string functionref(TitanLoadoutDef) MenuModelWeaponFunc 
 	bool custom = false
 	bool scriptHandled = false
 }
+global struct ModdedTitanGroupSettings{
+	int groupType = ModdedTitanGroupType.Collection
+	string Name = "base"
+	array<string> path = []
+	bool createPathOnNoneFound = false //Should cover the entire path or create group on first not found node
+	bool showName = true
+	bool showTagAsPrefix = false
+	bool showTagAsSuffix = true
+}
+
 global struct ModdedTitanData{
 	string Name
+	string Tag //Only used for titan groups
 	string passiveDisplayNameOverride = "#TITAN_KIT_DEFAULT"
 	string titanReadyMessageOverride = "#TITAN_READY_DEFAULT"
 	array<string> titanHints
 
-
+	ModdedTitanGroupSettings& groupSettings
 
 	ModdedTitanWeaponAbilityData& Primary
 	ModdedTitanWeaponAbilityData& Left 
@@ -436,7 +467,8 @@ global struct ModdedTitanData{
 	ModdedTitanWeaponAbilityData& Right 
 	ModdedTitanWeaponAbilityData& Core
 
-	int AltTitanMethod
+	int AltTitanMethod //Unimplemented
+	bool startsAsPrime = false
 
 	array<FrameworkChassisStruct> altChassis
 
@@ -451,12 +483,14 @@ global struct ModdedTitanData{
 	string BaseName
 	
 	asset icon = $"ui/temp"
+	asset LTSIcon = $"rui/menu/postgame/vanguard_icon"
 
+	
 	array<ModdedPassiveData> passive2Array
 	array<ModdedPassiveData> passive4Array
 	array<ModdedPassiveData> passive5Array
 	array<ModdedPassiveData> passive6Array
-
+	array<ModdedPassiveData> passiveFDArray
 	
 	int ExecutionType = 0
 	string Melee = "melee_titan_punch_scorch"
@@ -493,6 +527,9 @@ struct
 	table<string, table<int, string> > titanClassAndPersistenceValueToNoseArtRefTable //Primarily used to speed up validation of persistence data
 	table<string, table<int, string> > titanClassAndPersistenceValueToSkinRefTable //Primarily used to speed up validation of persistence data
 	table<string, table<int, string> > weaponRefAndPersistenceValueToSkinRefTable //Primarily used to speed up validation of persistence data
+
+	// northstar custom hooks
+	array<void functionref()> itemRegistrationCallbacks
 } file
 
 void function RegisterModdedTitanData(ModdedTitanData titan)
@@ -1359,6 +1396,10 @@ void function InitItems()
 		if ( item.persistenceStruct != "" )
 			file.itemsWithPersistenceStruct[ item.persistenceStruct ] <- item
 	}
+	
+	// northstar hook: custom item registrations
+	foreach ( void functionref() callback in file.itemRegistrationCallbacks )
+		callback()
 
 	// Sort some items based on unlock level
 	file.globalItemRefsOfType[eItemTypes.PILOT_PRIMARY].sort( SortByUnlockLevel )
@@ -1429,6 +1470,10 @@ void function InitItems()
 		RegisterModdedTitanItemsSimple(titan)
 	}
 	print("ITEMDATA LEN = " + file.itemData.len())
+}
+void function AddCallback_OnRegisterCustomItems( void functionref() callback )
+{
+	file.itemRegistrationCallbacks.append( callback )
 }
 
 void function InitUnlocks()
@@ -3566,6 +3611,163 @@ void function InitUnlocks()
 	InitUnlockAsEntitlement( "skin_r97_sky", "mp_weapon_r97", ET_DLC11_R97_WARPAINT, "StoreMenu_WeaponSkins" )
 	InitUnlockAsEntitlement( "skin_rspn101_crimson_fury", "mp_weapon_rspn101", ET_DLC11_R101_WARPAINT, "StoreMenu_WeaponSkins" )
 
+	#if TITANFRAMEWORK_HAS_MORESKINS	
+	InitUnlock( "skin_volt_masterwork", "mp_weapon_hemlok_smg", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_volt_frontier", "mp_weapon_hemlok_smg", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_volt_crimson_fury", "mp_weapon_hemlok_smg", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_volt_carbon", "mp_weapon_hemlok_smg", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_volt_storm", "mp_weapon_hemlok_smg", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_car_carbon", "mp_weapon_car", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_car_prime_01", "mp_weapon_car", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_car_prime_03", "mp_weapon_car", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_car_prime_04", "mp_weapon_car", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_car_prime_06", "mp_weapon_car", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_alternator_prime_02", "mp_weapon_alternator_smg", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_alternator_prime_03", "mp_weapon_alternator_smg", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_alternator_prime_05", "mp_weapon_alternator_smg", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_alternator_prime_06", "mp_weapon_alternator_smg", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_rspn101_og_masterwork", "mp_weapon_rspn101_og", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_rspn101_og_prime_02", "mp_weapon_rspn101_og", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_rspn101_og_sunrise", "mp_weapon_rspn101_og", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_rspn101_og_sky", "mp_weapon_rspn101_og", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_rspn101_og_chrome", "mp_weapon_rspn101_og", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_rspn101_prime_01", "mp_weapon_rspn101", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_rspn101_prime_02", "mp_weapon_rspn101", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_rspn101_prime_04", "mp_weapon_rspn101", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_rspn101_blacksite", "mp_weapon_rspn101", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_rspn101_heatsink", "mp_weapon_rspn101", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_g2_prime_01", "mp_weapon_g2", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_g2_prime_02", "mp_weapon_g2", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_g2_prime_03", "mp_weapon_g2", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_g2_prime_04", "mp_weapon_g2", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_hemlok_prime_01", "mp_weapon_hemlok", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_hemlok_prime_02", "mp_weapon_hemlok", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_hemlok_prime_03", "mp_weapon_hemlok", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_hemlok_colbalt", "mp_weapon_hemlok", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_hemlok_purple_fade", "mp_weapon_hemlok", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_vinson_prime_01", "mp_weapon_vinson", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_vinson_prime_02", "mp_weapon_vinson", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_vinson_prime_03", "mp_weapon_vinson", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_vinson_hazard", "mp_weapon_vinson", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_vinson_prime_05", "mp_weapon_vinson", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_r97_prime_01", "mp_weapon_r97", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_r97_prime_02", "mp_weapon_r97", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_r97_frontline", "mp_weapon_r97", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_r97_prime_05", "mp_weapon_r97", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_spitfire_masterwork", "mp_weapon_lmg", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_spitfire_desert", "mp_weapon_lmg", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_spitfire_night_tech", "mp_weapon_lmg", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_spitfire_prime_04", "mp_weapon_lmg", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_spitfire_prime_05", "mp_weapon_lmg", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_spitfire_purple_fade", "mp_weapon_lmg", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_lstar_masterwork", "mp_weapon_lstar", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_lstar_prime_1", "mp_weapon_lstar", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_lstar_prime_2", "mp_weapon_lstar", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_lstar_prime_3", "mp_weapon_lstar", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_lstar_crimson_fury", "mp_weapon_lstar", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_devotion_masterwork", "mp_weapon_esaw", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_devotion_frontline", "mp_weapon_esaw", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_devotion_blacksite", "mp_weapon_esaw", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_devotion_venom", "mp_weapon_esaw", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_devotion_gold_plate", "mp_weapon_esaw", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_devotion_blue_fade", "mp_weapon_esaw", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_kraber_prime_02", "mp_weapon_sniper", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_kraber_prime_03", "mp_weapon_sniper", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_kraber_prime_04", "mp_weapon_sniper", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_kraber_prime_05", "mp_weapon_sniper", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_kraber_prime_06", "mp_weapon_sniper", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_doubletake_prime_02", "mp_weapon_doubletake", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_doubletake_prime_03", "mp_weapon_doubletake", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_doubletake_prime_04", "mp_weapon_doubletake", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_doubletake_prime_05", "mp_weapon_doubletake", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_doubletake_prime_06", "mp_weapon_doubletake", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_dmr_prime_01", "mp_weapon_dmr", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_dmr_prime_03", "mp_weapon_dmr", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_dmr_prime_04", "mp_weapon_dmr", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_dmr_prime_05", "mp_weapon_dmr", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_dmr_prime_06", "mp_weapon_dmr", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_shotgun_prime_01", "mp_weapon_shotgun", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_shotgun_prime_02", "mp_weapon_shotgun", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_shotgun_prime_04", "mp_weapon_shotgun", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_shotgun_prime_05", "mp_weapon_shotgun", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_shotgun_prime_06", "mp_weapon_shotgun", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_mastiff_masterwork", "mp_weapon_mastiff", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_mastiff_flight_deck", "mp_weapon_mastiff", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_mastiff_frontier_patriot", "mp_weapon_mastiff", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_mastiff_frontline", "mp_weapon_mastiff", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_mastiff_heatsink", "mp_weapon_mastiff", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_sidewinder_prime_02", "mp_weapon_smr", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_sidewinder_prime_03", "mp_weapon_smr", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_sidewinder_prime_04", "mp_weapon_smr", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_sidewinder_chrome", "mp_weapon_smr", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_sidewinder_prime_06", "mp_weapon_smr", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_epg_prime_01", "mp_weapon_epg", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_epg_prime_02", "mp_weapon_epg", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_epg_prime_03", "mp_weapon_epg", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_epg_prime_05", "mp_weapon_epg", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_epg_prime_06", "mp_weapon_epg", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_softball_desert", "mp_weapon_softball", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_softball_hazard", "mp_weapon_softball", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_softball_sky", "mp_weapon_softball", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_softball_cobalt", "mp_weapon_softball", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_softball_purple_fade", "mp_weapon_softball", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_coldwar_prime_01", "mp_weapon_pulse_lmg", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_coldwar_prime_02", "mp_weapon_pulse_lmg", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_coldwar_prime_03", "mp_weapon_pulse_lmg", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_coldwar_prime_04", "mp_weapon_pulse_lmg", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_coldwar_prime_06", "mp_weapon_pulse_lmg", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_wingman_elite_prime_01", "mp_weapon_wingman_n", eUnlockType.PERSISTENT_ITEM, 0 )
+//	InitUnlock( "skin_wingman_elite_prime_02", "mp_weapon_wingman_n", eUnlockType.PERSISTENT_ITEM, 0 )
+//	InitUnlock( "skin_wingman_elite_prime_03", "mp_weapon_wingman_n", eUnlockType.PERSISTENT_ITEM, 0 )
+//	InitUnlock( "skin_wingman_elite_prime_04", "mp_weapon_wingman_n", eUnlockType.PERSISTENT_ITEM, 0 )
+//	InitUnlock( "skin_wingman_elite_prime_05", "mp_weapon_wingman_n", eUnlockType.PERSISTENT_ITEM, 0 )
+//	InitUnlock( "skin_wingman_elite_prime_06", "mp_weapon_wingman_n", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_mozambique_prime_01", "mp_weapon_shotgun_pistol", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_mozambique_prime_02", "mp_weapon_shotgun_pistol", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_mozambique_prime_03", "mp_weapon_shotgun_pistol", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_mozambique_prime_04", "mp_weapon_shotgun_pistol", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_mozambique_prime_05", "mp_weapon_shotgun_pistol", eUnlockType.PERSISTENT_ITEM, 0 )
+//	InitUnlock( "skin_mgl_prime_01", "mp_weapon_mgl", eUnlockType.PERSISTENT_ITEM, 0 )
+//	InitUnlock( "skin_mgl_prime_02", "mp_weapon_mgl", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_mgl_colbalt", "mp_weapon_mgl", eUnlockType.PERSISTENT_ITEM, 0 )
+//	InitUnlock( "skin_mgl_prime_04", "mp_weapon_mgl", eUnlockType.PERSISTENT_ITEM, 0 )
+//	InitUnlock( "skin_mgl_prime_05", "mp_weapon_mgl", eUnlockType.PERSISTENT_ITEM, 0 )
+//	InitUnlock( "skin_mgl_prime_06", "mp_weapon_mgl", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_rocket_launcher_prime_02", "mp_weapon_rocket_launcher", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_rocket_launcher_prime_03", "mp_weapon_rocket_launcher", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_rocket_launcher_prime_04", "mp_weapon_rocket_launcher", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_rocket_launcher_prime_05", "mp_weapon_rocket_launcher", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_rocket_launcher_prime_06", "mp_weapon_rocket_launcher", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_thunderbolt_prime_02", "mp_weapon_arc_launcher", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_thunderbolt_prime_03", "mp_weapon_arc_launcher", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_thunderbolt_prime_04", "mp_weapon_arc_launcher", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_thunderbolt_prime_05", "mp_weapon_arc_launcher", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_thunderbolt_prime_06", "mp_weapon_arc_launcher", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_defender_prime_01", "mp_weapon_defender", eUnlockType.PERSISTENT_ITEM, 0 )	
+//	InitUnlock( "skin_defender_prime_02", "mp_weapon_defender", eUnlockType.PERSISTENT_ITEM, 0 )
+//	InitUnlock( "skin_defender_prime_03", "mp_weapon_defender", eUnlockType.PERSISTENT_ITEM, 0 )
+//	InitUnlock( "skin_defender_prime_04", "mp_weapon_defender", eUnlockType.PERSISTENT_ITEM, 0 )
+//	InitUnlock( "skin_defender_prime_05", "mp_weapon_defender", eUnlockType.PERSISTENT_ITEM, 0 )
+//	InitUnlock( "skin_defender_prime_06", "mp_weapon_defender", eUnlockType.PERSISTENT_ITEM, 0 )
+//	InitUnlock( "skin_p2011_prime_01", "mp_weapon_semipistol", eUnlockType.PERSISTENT_ITEM, 0 )
+//	InitUnlock( "skin_p2011_prime_02", "mp_weapon_semipistol", eUnlockType.PERSISTENT_ITEM, 0 )
+//	InitUnlock( "skin_p2011_prime_03", "mp_weapon_semipistol", eUnlockType.PERSISTENT_ITEM, 0 )
+//	InitUnlock( "skin_p2011_frontline", "mp_weapon_semipistol", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_p2011_heatsink", "mp_weapon_semipistol", eUnlockType.PERSISTENT_ITEM, 0 )
+//	InitUnlock( "skin_p2011_prime_06", "mp_weapon_semipistol", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_wingman_prime_01", "mp_weapon_wingman", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_wingman_prime_02", "mp_weapon_wingman", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_wingman_prime_03", "mp_weapon_wingman", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_wingman_prime_04", "mp_weapon_wingman", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_wingman_prime_05", "mp_weapon_wingman", eUnlockType.PERSISTENT_ITEM, 0 )
+	InitUnlock( "skin_autopistol_prime_01", "mp_weapon_autopistol", eUnlockType.PERSISTENT_ITEM, 0 )
+//	InitUnlock( "skin_autopistol_prime_02", "mp_weapon_autopistol", eUnlockType.PERSISTENT_ITEM, 0 )
+//	InitUnlock( "skin_autopistol_prime_03", "mp_weapon_autopistol", eUnlockType.PERSISTENT_ITEM, 0 )
+//	InitUnlock( "skin_autopistol_prime_04", "mp_weapon_autopistol", eUnlockType.PERSISTENT_ITEM, 0 )
+//	InitUnlock( "skin_autopistol_prime_05", "mp_weapon_autopistol", eUnlockType.PERSISTENT_ITEM, 0 )
+//	InitUnlock( "skin_autopistol_prime_06", "mp_weapon_autopistol", eUnlockType.PERSISTENT_ITEM, 0 )
+	#endif
+
 	array<ItemData> burnMeterRewards = GetAllItemsOfType( eItemTypes.BURN_METER_REWARD )
 	foreach ( ItemData item in burnMeterRewards )
 	{
@@ -5428,7 +5630,7 @@ ItemData function CreateGenericItem( int dataTableIndex, int itemType, string re
 	item.desc               = desc
 	item.longdesc           = longdesc
 	item.image              = image
-	item.imageAtlas			= -1
+	item.imageAtlas			= IMAGE_ATLAS_MENU
 	item.persistenceId      = dataTableIndex
 	item.cost				= cost
 
@@ -5543,7 +5745,11 @@ void function CreateTitanData( int dataTableIndex, string titanRef, int cost, as
 asset function GetIconForTitanClass( string titanClass )
 {
 	if(GetModdedTitanClasses().contains(titanClass))
-		titanClass = GetModdedTitanClassForMods(titanClass) //TODO, Add custom icon support
+	{
+		return GetItemImage(titanClass)
+		//titanClass = GetModdedTitanClassForMods(titanClass) //TODO, Add custom icon support
+		
+	}
 	var dataTable = GetDataTable( $"datatable/titan_properties.rpak" )
 	int loadoutIconCol = GetDataTableColumnByName( dataTable, "loadoutIcon" )
 	int titanCol = GetDataTableColumnByName( dataTable, "titanRef" )
@@ -5564,7 +5770,6 @@ array<ItemDisplayData> function FD_GetUpgradesForTitanClass( string titanClass )
 	{
 		if ( item.parentRef != titanClass )
 			continue
-
 		titanUpgrades.append( item )
 	}
 
@@ -9171,10 +9376,17 @@ int function SortByUnlockLevelUntyped( ItemDisplayData a, ItemDisplayData b )
 		return 1
 	else if ( aUnlockLevel < bUnlockLevel )
 		return -1
-	if(a.persistenceId == 999) //Represents modded items
+	if(a.persistenceId > 1000 && b.persistenceId > 1000) //Use persistence id for sorting because errrrr :clueless:
+	{
+		if ( a.persistenceId > b.persistenceId )
+			return 1
+		else
+			return -1
+	}
+	if(a.persistenceId >= 999) //Represents modded items
 		return -1
-	else if(b.persistenceId == 999)
-		return -1
+	else if(b.persistenceId >= 999)
+		return 1
 	int aUnlockType = CheckItemUnlockType( a.ref, a.parentRef )
 	int bUnlockType = CheckItemUnlockType( b.ref, b.parentRef )
 
@@ -10640,6 +10852,652 @@ void function SetupWeaponSkinData()
 
 		file.weaponRefAndPersistenceValueToSkinRefTable[ weaponRef ][ skinIndex ] <- ref
 	}
+	#if TITANFRAMEWORK_HAS_MORESKINS
+	
+	// Create unreleased skins 
+	// R201 - prime1
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_rspn101_prime_01", "mp_weapon_rspn101", "#r201_prime_01", $"rui/menu/common/no_art", 2, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_rspn101", "skin_rspn101_prime_01", 0, { skinIndex = 2 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_rspn101" ][ 2 ] <- "skin_rspn101_prime_01"
+	// R201 - prime2
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_rspn101_prime_02", "mp_weapon_rspn101", "#r201_prime_02", $"rui/menu/common/no_art", 3, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_rspn101", "skin_rspn101_prime_02", 0, { skinIndex = 3 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_rspn101" ][ 3 ] <- "skin_rspn101_prime_02"
+	// R201 - prime4
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_rspn101_prime_04", "mp_weapon_rspn101", "#r201_prime_04", $"rui/menu/common/no_art", 5, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_rspn101", "skin_rspn101_prime_02", 0, { skinIndex = 5 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_rspn101" ][ 5 ] <- "skin_rspn101_prime_04"
+	// R201 - blacksite
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_rspn101_blacksite", "mp_weapon_rspn101", "Blacksite Elite", $"rui/titan_loadout/skins/ion_skin_11", 4, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_rspn101", "skin_rspn101_blacksite", 0, { skinIndex = 4 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_rspn101" ][ 4 ] <- "skin_rspn101_blacksite"
+	// R201 - heatsink
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_rspn101_heatsink", "mp_weapon_rspn101", "#SKIN_HEAT_SINK", $"rui/weapon_skin_swatches/swatch_heatsink", 6, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_rspn101", "skin_rspn101_heatsink", 0, { skinIndex = 6 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_rspn101" ][ 6 ] <- "skin_rspn101_heatsink"
+	// R101 - masterwork
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_rspn101_og_masterwork", "mp_weapon_rspn101_og", "#SKIN_MASTERWORK", $"rui/weapon_skin_swatches/swatch_masterwork", 2, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_rspn101_og", "skin_rspn101_og_masterwork", 0, { skinIndex = 2 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_rspn101_og" ][ 2 ] <- "skin_rspn101_og_masterwork"
+	// R101 - prime2
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_rspn101_og_prime_02", "mp_weapon_rspn101_og", "#r101_prime_02", $"rui/menu/common/no_art", 3, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_rspn101_og", "skin_rspn101_og_prime_02", 0, { skinIndex = 3 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_rspn101_og" ][ 3 ] <- "skin_rspn101_og_prime_02"
+	// R101 - sunrise
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_rspn101_og_sunrise", "mp_weapon_rspn101_og", "Sunrise Elite", $"rui/titan_loadout/skins/ronin_skin_07", 4, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_rspn101_og", "skin_rspn101_og_sunrise", 0, { skinIndex = 4 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_rspn101_og" ][ 4 ] <- "skin_rspn101_og_sunrise"
+	// R101 - sky
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_rspn101_og_sky", "mp_weapon_rspn101_og", "#SKIN_SKY", $"rui/weapon_skin_swatches/swatch_sky", 5, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_rspn101_og", "skin_rspn101_og_sky", 0, { skinIndex = 5 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_rspn101_og" ][ 5 ] <- "skin_rspn101_og_sky"
+	// R101 - chrome
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_rspn101_og_chrome", "mp_weapon_rspn101_og", "Chrome Elite", $"rui/titan_loadout/skins/legion_skin_04", 6, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_rspn101_og", "skin_rspn101_og_chrome", 0, { skinIndex = 6 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_rspn101_og" ][ 6 ] <- "skin_rspn101_og_chrome"
+	// G2A4 - prime1
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_g2_prime_01", "mp_weapon_g2", "#g2_prime_01", $"rui/menu/common/no_art", 2, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_g2", "skin_g2_prime_01", 0, { skinIndex = 2 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_g2" ][ 2 ] <- "skin_g2_prime_01"
+	// G2A4 - prime2
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_g2_prime_02", "mp_weapon_g2", "#g2_prime_02", $"rui/menu/common/no_art", 3, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_g2", "skin_g2_prime_02", 0, { skinIndex = 3 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_g2" ][ 3 ] <- "skin_g2_prime_02"
+	// G2A4 - prime3
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_g2_prime_03", "mp_weapon_g2", "#g2_prime_03", $"rui/menu/common/no_art", 4, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_g2", "skin_g2_prime_03", 0, { skinIndex = 4 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_g2" ][ 4 ] <- "skin_g2_prime_03"
+	// G2A4 - prime4
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_g2_prime_04", "mp_weapon_g2", "#g2_prime_04", $"rui/menu/common/no_art", 5, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_g2", "skin_g2_prime_04", 0, { skinIndex = 5 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_g2" ][ 5 ] <- "skin_g2_prime_04"
+	// Hemlok - prime1
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_hemlok_prime_01", "mp_weapon_hemlok", "#hemlok_prime_01", $"rui/menu/common/no_art", 2, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_hemlok", "skin_hemlok_prime_01", 0, { skinIndex = 2 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_hemlok" ][ 2 ] <- "skin_hemlok_prime_01"
+	// Hemlok - prime2
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_hemlok_prime_02", "mp_weapon_hemlok", "#hemlok_prime_02", $"rui/menu/common/no_art", 3, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_hemlok", "skin_hemlok_prime_02", 0, { skinIndex = 3 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_hemlok" ][ 3 ] <- "skin_hemlok_prime_02"
+	// Hemlok - prime3
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_hemlok_prime_03", "mp_weapon_hemlok", "#hemlok_prime_03", $"rui/menu/common/no_art", 4, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_hemlok", "skin_hemlok_prime_03", 0, { skinIndex = 4 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_hemlok" ][ 4 ] <- "skin_hemlok_prime_03"
+	// Hemlok - colbalt
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_hemlok_colbalt", "mp_weapon_hemlok", "Colbalt Elite", $"rui/weapon_skin_swatches/swatch_blue_fade", 6, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_hemlok", "skin_hemlok_colbalt", 0, { skinIndex = 6 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_hemlok" ][ 6 ] <- "skin_hemlok_colbalt"
+	// Hemlok - purple fade
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_hemlok_purple_fade", "mp_weapon_hemlok", "#SKIN_PURPLE_FADE", $"rui/weapon_skin_swatches/swatch_purple_fade", 7, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_hemlok", "skin_hemlok_purple_fade", 0, { skinIndex = 7 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_hemlok" ][ 7 ] <- "skin_hemlok_purple_fade"
+	// Vinson - prime1
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_vinson_prime_01", "mp_weapon_vinson", "#flatline_prime_01", $"rui/menu/common/no_art", 2, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_vinson", "skin_vinson_prime_01", 0, { skinIndex = 2 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_vinson" ][ 2 ] <- "skin_vinson_prime_01"
+	// Vinson - prime2
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_vinson_prime_02", "mp_weapon_vinson", "#flatline_prime_02", $"rui/menu/common/no_art", 3, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_vinson", "skin_vinson_prime_02", 0, { skinIndex = 3 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_vinson" ][ 3 ] <- "skin_vinson_prime_02"
+	// Vinson - prime3
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_vinson_prime_03", "mp_weapon_vinson", "#flatline_prime_03", $"rui/menu/common/no_art", 4, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_vinson", "skin_vinson_prime_03", 0, { skinIndex = 4 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_vinson" ][ 4 ] <- "skin_vinson_prime_03"
+	// Vinson - hazard
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_vinson_hazard", "mp_weapon_vinson", "#Hazard Elite", $"rui/titan_loadout/skins/northstar_skin_04", 5, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_vinson", "skin_vinson_hazard", 0, { skinIndex = 5 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_vinson" ][ 5 ] <- "skin_vinson_hazard"
+	// Vinson - prime5
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_vinson_prime_05", "mp_weapon_vinson", "#flatline_prime_05", $"rui/menu/common/no_art", 6, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_vinson", "skin_vinson_prime_05", 0, { skinIndex = 6 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_vinson" ][ 6 ] <- "skin_vinson_prime_05"
+	// CAR - prime1
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_car_prime_01", "mp_weapon_car", "#car_prime_01", $"rui/menu/common/no_art", 2, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_car", "skin_car_prime_01", 0, { skinIndex = 2 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_car" ][ 2 ] <- "skin_car_prime_01"
+	// CAR - carbon
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_car_carbon", "mp_weapon_car", "Carbon Elite", $"rui/titan_loadout/skins/legion_skin_09", 3, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_car", "skin_car_carbon", 0, { skinIndex = 3 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_car" ][ 3 ] <- "skin_car_carbon"
+	// CAR - prime3
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_car_prime_03", "mp_weapon_car", "#car_prime_03", $"rui/menu/common/no_art", 4, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_car", "skin_car_prime_03", 0, { skinIndex = 4 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_car" ][ 4 ] <- "skin_car_prime_03"
+	// CAR - prime4
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_car_prime_04", "mp_weapon_car", "#car_prime_04", $"rui/menu/common/no_art", 5, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_car", "skin_car_prime_04", 0, { skinIndex = 5 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_car" ][ 5 ] <- "skin_car_prime_04"
+	// CAR - prime6	
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_car_prime_06", "mp_weapon_car", "#car_prime_06", $"rui/menu/common/no_art", 7, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_car", "skin_car_prime_06", 0, { skinIndex = 7 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_car" ][ 7 ] <- "skin_car_prime_06"
+	// Alternator - prime2
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_alternator_prime_02", "mp_weapon_alternator_smg", "#alternator_prime_02", $"rui/menu/common/no_art", 3, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_alternator_smg", "skin_alternator_prime_02", 0, { skinIndex = 3 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_alternator_smg" ][ 3 ] <- "skin_alternator_prime_02"
+	// Alternator - prime3
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_alternator_prime_03", "mp_weapon_alternator_smg", "#alternator_prime_03", $"rui/menu/common/no_art", 4, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_alternator_smg", "skin_alternator_prime_03", 0, { skinIndex = 4 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_alternator_smg" ][ 4 ] <- "skin_alternator_prime_03"
+	// Alternator - prime5
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_alternator_prime_05", "mp_weapon_alternator_smg", "#alternator_prime_05", $"rui/menu/common/no_art", 6, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_alternator_smg", "skin_alternator_prime_05", 0, { skinIndex = 6 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_alternator_smg" ][ 6 ] <- "skin_alternator_prime_05"
+	// Alternator - prime6
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_alternator_prime_06", "mp_weapon_alternator_smg", "#alternator_prime_06", $"rui/menu/common/no_art", 7, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_alternator_smg", "skin_alternator_prime_06", 0, { skinIndex = 7 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_alternator_smg" ][ 7 ] <- "skin_alternator_prime_06"
+	// Volt - masterwork
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_volt_masterwork", "mp_weapon_hemlok_smg", "#SKIN_MASTERWORK", $"rui/weapon_skin_swatches/swatch_masterwork", 2, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_hemlok_smg", "skin_volt_masterwork", 0, { skinIndex = 2 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_hemlok_smg" ][ 2 ] <- "skin_volt_masterwork"
+	// Volt - frontier
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_volt_frontier", "mp_weapon_hemlok_smg", "Frontier Elite", $"rui/titan_loadout/skins/northstar_skin_06", 5, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_hemlok_smg", "skin_volt_frontier", 0, { skinIndex = 5 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_hemlok_smg" ][ 5 ] <- "skin_volt_frontier"
+	// Volt - crimson fury
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_volt_crimson_fury", "mp_weapon_hemlok_smg", "#SKIN_CRIMSON_FURY", $"rui/weapon_skin_swatches/swatch_crimson_fury", 7, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_hemlok_smg", "skin_volt_crimson_fury", 0, { skinIndex = 7 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_hemlok_smg" ][ 7 ] <- "skin_volt_crimson_fury"
+	// Volt - carbon
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_volt_carbon", "mp_weapon_hemlok_smg", "Carbon Elite", $"rui/titan_loadout/skins/legion_skin_09", 3, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_hemlok_smg", "skin_volt_carbon", 0, { skinIndex = 3 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_hemlok_smg" ][ 3 ] <- "skin_volt_carbon"
+	// Volt - storm p3
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_volt_storm", "mp_weapon_hemlok_smg", "Storm Elite", $"rui/titan_loadout/skins/ion_skin_04", 4, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_hemlok_smg", "skin_volt_storm", 0, { skinIndex = 4 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_hemlok_smg" ][ 4 ] <- "skin_volt_storm"
+	// R97 - prime1
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_r97_prime_01", "mp_weapon_r97", "#r97_prime_01", $"rui/menu/common/no_art", 2, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_r97", "skin_r97_prime_01", 0, { skinIndex = 2 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_r97" ][ 2 ] <- "skin_r97_prime_01"
+	// R97 - prime2
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_r97_prime_02", "mp_weapon_r97", "#r97_prime_02", $"rui/menu/common/no_art", 3, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_r97", "skin_r97_prime_02", 0, { skinIndex = 3 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_r97" ][ 3 ] <- "skin_r97_prime_02"
+	// R97 - frontline
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_r97_frontline", "mp_weapon_r97", "Frontline Elite", $"rui/titan_loadout/skins/tone_skin_06", 4, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_r97", "skin_r97_frontline", 0, { skinIndex = 4 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_r97" ][ 4 ] <- "skin_r97_frontline"
+	// R97 - prime5
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_r97_prime_05", "mp_weapon_r97", "#r97_prime_05", $"rui/menu/common/no_art", 6, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_r97", "skin_r97_prime_05", 0, { skinIndex = 6 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_r97" ][ 6 ] <- "skin_r97_prime_05"
+	// Spitfire - masterwork
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_spitfire_masterwork", "mp_weapon_lmg", "#SKIN_MASTERWORK", $"rui/weapon_skin_swatches/swatch_masterwork", 2, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_lmg", "skin_spitfire_masterwork", 0, { skinIndex = 2 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_lmg" ][ 2 ] <- "skin_spitfire_masterwork"
+	// Spitfire - desert
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_spitfire_desert", "mp_weapon_lmg", "Desert Elite", $"rui/titan_loadout/skins/ion_skin_02", 3, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_lmg", "skin_spitfire_desert", 0, { skinIndex = 3 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_lmg" ][ 3 ] <- "skin_spitfire_desert"
+	// Spitfire - night tech
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_spitfire_night_tech", "mp_weapon_lmg", "Night Tech Elite", $"rui/titan_loadout/skins/ion_skin_03", 4, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_lmg", "skin_spitfire_night_tech", 0, { skinIndex = 4 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_lmg" ][ 4 ] <- "skin_spitfire_night_tech"
+	// Spitfire - blu military
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_spitfire_prime_04", "mp_weapon_lmg", "V2 Elite", $"rui/titan_loadout/skins/ronin_skin_01", 5, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_lmg", "skin_spitfire_prime_04", 0, { skinIndex = 5 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_lmg" ][ 5 ] <- "skin_spitfire_prime_04"
+	// Spitfire - red piss
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_spitfire_prime_05", "mp_weapon_lmg", "Bloodlust Elite", $"rui/titan_loadout/skins/northstar_skin_fd", 6, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_lmg", "skin_spitfire_prime_05", 0, { skinIndex = 6 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_lmg" ][ 6 ] <- "skin_spitfire_prime_05"
+	// Spitfire - purple fade
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_spitfire_purple_fade", "mp_weapon_lmg", "#SKIN_PURPLE_FADE", $"rui/weapon_skin_swatches/swatch_purple_fade", 7, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_lmg", "skin_spitfire_purple_fade", 0, { skinIndex = 7 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_lmg" ][ 7 ] <- "skin_spitfire_purple_fade"
+	// LStar - masterwork
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_lstar_masterwork", "mp_weapon_lstar", "#SKIN_MASTERWORK", $"rui/weapon_skin_swatches/swatch_masterwork", 2, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_lstar", "skin_lstar_masterwork", 0, { skinIndex = 2 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_lstar" ][ 2 ] <- "skin_lstar_masterwork"
+	// LStar - storm p2
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_lstar_prime_1", "mp_weapon_lstar", "Storm Elite", $"rui/titan_loadout/skins/ion_skin_04", 3, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_lstar", "skin_lstar_prime_1", 0, { skinIndex = 3 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_lstar" ][ 3 ] <- "skin_lstar_prime_1"
+	// LStar - Sunrise p3
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_lstar_prime_2", "mp_weapon_lstar", "Sunrise Elite", $"rui/titan_loadout/skins/scorch_skin_07", 4, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_lstar", "skin_lstar_prime_2", 0, { skinIndex = 4 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_lstar" ][ 4 ] <- "skin_lstar_prime_2"
+	// LStar - militia p4
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_lstar_prime_3", "mp_weapon_lstar", "Frontline Elite", $"rui/titan_loadout/skins/tone_skin_06", 5, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_lstar", "skin_lstar_prime_3", 0, { skinIndex = 5 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_lstar" ][ 5 ] <- "skin_lstar_prime_3"
+	// LStar - crimson fury
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_lstar_crimson_fury", "mp_weapon_lstar", "#SKIN_CRIMSON_FURY", $"rui/weapon_skin_swatches/swatch_crimson_fury", 7, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_lstar", "skin_lstar_crimson_fury", 0, { skinIndex = 7 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_lstar" ][ 7 ] <- "skin_lstar_crimson_fury"
+	// Devotion - masterwork
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_devotion_masterwork", "mp_weapon_esaw", "#SKIN_MASTERWORK", $"rui/weapon_skin_swatches/swatch_masterwork", 2, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_esaw", "skin_devotion_masterwork", 0, { skinIndex = 2 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_esaw" ][ 2 ] <- "skin_devotion_masterwork"
+	// Devotion - frontline
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_devotion_frontline", "mp_weapon_esaw", "Frontline Elite", $"rui/titan_loadout/skins/tone_skin_06", 3, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_esaw", "skin_devotion_frontline", 0, { skinIndex = 3 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_esaw" ][ 3 ] <- "skin_devotion_frontline"
+	// Devotion - blacksite
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_devotion_blacksite", "mp_weapon_esaw", "Blacksite Elite", $"rui/titan_loadout/skins/ronin_skin_10", 4, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_esaw", "skin_devotion_blacksite", 0, { skinIndex = 4 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_esaw" ][ 4 ] <- "skin_devotion_blacksite"
+	// Devotion - venom
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_devotion_venom", "mp_weapon_esaw", "Venom Elite", $"rui/titan_loadout/skins/northstar_skin_11", 5, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_esaw", "skin_devotion_venom", 0, { skinIndex = 5 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_esaw" ][ 5 ] <- "skin_devotion_venom"
+	// Devotion - gold plate
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_devotion_gold_plate", "mp_weapon_esaw", "Gold Plate Elite", $"rui/titan_loadout/skins/ion_skin_07", 6, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_esaw", "skin_devotion_gold_plate", 0, { skinIndex = 6 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_esaw" ][ 6 ] <- "skin_devotion_gold_plate"
+	// Devotion - blue fade
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_devotion_blue_fade", "mp_weapon_esaw", "#SKIN_BLUE_FADE", $"rui/weapon_skin_swatches/swatch_blue_fade", 7, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_esaw", "skin_devotion_blue_fade", 0, { skinIndex = 7 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_esaw" ][ 7 ] <- "skin_devotion_blue_fade"
+	// Kraber - prime2
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_kraber_prime_02", "mp_weapon_sniper", "#kraber_prime_02", $"rui/menu/common/no_art", 3, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_sniper", "skin_kraber_prime_02", 0, { skinIndex = 3 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_sniper" ][ 3 ] <- "skin_kraber_prime_02"
+	// Kraber - prime3
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_kraber_prime_03", "mp_weapon_sniper", "#kraber_prime_03", $"rui/menu/common/no_art", 4, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_sniper", "skin_kraber_prime_03", 0, { skinIndex = 4 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_sniper" ][ 4 ] <- "skin_kraber_prime_03"
+	// Kraber - prime4
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_kraber_prime_04", "mp_weapon_sniper", "#kraber_prime_04", $"rui/menu/common/no_art", 5, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_sniper", "skin_kraber_prime_04", 0, { skinIndex = 5 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_sniper" ][ 5 ] <- "skin_kraber_prime_04"
+	// Kraber - prime5
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_kraber_prime_05", "mp_weapon_sniper", "#kraber_prime_05", $"rui/menu/common/no_art", 6, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_sniper", "skin_kraber_prime_05", 0, { skinIndex = 6 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_sniper" ][ 6 ] <- "skin_kraber_prime_05"
+	// Kraber - prime6
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_kraber_prime_06", "mp_weapon_sniper", "#kraber_prime_06", $"rui/menu/common/no_art", 7, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_sniper", "skin_kraber_prime_06", 0, { skinIndex = 7 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_sniper" ][ 7 ] <- "skin_kraber_prime_06"
+	// Doubletake - prime2
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_doubletake_prime_02", "mp_weapon_doubletake", "#d2_prime_02", $"rui/menu/common/no_art", 3, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_doubletake", "skin_doubletake_prime_02", 0, { skinIndex = 3 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_doubletake" ][ 3 ] <- "skin_doubletake_prime_02"
+	// Doubletake - prime3
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_doubletake_prime_03", "mp_weapon_doubletake", "#d2_prime_03", $"rui/menu/common/no_art", 4, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_doubletake", "skin_doubletake_prime_03", 0, { skinIndex = 4 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_doubletake" ][ 4 ] <- "skin_doubletake_prime_03"
+	// Doubletake - prime4
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_doubletake_prime_04", "mp_weapon_doubletake", "#d2_prime_04", $"rui/menu/common/no_art", 5, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_doubletake", "skin_doubletake_prime_04", 0, { skinIndex = 5 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_doubletake" ][ 5 ] <- "skin_doubletake_prime_04"
+	// Doubletake - prime5
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_doubletake_prime_05", "mp_weapon_doubletake", "#d2_prime_05", $"rui/menu/common/no_art", 6, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_doubletake", "skin_doubletake_prime_05", 0, { skinIndex = 6 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_doubletake" ][ 6 ] <- "skin_doubletake_prime_05"
+	// Doubletake - prime6
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_doubletake_prime_06", "mp_weapon_doubletake", "#d2_prime_06", $"rui/menu/common/no_art", 7, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_doubletake", "skin_doubletake_prime_06", 0, { skinIndex = 7 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_doubletake" ][ 7 ] <- "skin_doubletake_prime_06"
+	// Longbow - prime1
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_dmr_prime_01", "mp_weapon_dmr", "#dmr_prime_01", $"rui/menu/common/no_art", 2, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_dmr", "skin_dmr_prime_01", 0, { skinIndex = 2 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_dmr" ][ 2 ] <- "skin_dmr_prime_01"
+	// Longbow - prime3
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_dmr_prime_03", "mp_weapon_dmr", "#dmr_prime_03", $"rui/menu/common/no_art", 4, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_dmr", "skin_dmr_prime_03", 0, { skinIndex = 4 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_dmr" ][ 4 ] <- "skin_dmr_prime_03"
+	// Longbow - prime4
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_dmr_prime_04", "mp_weapon_dmr", "#dmr_prime_04", $"rui/menu/common/no_art", 5, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_dmr", "skin_dmr_prime_04", 0, { skinIndex = 5 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_dmr" ][ 5 ] <- "skin_dmr_prime_04"
+	// Longbow - prime5
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_dmr_prime_05", "mp_weapon_dmr", "#dmr_prime_05", $"rui/menu/common/no_art", 6, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_dmr", "skin_dmr_prime_05", 0, { skinIndex = 6 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_dmr" ][ 6 ] <- "skin_dmr_prime_05"
+	// Longbow - prime6
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_dmr_prime_06", "mp_weapon_dmr", "#dmr_prime_06", $"rui/menu/common/no_art", 7, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_dmr", "skin_dmr_prime_06", 0, { skinIndex = 7 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_dmr" ][ 7 ] <- "skin_dmr_prime_06"
+	// Eva-8  - prime1
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_shotgun_prime_01", "mp_weapon_shotgun", "#eva-8_prime_01", $"rui/menu/common/no_art", 2, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_shotgun", "skin_shotgun_prime_01", 0, { skinIndex = 2 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_shotgun" ][ 2 ] <- "skin_shotgun_prime_01"
+	// Eva-8 - prime2
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_shotgun_prime_02", "mp_weapon_shotgun", "#eva-8_prime_02", $"rui/menu/common/no_art", 3, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_shotgun", "skin_shotgun_prime_02", 0, { skinIndex = 3 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_shotgun" ][ 3 ] <- "skin_shotgun_prime_02"
+	// Eva-8  - prime4
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_shotgun_prime_04", "mp_weapon_shotgun", "#eva-8_prime_04", $"rui/menu/common/no_art", 5, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_shotgun", "skin_shotgun_prime_04", 0, { skinIndex = 5 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_shotgun" ][ 5 ] <- "skin_shotgun_prime_04"
+	// Eva-8  - prime5
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_shotgun_prime_05", "mp_weapon_shotgun", "#eva-8_prime_05", $"rui/menu/common/no_art", 6, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_shotgun", "skin_shotgun_prime_05", 0, { skinIndex = 6 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_shotgun" ][ 6 ] <- "skin_shotgun_prime_05"
+	// Eva-8  - prime6
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_shotgun_prime_06", "mp_weapon_shotgun", "#eva-8_prime_06", $"rui/menu/common/no_art", 7, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_shotgun", "skin_shotgun_prime_06", 0, { skinIndex = 7 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_shotgun" ][ 7 ] <- "skin_shotgun_prime_06"
+	// Mastiff - masterwork
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_mastiff_masterwork", "mp_weapon_mastiff", "#SKIN_MASTERWORK", $"rui/weapon_skin_swatches/swatch_masterwork", 2, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_mastiff", "skin_mastiff_masterwork", 0, { skinIndex = 2 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_mastiff" ][ 2 ] <- "skin_mastiff_masterwork"
+	// Mastiff - flight deck
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_mastiff_flight_deck", "mp_weapon_mastiff", "Flight Deck Elite", $"rui/titan_loadout/skins/ion_skin_fd", 3, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_mastiff", "skin_mastiff_flight_deck", 0, { skinIndex = 3 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_mastiff" ][ 3 ] <- "skin_mastiff_flight_deck"
+	// Mastiff - patriot
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_mastiff_frontier_patriot", "mp_weapon_mastiff", "#SKIN_PATRIOT", $"rui/weapon_skin_swatches/swatch_patriot", 4, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_mastiff", "skin_mastiff_frontier_patriot", 0, { skinIndex = 4 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_mastiff" ][ 4 ] <- "skin_mastiff_frontier_patriot"
+	// Mastiff - frontline
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_mastiff_frontline", "mp_weapon_mastiff", "Frontline Elite", $"rui/titan_loadout/skins/tone_skin_06", 5, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_mastiff", "skin_mastiff_frontline", 0, { skinIndex = 5 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_mastiff" ][ 5 ] <- "skin_mastiff_frontline"
+	// Mastiff - heatsink
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_mastiff_heatsink", "mp_weapon_mastiff", "#SKIN_HEAT_SINK", $"rui/weapon_skin_swatches/swatch_heatsink", 6, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_mastiff", "skin_mastiff_heatsink", 0, { skinIndex = 6 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_mastiff" ][ 6 ] <- "skin_mastiff_heatsink"
+	// SMR - prime2
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_sidewinder_prime_02", "mp_weapon_smr", "#smr_prime_01", $"rui/menu/common/no_art", 3, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_smr", "skin_sidewinder_prime_02", 0, { skinIndex = 3 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_smr" ][ 3 ] <- "skin_sidewinder_prime_02"
+	// SMR - prime3
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_sidewinder_prime_03", "mp_weapon_smr", "#smr_prime_03", $"rui/menu/common/no_art", 4, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_smr", "skin_sidewinder_prime_03", 0, { skinIndex = 4 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_smr" ][ 4 ] <- "skin_sidewinder_prime_03"
+	// SMR - prime4
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_sidewinder_prime_04", "mp_weapon_smr", "#smr_prime_04", $"rui/menu/common/no_art", 5, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_smr", "skin_sidewinder_prime_04", 0, { skinIndex = 5 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_smr" ][ 5 ] <- "skin_sidewinder_prime_04"
+	// SMR - Chrome p5 
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_sidewinder_chrome", "mp_weapon_smr", "Chrome Elite", $"rui/titan_loadout/skins/legion_skin_04", 6, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_smr", "skin_sidewinder_chrome", 0, { skinIndex = 6 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_smr" ][ 6 ] <- "skin_sidewinder_chrome"
+	// SMR - prime6
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_sidewinder_prime_06", "mp_weapon_smr", "#smr_prime_06", $"rui/menu/common/no_art", 7, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_smr", "skin_sidewinder_prime_06", 0, { skinIndex = 7 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_smr" ][ 7 ] <- "skin_sidewinder_prime_06"
+	// EPG-1 - prime1
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_epg_prime_01", "mp_weapon_epg", "#epg_prime_01", $"rui/menu/common/no_art", 2, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_epg", "skin_epg_prime_01", 0, { skinIndex = 2 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_epg" ][ 2 ] <- "skin_epg_prime_01"
+	// EPG-1 - prime2
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_epg_prime_02", "mp_weapon_epg", "#epg_prime_02", $"rui/menu/common/no_art", 3, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_epg", "skin_epg_prime_02", 0, { skinIndex = 3 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_epg" ][ 3 ] <- "skin_epg_prime_02"
+	// EPG-1  - prime3
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_epg_prime_03", "mp_weapon_epg", "#epg_prime_03", $"rui/menu/common/no_art", 4, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_epg", "skin_epg_prime_03", 0, { skinIndex = 4 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_epg" ][ 4 ] <- "skin_epg_prime_03"
+	// EPG-1  - prime5
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_epg_prime_05", "mp_weapon_epg", "#epg_prime_05", $"rui/menu/common/no_art", 6, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_epg", "skin_epg_prime_05", 0, { skinIndex = 6 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_epg" ][ 6 ] <- "skin_epg_prime_05"
+	// EPG-1  - prime6
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_epg_prime_06", "mp_weapon_epg", "#epg_prime_06", $"rui/menu/common/no_art", 7, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_epg", "skin_epg_prime_06", 0, { skinIndex = 7 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_epg" ][ 7 ] <- "skin_epg_prime_06"
+	// Softball - desert
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_softball_desert", "mp_weapon_softball", "Desert Elite", $"rui/titan_loadout/skins/ion_skin_02", 3, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_softball", "skin_softball_desert", 0, { skinIndex = 3 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_softball" ][ 3 ] <- "skin_softball_desert"
+	// Softball - hazard p3
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_softball_hazard", "mp_weapon_softball", "#Hazard Elite", $"rui/titan_loadout/skins/northstar_skin_04", 4, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_softball", "skin_softball_hazard", 0, { skinIndex = 4 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_softball" ][ 4 ] <- "skin_softball_hazard"
+	// Softball - sky
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_softball_sky", "mp_weapon_softball", "#SKIN_SKY", $"rui/weapon_skin_swatches/swatch_sky", 5, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_softball", "skin_softball_sky", 0, { skinIndex = 5 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_softball" ][ 5 ] <- "skin_softball_sky"
+	// Softball - cobalt p5
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_softball_cobalt", "mp_weapon_softball", "Colbalt Elite", $"rui/weapon_skin_swatches/swatch_blue_fade", 6, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_softball", "skin_softball_cobalt", 0, { skinIndex = 6 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_softball" ][ 6 ] <- "skin_softball_cobalt"
+	// Softball - purple fade
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_softball_purple_fade", "mp_weapon_softball", "#SKIN_PURPLE_FADE", $"rui/weapon_skin_swatches/swatch_purple_fade", 7, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_softball", "skin_softball_purple_fade", 0, { skinIndex = 7 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_softball" ][ 7 ] <- "skin_softball_purple_fade"
+	// Cold-War - prime1
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_coldwar_prime_01", "mp_weapon_pulse_lmg", "#cold-war_prime_01", $"rui/menu/common/no_art", 2, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_pulse_lmg", "skin_coldwar_prime_01", 0, { skinIndex = 2 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_pulse_lmg" ][ 2 ] <- "skin_coldwar_prime_01"
+	// Cold-War - prime2
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_coldwar_prime_02", "mp_weapon_pulse_lmg", "#cold-war_prime_02", $"rui/menu/common/no_art", 3, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_pulse_lmg", "skin_coldwar_prime_02", 0, { skinIndex = 3 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_pulse_lmg" ][ 3 ] <- "skin_coldwar_prime_02"
+	// Cold-War - prime3
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_coldwar_prime_03", "mp_weapon_pulse_lmg", "#cold-war_prime_03", $"rui/menu/common/no_art", 4, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_pulse_lmg", "skin_coldwar_prime_03", 0, { skinIndex = 4 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_pulse_lmg" ][ 4 ] <- "skin_coldwar_prime_03"
+	// Cold-War - carbon p4
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_coldwar_prime_04", "mp_weapon_pulse_lmg", "Carbon Elite", $"rui/titan_loadout/skins/legion_skin_08", 5, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_pulse_lmg", "skin_coldwar_prime_04", 0, { skinIndex = 5 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_pulse_lmg" ][ 5 ] <- "skin_coldwar_prime_04"
+	// Cold-War - prime6
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_coldwar_prime_06", "mp_weapon_pulse_lmg", "#cold-war_prime_06", $"rui/menu/common/no_art", 7, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_pulse_lmg", "skin_coldwar_prime_06", 0, { skinIndex = 7 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_pulse_lmg" ][ 7 ] <- "skin_coldwar_prime_06"
+	// Wingman Elite - prime1 	//invalid_ref if there are more than one prime skins
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_wingman_elite_prime_01", "mp_weapon_wingman_n", "#wingman_e_prime_01", $"rui/menu/common/no_art", 2, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_wingman_n", "skin_wingman_elite_prime_01", 0, { skinIndex = 2 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_wingman_n" ] <- {}
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_wingman_n" ][ 2 ] <- "skin_wingman_elite_prime_01"
+	// Wingman Elite - prime2	
+//	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_wingman_elite_prime_02", "mp_weapon_wingman_n", "#wingman_e_prime_02", $"rui/menu/common/no_art", 3, 1 )
+//	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_wingman_n", "skin_wingman_elite_prime_02", 0, { skinIndex = 3 } )
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_wingman_n" ] <- {}
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_wingman_n" ][ 3 ] <- "skin_wingman_elite_prime_02"
+	// Wingman Elite - prime3	
+//	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_wingman_elite_prime_03", "mp_weapon_wingman_n", "#wingman_e_prime_03", $"rui/menu/common/no_art", 4, 1 )
+//	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_wingman_n", "skin_wingman_elite_prime_03", 0, { skinIndex = 4 } )
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_wingman_n" ] <- {}
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_wingman_n" ][ 4 ] <- "skin_wingman_elite_prime_03"
+	// Wingman Elite - prime4	
+//	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_wingman_elite_prime_04", "mp_weapon_wingman_n", "#wingman_e_prime_04", $"rui/menu/common/no_art", 5, 1 )
+//	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_wingman_n", "skin_wingman_elite_prime_04", 0, { skinIndex = 5 } )
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_wingman_n" ] <- {}
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_wingman_n" ][ 5 ] <- "skin_wingman_elite_prime_04"
+	// Wingman Elite - prime5	
+//	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_wingman_elite_prime_05", "mp_weapon_wingman_n", "#wingman_e_prime_05", $"rui/menu/common/no_art", 6, 1 )
+//	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_wingman_n", "skin_wingman_elite_prime_05", 0, { skinIndex = 6 } )
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_wingman_n" ] <- {}
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_wingman_n" ][ 6 ] <- "skin_wingman_elite_prime_05"
+	// Wingman Elite - prime6	
+//	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_wingman_elite_prime_06", "mp_weapon_wingman_n", "#wingman_e_prime_06", $"rui/menu/common/no_art", 7, 1 )
+//	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_wingman_n", "skin_wingman_elite_prime_06", 0, { skinIndex = 7 } )
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_wingman_n" ] <- {}
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_wingman_n" ][ 7 ] <- "skin_wingman_elite_prime_06"
+	// Mozambique - prime1
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_mozambique_prime_01", "mp_weapon_shotgun_pistol", "#mozambique_prime_01", $"rui/menu/common/no_art", 2, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_shotgun_pistol", "skin_mozambique_prime_01", 0, { skinIndex = 2 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_shotgun_pistol" ][ 2 ] <- "skin_mozambique_prime_01"
+	// Mozambique - prime2
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_mozambique_prime_02", "mp_weapon_shotgun_pistol", "#mozambique_prime_02", $"rui/menu/common/no_art", 3, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_shotgun_pistol", "skin_mozambique_prime_02", 0, { skinIndex = 3 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_shotgun_pistol" ][ 3 ] <- "skin_mozambique_prime_02"
+	// Mozambique - prime3
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_mozambique_prime_03", "mp_weapon_shotgun_pistol", "#mozambique_prime_03", $"rui/menu/common/no_art", 4, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_shotgun_pistol", "skin_mozambique_prime_03", 0, { skinIndex = 4 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_shotgun_pistol" ][ 4 ] <- "skin_mozambique_prime_03"
+	// Mozambique - prime4
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_mozambique_prime_04", "mp_weapon_shotgun_pistol", "#mozambique_prime_04", $"rui/menu/common/no_art", 5, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_shotgun_pistol", "skin_mozambique_prime_04", 0, { skinIndex = 5 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_shotgun_pistol" ][ 5 ] <- "skin_mozambique_prime_04"
+	// Mozambique - prime5
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_mozambique_prime_05", "mp_weapon_shotgun_pistol", "#mozambique_prime_05", $"rui/menu/common/no_art", 6, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_shotgun_pistol", "skin_mozambique_prime_05", 0, { skinIndex = 6 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_shotgun_pistol" ][ 6 ] <- "skin_mozambique_prime_05"
+	// MGL - red p1
+//	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_mgl_prime_01", "mp_weapon_mgl", "Red Elite", $"rui/weapon_skin_swatches/swatch_blue_fade", 2, 1 )
+//	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_mgl", "skin_mgl_prime_01", 0, { skinIndex = 2 } )
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_mgl" ] <- {}
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_mgl" ][ 2 ] <- "skin_mgl_prime_01"
+	// MGL - green p2
+//	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_mgl_prime_02", "mp_weapon_mgl", "Green Elite", $"rui/weapon_skin_swatches/swatch_blue_fade", 3, 1 )
+//	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_mgl", "skin_mgl_prime_02", 0, { skinIndex = 3 } )
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_mgl" ] <- {}
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_mgl" ][ 3 ] <- "skin_mgl_prime_02"
+	// MGL - colbalt p3
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_mgl_colbalt", "mp_weapon_mgl", "Colbalt Elite", $"rui/weapon_skin_swatches/swatch_blue_fade", 4, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_mgl", "skin_mgl_colbalt", 0, { skinIndex = 4 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_mgl" ] <- {}
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_mgl" ][ 4 ] <- "skin_mgl_colbalt"
+	// MGL - prime4			// 4-6 DON'T EXIST IN .QC !!!
+//	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_mgl_prime_04", "mp_weapon_mgl", "#mgl_prime_04", $"rui/menu/common/no_art", 5, 1 )
+//	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_mgl", "skin_mgl_prime_04", 0, { skinIndex = 5 } )
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_mgl" ] <- {}
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_mgl" ][ 5 ] <- "skin_mgl_prime_04"
+	// MGL - prime5
+//	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_mgl_prime_05", "mp_weapon_mgl", "#mgl_prime_05", $"rui/menu/common/no_art", 6, 1 )
+//	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_mgl", "skin_mgl_prime_05", 0, { skinIndex = 6 } )
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_mgl" ] <- {}
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_mgl" ][ 6 ] <- "skin_mgl_prime_05"
+	// MGL - prime6
+//	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_mgl_prime_06", "mp_weapon_mgl", "#mgl_prime_06", $"rui/menu/common/no_art", 7, 1 )
+//	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_mgl", "skin_mgl_prime_06", 0, { skinIndex = 7 } )
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_mgl" ] <- {}
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_mgl" ][ 7 ] <- "skin_mgl_prime_06"
+	// Archer_at - prime2
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_rocket_launcher_prime_02", "mp_weapon_rocket_launcher", "#archer_prime_02", $"rui/menu/common/no_art", 3, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_rocket_launcher", "skin_rocket_launcher_prime_02", 0, { skinIndex = 3 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_rocket_launcher" ][ 3 ] <- "skin_rocket_launcher_prime_02"
+	// Archer_at - prime3
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_rocket_launcher_prime_03", "mp_weapon_rocket_launcher", "#archer_prime_03", $"rui/menu/common/no_art", 4, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_rocket_launcher", "skin_rocket_launcher_prime_03", 0, { skinIndex = 4 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_rocket_launcher" ][ 4 ] <- "skin_rocket_launcher_prime_03"
+	// Archer_at - prime4
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_rocket_launcher_prime_04", "mp_weapon_rocket_launcher", "#archer_prime_04", $"rui/menu/common/no_art", 5, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_rocket_launcher", "skin_rocket_launcher_prime_04", 0, { skinIndex = 5 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_rocket_launcher" ][ 5 ] <- "skin_rocket_launcher_prime_04"
+	// Archer_at - prime5
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_rocket_launcher_prime_05", "mp_weapon_rocket_launcher", "#archer_prime_05", $"rui/menu/common/no_art", 6, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_rocket_launcher", "skin_rocket_launcher_prime_05", 0, { skinIndex = 6 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_rocket_launcher" ][ 6 ] <- "skin_rocket_launcher_prime_05"
+	// Archer_at - prime6
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_rocket_launcher_prime_06", "mp_weapon_rocket_launcher", "#archer_prime_06", $"rui/menu/common/no_art", 7, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_rocket_launcher", "skin_rocket_launcher_prime_06", 0, { skinIndex = 7 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_rocket_launcher" ][ 7 ] <- "skin_rocket_launcher_prime_06"
+	// Arc Launcher - prime2
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_thunderbolt_prime_02", "mp_weapon_arc_launcher", "#thunderbolt_prime_02", $"rui/menu/common/no_art", 3, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_arc_launcher", "skin_thunderbolt_prime_02", 0, { skinIndex = 3 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_arc_launcher" ][ 3 ] <- "skin_thunderbolt_prime_02"
+	// Arc Launcher - prime3
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_thunderbolt_prime_03", "mp_weapon_arc_launcher", "#thunderbolt_prime_03", $"rui/menu/common/no_art", 4, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_arc_launcher", "skin_thunderbolt_prime_03", 0, { skinIndex = 4 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_arc_launcher" ][ 4 ] <- "skin_thunderbolt_prime_03"
+	// Arc Launcher - prime4
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_thunderbolt_prime_04", "mp_weapon_arc_launcher", "#thunderbolt_prime_04", $"rui/menu/common/no_art", 5, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_arc_launcher", "skin_thunderbolt_prime_04", 0, { skinIndex = 5 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_arc_launcher" ][ 5 ] <- "skin_thunderbolt_prime_04"
+	// Arc Launcher - prime5
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_thunderbolt_prime_05", "mp_weapon_arc_launcher", "#thunderbolt_prime_05", $"rui/menu/common/no_art", 6, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_arc_launcher", "skin_thunderbolt_prime_05", 0, { skinIndex = 6 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_arc_launcher" ][ 6 ] <- "skin_thunderbolt_prime_05"
+	// Arc Launcher - prime6
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_thunderbolt_prime_06", "mp_weapon_arc_launcher", "#thunderbolt_prime_06", $"rui/menu/common/no_art", 7, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_arc_launcher", "skin_thunderbolt_prime_06", 0, { skinIndex = 7 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_arc_launcher" ][ 7 ] <- "skin_thunderbolt_prime_06"
+	// Charge Rifle - prime1 	//idk :( ...
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_defender_prime_01", "mp_weapon_defender", "#charge_rifle_prime_01", $"rui/menu/common/no_art", 2, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_defender", "skin_defender_prime_01", 0, { skinIndex = 2 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_defender" ] <- {}
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_defender" ][ 2 ] <- "skin_defender_prime_01"
+	// Charge Rifle - prime2
+//	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_defender_prime_02", "mp_weapon_defender", "#charge_rifle_prime_02", $"rui/menu/common/no_art", 3, 1 )
+//	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_defender", "skin_defender_prime_02", 0, { skinIndex = 3 } )
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_defender" ] <- {}
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_defender" ][ 3 ] <- "skin_defender_prime_02"
+	// Charge Rifle - prime3	
+//	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_defender_prime_03", "mp_weapon_defender", "#charge_rifle_prime_03", $"rui/menu/common/no_art", 4, 1 )
+//	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_defender", "skin_defender_prime_03", 0, { skinIndex = 4 } )
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_defender" ] <- {}
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_defender" ][ 4 ] <- "skin_defender_prime_03"
+	// Charge Rifle - prime4	
+//	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_defender_prime_04", "mp_weapon_defender", "#charge_rifle_prime_04", $"rui/menu/common/no_art", 5, 1 )
+//	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_defender", "skin_defender_prime_04", 0, { skinIndex = 5 } )
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_defender" ] <- {}
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_defender" ][ 5 ] <- "skin_defender_prime_04"
+	// Charge Rifle - prime5	
+//	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_defender_prime_05", "mp_weapon_defender", "#charge_rifle_prime_05", $"rui/menu/common/no_art", 6, 1 )
+//	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_defender", "skin_defender_prime_05", 0, { skinIndex = 6 } )
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_defender" ] <- {}
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_defender" ][ 6 ] <- "skin_defender_prime_05"
+	// Charge Rifle - prime6	
+//	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_defender_prime_06", "mp_weapon_defender", "#charge_rifle_prime_06", $"rui/menu/common/no_art", 7, 1 )
+//	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_defender", "skin_defender_prime_06", 0, { skinIndex = 7 } )
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_defender" ] <- {}
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_defender" ][ 7 ] <- "skin_defender_prime_06"
+	// P2011 - prime1
+//	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_p2011_prime_01", "mp_weapon_semipistol", "#p2016_prime_01", $"rui/weapon_skin_swatches/swatch_masterwork", 2, 1 )
+//	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_semipistol", "skin_p2011_prime_01", 0, { skinIndex = 2 } )
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_semipistol" ][ 2 ] <- "skin_p2011_prime_01"
+	// P2011 - prime2
+//	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_p2011_prime_02", "mp_weapon_semipistol", "#p2016_prime_02", $"rui/weapon_skin_swatches/swatch_masterwork", 3, 1 )
+//	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_semipistol", "skin_p2011_prime_02", 0, { skinIndex = 3 } )
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_semipistol" ][ 3 ] <- "skin_p2011_prime_02"
+	// P2011 - prime3
+//	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_p2011_prime_03", "mp_weapon_semipistol", "#p2016_prime_03", $"rui/weapon_skin_swatches/swatch_masterwork", 4, 1 )
+//	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_semipistol", "skin_p2011_prime_03", 0, { skinIndex = 4 } )
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_semipistol" ][ 4 ] <- "skin_p2011_prime_03"
+	// P2011 - frontline p4
+//	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_p2011_frontline", "mp_weapon_semipistol", "Frontline Elite", $"rui/weapon_skin_swatches/swatch_masterwork", 5, 1 )
+//	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_semipistol", "skin_p2011_frontline", 0, { skinIndex = 5 } )
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_semipistol" ][ 5 ] <- "skin_p2011_frontline"
+	// P2011 - heatsink p5
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_p2011_heatsink", "mp_weapon_semipistol", "#SKIN_HEAT_SINK", $"rui/weapon_skin_swatches/swatch_heatsink", 6, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_semipistol", "skin_p2011_heatsink", 0, { skinIndex = 6 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_semipistol" ] <- {}
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_semipistol" ][ 6 ] <- "skin_p2011_heatsink"
+	// P2011 - prime6
+//	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_p2011_prime_06", "mp_weapon_semipistol", "#p2016_prime_06", $"rui/weapon_skin_swatches/swatch_heatsink", 7, 1 )
+//	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_semipistol", "skin_p2011_prime_06", 0, { skinIndex = 7 } )
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_semipistol" ] <- {}
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_semipistol" ][ 7 ] <- "skin_p2011_prime_06"
+	// Wingman - prime1
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_wingman_prime_01", "mp_weapon_wingman", "#wingman_prime_01", $"rui/menu/common/no_art", 2, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_wingman", "skin_wingman_prime_01", 0, { skinIndex = 2 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_wingman" ][ 2 ] <- "skin_wingman_prime_01"
+	// Wingman - prime2
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_wingman_prime_02", "mp_weapon_wingman", "#wingman_prime_02", $"rui/menu/common/no_art", 3, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_wingman", "skin_wingman_prime_02", 0, { skinIndex = 3 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_wingman" ][ 3 ] <- "skin_wingman_prime_02"
+	// Wingman - prime3
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_wingman_prime_03", "mp_weapon_wingman", "#wingman_prime_03", $"rui/menu/common/no_art", 4, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_wingman", "skin_wingman_prime_03", 0, { skinIndex = 4 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_wingman" ][ 4 ] <- "skin_wingman_prime_03"
+	// Wingman - prime4
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_wingman_prime_04", "mp_weapon_wingman", "#wingman_prime_04", $"rui/menu/common/no_art", 5, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_wingman", "skin_wingman_prime_04", 0, { skinIndex = 5 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_wingman" ][ 5 ] <- "skin_wingman_prime_04"
+	// Wingman - prime5
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_wingman_prime_05", "mp_weapon_wingman", "#wingman_prime_05", $"rui/menu/common/no_art", 6, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_wingman", "skin_wingman_prime_05", 0, { skinIndex = 6 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_wingman" ][ 6 ] <- "skin_wingman_prime_05"
+	// RE-45 - prime1 	//invalid_ref
+	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_autopistol_prime_01", "mp_weapon_autopistol", "#re-45_prime_01", $"rui/menu/common/no_art", 2, 1 )
+	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_autopistol", "skin_autopistol_prime_01", 0, { skinIndex = 2 } )
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_autopistol" ] <- {}
+	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_autopistol" ][ 2 ] <- "skin_autopistol_prime_01"
+	// RE-45 - prime2	//invalid_ref if there is more than 1 reskin
+//	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_autopistol_prime_02", "mp_weapon_autopistol", "#re-45_prime_02", $"rui/menu/common/no_art", 3, 1 )
+//	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_autopistol", "skin_autopistol_prime_02", 0, { skinIndex = 3 } )
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_autopistol" ] <- {}
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_autopistol" ][ 3 ] <- "skin_autopistol_prime_02"
+	// RE-45 - prime3	
+//	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_autopistol_prime_03", "mp_weapon_autopistol", "#re-45_prime_03", $"rui/menu/common/no_art", 4, 1 )
+//	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_autopistol", "skin_autopistol_prime_03", 0, { skinIndex = 4 } )
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_autopistol" ] <- {}
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_autopistol" ][ 4 ] <- "skin_autopistol_prime_03"
+	// RE-45 - prime4	
+//	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_autopistol_prime_04", "mp_weapon_autopistol", "#re-45_prime_04", $"rui/menu/common/no_art", 5, 1 )
+//	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_autopistol", "skin_autopistol_prime_04", 0, { skinIndex = 5 } )
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_autopistol" ] <- {}
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_autopistol" ][ 5 ] <- "skin_autopistol_prime_04"
+	// RE-45 - prime5	
+//	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_autopistol_prime_05", "mp_weapon_autopistol", "#re-45_prime_05", $"rui/menu/common/no_art", 6, 1 )
+//	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_autopistol", "skin_autopistol_prime_05", 0, { skinIndex = 6 } )
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_autopistol" ] <- {}
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_autopistol" ][ 6 ] <- "skin_autopistol_prime_05"
+	// RE-45 - prime6	
+//	CreateWeaponSkinData( -1, eItemTypes.WEAPON_SKIN, false, "skin_autopistol_prime_06", "mp_weapon_autopistol", "#re-45_prime_06", $"rui/menu/common/no_art", 7, 1 )
+//	CreateGenericSubItemData( eItemTypes.WEAPON_SKIN, "mp_weapon_autopistol", "skin_autopistol_prime_06", 0, { skinIndex = 7 } )
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_autopistol" ] <- {}
+//	file.weaponRefAndPersistenceValueToSkinRefTable[ "mp_weapon_autopistol" ][ 7 ] <- "skin_autopistol_prime_06"
+#endif
 }
 
 bool function ItemsInSameMenuCategory( string itemRef1, string itemRef2 )

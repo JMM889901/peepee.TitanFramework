@@ -788,6 +788,7 @@ void function OnPassiveSelectMenu_Close()
 
 		ClearNewStatus( button, ref, parentRef )
 	}
+
 }
 
 void function HideSubmenuBackgroundElems()

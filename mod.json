@@ -3,10 +3,10 @@
 	"Description": "Pain",
 	"LoadPriority": 50,
 	"RequiredOnClient": true,
-	"Version": "1.1.5",
+	"Version": "1.2.1",
 	"Scripts": [
 		{
-			"Path": "UIStuff.gnut",
+			"Path": "titanFramework/FrameworkUtil.gnut",
 			"RunOn": "UI || SERVER || CLIENT",
 			"ServerCallback": {
 				"Before": "PreInit",
@@ -23,8 +23,22 @@
 			}
 		},
 		{
-			"Path": "FrameworkMenuFunctions.gnut",
+			"Path": "titanFramework/UI/FrameworkLoadoutSelectionUtil.gnut",
 			"RunOn": "UI"
+		},
+		{
+			"Path": "titanFramework/UI/FrameworkLoadoutSelectionMenu.gnut",
+			"RunOn": "UI",
+			"UICallback": {
+				"Before": "FrameworkSelectMenuInit"
+			}
+		},
+		{
+			"Path": "titanFramework/UI/FrameworkCustomPassiveSelect.gnut",
+			"RunOn": "UI",
+			"UICallback": {
+				"Before": "FrameworkPassiveMenuInit"
+			}
 		}
 	],
 	"ConVars": [
@@ -37,6 +51,10 @@
 			"DefaultValue": "0"
 		}
 	],
+	"Dependencies":
+    {
+      "TITANFRAMEWORK_HAS_MORESKINS": "MoreSkins-"
+    },
 	"Localisation": [
 		"resource/TitanFramework_localisation_%language%.txt"
 	]

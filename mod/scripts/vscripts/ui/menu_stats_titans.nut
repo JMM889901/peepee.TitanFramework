@@ -44,7 +44,7 @@ void function OnViewStatsTitans_Open()
 	{
 		if(titan.persistenceId == 999)
 		{
-			print(titan.ref + " Not base titan")
+			//print(titan.ref + " Not base titan")
 			file.allTitans.removebyvalue(titan)
 			continue
 		}

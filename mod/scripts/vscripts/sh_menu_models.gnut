@@ -2287,7 +2287,7 @@
 		{
 			ModdedTitanData data = GetModdedTitanData(GetCachedTitanLoadout( loadoutIndex ).name)
 			if(data.Primary.scriptHandled)
-				return data.Primary.MenuModelWeapon
+				return data.Primary.MenuModelWeaponFunc(GetCachedTitanLoadout( loadoutIndex ))
 		}
 		return GetCachedTitanLoadout( loadoutIndex ).primary
 	}

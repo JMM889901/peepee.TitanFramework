@@ -310,6 +310,11 @@ int function FD_TitanGetRawLevel( entity player, string titanClass )
 
 int function FD_TitanGetLevel( entity player, string titanClass )
 {
+	//if(GetModdedTitanClasses().contains(titanClass))
+	//{
+	//	titanClass = GetModdedTitanClassForMods(titanClass)
+	//	
+	//}
 	return FD_TitanGetLevelForXP( titanClass, FD_TitanGetXP( player, titanClass ) )
 }
 
