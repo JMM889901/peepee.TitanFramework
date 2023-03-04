@@ -36,7 +36,6 @@ global function GetModdedTitanReadyMessage
 global function ModdedTitanPassiveHasCustomAssets
 //global function GetModdedTitanFDPassiveArray
 global function GetModdedTitanPassiveHasAsset
-global function GetModdedTitanLTSIcon
 global function GetHintForModdedTitanLoadout
 global function DevPrintTitanLoadoutPersistentDebug
 
@@ -64,7 +63,6 @@ table<int, int > ModdedTitanPassivePersistentType
 table<int, string> ModdedPassiveTypeDisplayNames
 table<string, table<string, bool> > ModdedTitanPassiveHasAsset
 table<string, string> ModdedTitanReadyMessage
-table<string, asset> ModdedTitanLTSIcon
 table<string, array<string> > ModdedTitanHints
 //table<string, array<ItemDisplayData> ModdedTitanFDUpgrades
 
@@ -147,12 +145,7 @@ bool function ModdedTitanPassiveHasCustomAssets(string titan, string itemType)
 	//	print("not in")
 	return false
 }
-asset function GetModdedTitanLTSIcon(string titan)
-{
-	if(titan in ModdedTitanLTSIcon)
-		return ModdedTitanLTSIcon[titan]
-	return $"rui/menu/postgame/vanguard_icon"
-}
+
 table<string, table<string, bool> > function GetModdedTitanPassiveHasAsset()
 {
 	return ModdedTitanPassiveHasAsset
@@ -430,7 +423,9 @@ table<string, table<string, table<string, string> > > function DevGetPassivePers
 }
 void function PreInit()
 {
-
+	#if SERVER || CLIENT
+	AddCallback_OnRegisteringCustomNetworkVars( RegisterFrameworkNetworkVar )
+	#endif
 	PreInitGlobal()
 	#if CLIENT
 	AddServerToClientStringCommandCallback("UpdateTeamTitanSelectionString", ServerCallback_UpdateTeamTitanSelectionString )
@@ -465,6 +460,7 @@ void function FrameworkInit()
 	#if SERVER
 		AddClientCommandCallback( "SetTitanClass", SetPlayerTitanRemote )
 	#endif
+
 	for(int i = 7; i < 10; i++)
 	{//most of this is redundant but im afraid to remove it at this point
 		if(shouldPrintDevStuff())
@@ -502,7 +498,10 @@ void function FrameworkInit()
 	}
 
 }
-
+void function RegisterFrameworkNetworkVar()
+{
+	Remote_RegisterFunction("UpdateHealthSegmentCount")
+}
 void function checkLoadoutValues()
 {
 	
@@ -881,7 +880,6 @@ void function CreateModdedTitanSimple( ModdedTitanData Titan )
 	ModdedTitanClasses.append(Titan.Name)
 	ModdedTitanReadyMessage[Titan.Name] <- Titan.titanReadyMessageOverride
 	ModdedTitanPassiveHasAsset[Titan.Name] <- {}
-	ModdedTitanLTSIcon[Titan.Name] <- Titan.LTSIcon
 	//ModdedTitan[Titan.Name]
 	if(Titan.titanHints.len() > 0)
 		ModdedTitanHints[Titan.Name] <- Titan.titanHints
@@ -990,8 +988,16 @@ void function RegisterModdedTitanItemsSimple( ModdedTitanData titan )
 	asset Image = expect asset(GetItemData(titan.BaseName).i.coreIcon)
 	if(titan.icon != $"ui/temp")
 		Image = titan.icon
+	asset TitanIcon
+	if(titan.Core.scriptHandled && titan.coreIconOverride != $"ui/temp")
+			TitanIcon = titan.coreIconOverride
+	else if (titan.Core.scriptHandled)
+			TitanIcon = Image
+	else
+			TitanIcon = GetWeaponInfoFileKeyFieldAsset_Global(titan.Core.weaponName, "menu_icon")
+
 	array<int> typesarray = [eItemTypes.TITAN_TITANFALL_PASSIVE, eItemTypes.TITAN_GENERAL_PASSIVE, passive2, passive4, passive5, passive6]
-	ItemData titanData = CreateModdedTitanItem(999, eItemTypes.TITAN, titan.Name, titan.Name, titan.Description, titan.Description, titan.icon, 0, false, typesarray,Image)
+	ItemData titanData = CreateModdedTitanItem(999, eItemTypes.TITAN, titan.Name, titan.Name, titan.Description, titan.Description, Image, 0, false, typesarray,TitanIcon)
 	titanData.i.statSpeed <- titan.speedStat
 	titanData.i.statDamage <- titan.damageStat
 	titanData.i.statHealth <- titan.healthStat

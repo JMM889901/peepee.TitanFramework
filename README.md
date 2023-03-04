@@ -174,7 +174,7 @@ Debugging
 --
 To help debugging broken persistence data it can be helpful to run the command 
 
-`script_client DevPrintTitanLoadoutPersistentDebug(GetLocalClientPlayer(), LoadoutIndex(number between 0 and 9))` 
+`script_client DevPrintTitanLoadoutPersistentDebug(GetLocalClientPlayer(), (number between 0 and 9) )` 
 
 
 Changelog ish

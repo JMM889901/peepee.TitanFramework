@@ -483,7 +483,7 @@ global struct ModdedTitanData{
 	string BaseName
 	
 	asset icon = $"ui/temp"
-	asset LTSIcon = $"rui/menu/postgame/vanguard_icon"
+	asset coreIconOverride = $"ui/temp"
 
 	
 	array<ModdedPassiveData> passive2Array

@@ -20,6 +20,8 @@ global function TitanCockpit_DoEMP
 global function TitanEMP_Internal
 global function ServerCallback_EjectConfirmed
 global function LinkCoreHint
+global function UpdateHealthSegmentCount
+
 
 global function AddTitanCockpitManagedRUI
 global function UpdateTitanCockpitVisibility

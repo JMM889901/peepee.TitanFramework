@@ -280,13 +280,14 @@ entity function CreateAutoTitanForPlayer_FromTitanLoadout( entity player, TitanL
 	entity npcTitan = CreateNPCTitan( loadout.setFile, team, origin, angles, loadout.setFileMods )
 	SetTitanSpawnOptionsFromLoadout( npcTitan, loadout )
 	SetSpawnOption_OwnerPlayer( npcTitan, player )
-
 	if ( IsSingleplayer() )
 	{
 		npcTitan.EnableNPCFlag( NPC_IGNORE_FRIENDLY_SOUND )
 	}
 	#if MP
 		string titanRef = GetTitanCharacterNameFromSetFile( loadout.setFile )
+		if( GetModdedTitanClasses().contains(loadout.name) )
+			titanRef = loadout.name
 		npcTitan.SetTargetInfoIcon( GetTitanCoreIcon( titanRef ) )
 	#endif
 
