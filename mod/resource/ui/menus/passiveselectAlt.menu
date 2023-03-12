@@ -70,7 +70,7 @@ resource/ui/menus/passiveselectAlt.menu
 			wide 96
 			tall 96
 			ControlName				CNestedPanel
-			controlSettingsFile		"resource/ui/menus/panels/PassiveSelectButton.res"
+			controlSettingsFile		"resource/ui/menus/panels/PassiveSelectButtonCombined.res"
 			classname				PassiveSelectClass
 			scriptID				0
 	        xpos					96
@@ -87,7 +87,7 @@ resource/ui/menus/passiveselectAlt.menu
 			wide 96
 			tall 96
 			ControlName				CNestedPanel
-			controlSettingsFile		"resource/ui/menus/panels/PassiveSelectButton.res"
+			controlSettingsFile		"resource/ui/menus/panels/PassiveSelectButtonCombined.res"
 			classname				PassiveSelectClass
 			scriptID				1
 			xpos					6
@@ -109,7 +109,7 @@ resource/ui/menus/passiveselectAlt.menu
 			wide 96
 			tall 96
 			ControlName				CNestedPanel
-			controlSettingsFile		"resource/ui/menus/panels/PassiveSelectButton.res"
+			controlSettingsFile		"resource/ui/menus/panels/PassiveSelectButtonCombined.res"
 			classname				PassiveSelectClass
 			scriptID				2
 			ypos					6
@@ -128,7 +128,7 @@ resource/ui/menus/passiveselectAlt.menu
 			wide 96
 			tall 96
 			ControlName				CNestedPanel
-			controlSettingsFile		"resource/ui/menus/panels/PassiveSelectButton.res"
+			controlSettingsFile		"resource/ui/menus/panels/PassiveSelectButtonCombined.res"
 			classname				PassiveSelectClass
 			scriptID				3
 			xpos					6
@@ -150,7 +150,7 @@ resource/ui/menus/passiveselectAlt.menu
 			wide 96
 			tall 96
 			ControlName				CNestedPanel
-			controlSettingsFile		"resource/ui/menus/panels/PassiveSelectButton.res"
+			controlSettingsFile		"resource/ui/menus/panels/PassiveSelectButtonCombined.res"
 			classname				PassiveSelectClass
 			scriptID				4
 			ypos					6
@@ -169,7 +169,7 @@ resource/ui/menus/passiveselectAlt.menu
 			wide 96
 			tall 96
 			ControlName				CNestedPanel
-			controlSettingsFile		"resource/ui/menus/panels/PassiveSelectButton.res"
+			controlSettingsFile		"resource/ui/menus/panels/PassiveSelectButtonCombined.res"
 			classname				PassiveSelectClass
 			scriptID				5
 			xpos					6
@@ -191,7 +191,7 @@ resource/ui/menus/passiveselectAlt.menu
 			wide 96
 			tall 96
 			ControlName				CNestedPanel
-			controlSettingsFile		"resource/ui/menus/panels/PassiveSelectButton.res"
+			controlSettingsFile		"resource/ui/menus/panels/PassiveSelectButtonCombined.res"
 			classname				PassiveSelectClass
 			scriptID				6
 			ypos					6
@@ -210,7 +210,7 @@ resource/ui/menus/passiveselectAlt.menu
 			wide 96
 			tall 96
 			ControlName				CNestedPanel
-			controlSettingsFile		"resource/ui/menus/panels/PassiveSelectButton.res"
+			controlSettingsFile		"resource/ui/menus/panels/PassiveSelectButtonCombined.res"
 			classname				PassiveSelectClass
 			scriptID				7
 			xpos					6
@@ -232,7 +232,7 @@ resource/ui/menus/passiveselectAlt.menu
 			wide 96
 			tall 96
 			ControlName				CNestedPanel
-			controlSettingsFile		"resource/ui/menus/panels/PassiveSelectButton.res"
+			controlSettingsFile		"resource/ui/menus/panels/PassiveSelectButtonCombined.res"
 			classname				PassiveSelectClass
 			scriptID				8
 			ypos                    6
@@ -251,7 +251,7 @@ resource/ui/menus/passiveselectAlt.menu
 			wide 96
 			tall 96
 			ControlName				CNestedPanel
-			controlSettingsFile		"resource/ui/menus/panels/PassiveSelectButton.res"
+			controlSettingsFile		"resource/ui/menus/panels/PassiveSelectButtonCombined.res"
 			classname				PassiveSelectClass
 			scriptID				9
 			xpos					6

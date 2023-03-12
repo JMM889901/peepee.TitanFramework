@@ -166,62 +166,6 @@ resource/ui/menus/loadout_buttons.res
         visible					0
         //tabPosition             9
     }
-        Button11
-    {
-        ControlName				RuiButton
-        InheritProperties		RuiMenuButtonSmall
-        ypos                    8
-        scriptID				11
-        pin_to_sibling			Button10
-        pin_corner_to_sibling	TOP_LEFT
-        pin_to_sibling_corner	BOTTOM_LEFT
-        navUp					Button10
-        navDown					Button12
-        visible					0
-        //tabPosition             9
-    }
-        Button12
-    {
-        ControlName				RuiButton
-        InheritProperties		RuiMenuButtonSmall
-        ypos                    8
-        scriptID				12
-        pin_to_sibling			Button8
-        pin_corner_to_sibling	TOP_LEFT
-        pin_to_sibling_corner	BOTTOM_LEFT
-        navUp					Button11
-        navDown					Button13
-        visible					0
-        //tabPosition             9
-    }
-        Button13
-    {
-        ControlName				RuiButton
-        InheritProperties		RuiMenuButtonSmall
-        ypos                    8
-        scriptID				13
-        pin_to_sibling			Button12
-        pin_corner_to_sibling	TOP_LEFT
-        pin_to_sibling_corner	BOTTOM_LEFT
-        navUp					Button12
-        navDown					Button14
-        visible					0
-        //tabPosition             9
-    }
-        Button14
-    {
-        ControlName				RuiButton
-        InheritProperties		RuiMenuButtonSmall
-        ypos                    8
-        scriptID				14
-        pin_to_sibling			Button13
-        pin_corner_to_sibling	TOP_LEFT
-        pin_to_sibling_corner	BOTTOM_LEFT
-        navUp					Button13
-        navDown					ButtonLast
-        visible					0
-        //tabPosition             9
-    }
     ButtonLast
     {
         ControlName				RuiButton

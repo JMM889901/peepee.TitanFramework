@@ -1,0 +1,115 @@
+globalize_all_functions
+global struct globalPlayerCustomLoadouts
+{
+    table<entity, string> playerSelectedModdedLoadout //player, loadoutName
+    table<entity, table<string, frameworkPersistentTitanLoadout> > playerLoadouts
+}
+global globalPlayerCustomLoadouts frameworkPlayerLoadouts
+void function frameworkIOPersistInit()
+{
+    AddClientCommandCallback("titanFrameworkNewLoadout", registerNewTitanLoadoutFromClient)
+}
+bool function playerHasModdedLoadout(entity player)
+{
+    if(!(player in frameworkPlayerLoadouts.playerSelectedModdedLoadout))
+        return false
+    return frameworkPlayerLoadouts.playerSelectedModdedLoadout[player] != ""
+}
+string function getPlayerModdedLoadoutName(entity player)
+{
+    if(!(player in frameworkPlayerLoadouts.playerSelectedModdedLoadout))
+        return ""
+    return frameworkPlayerLoadouts.playerSelectedModdedLoadout[player]
+}
+frameworkPersistentTitanLoadout function getPlayerModdedLoadout(entity player)
+{
+    return frameworkPlayerLoadouts.playerLoadouts[player][frameworkPlayerLoadouts.playerSelectedModdedLoadout[player]]
+}
+bool function registerNewTitanLoadoutFromClient(entity player, array<string> args)
+{
+    if( args.len() < 7 || args.len() % 2 == 0 )
+    {
+        ServerToClientStringCommand(player, "FrameworkInformLoadoutResponse " + "#REJECTED #INVALIDFORMAT #TOOFEWARGS" )
+    }
+    if( args[2] != "fileName")
+    {
+        ServerToClientStringCommand(player, "FrameworkInformLoadoutResponse " + "#REJECTED #INVALIDFORMAT #NOFILENAME" )
+        return false;
+    }
+    if( args[0] != "titanName" )
+    {
+        ServerToClientStringCommand(player, "FrameworkInformLoadoutResponse " + args[3] + " #REJECTED #INVALIDFORMAT #NOTITANNAME" )
+        return false;
+    }
+    table<string, bool functionref(string value, string property, TitanLoadoutDef acceptedLoadout)> PersistentVars
+    bool modded
+    if( GetModdedTitanClasses().contains(args[1] ) )
+    {
+        modded = true
+        PersistentVars = GetModdedTitanData(args[1]).derivedData.PersistentValuesValidation
+    }
+    else if(IsBaseTitan(args[1]))
+    {
+        PersistentVars = getBaseLoadoutValidationTable()
+    } 
+    else 
+    {
+        ServerToClientStringCommand(player, "FrameworkInformLoadoutResponse " + args[3] + " #REJECED #INVALIDLOADOUT #INVALIDTITANNAME " + args[1] )
+        return false;
+    }
+    frameworkPersistentTitanLoadout PersistLoadout
+    PersistLoadout.fileName = args[3]
+    PersistLoadout.titanName = args[1]
+    TitanLoadoutDef loadout = PersistLoadout.loadout
+    if(modded)
+        overrideTitanLoadoutWithTitanLoadout(loadout, GetModdedTitanByClassNoPersist(args[1]))
+    else
+        overrideTitanLoadoutWithTitanLoadout(loadout, GetBaseTitanByClassNoPersist(args[1]))
+    loadout.titanClass = args[1]
+
+    if(player in frameworkPlayerLoadouts.playerLoadouts && args[3] in frameworkPlayerLoadouts.playerLoadouts[player])
+        return false
+    if( args[4] != "select")
+    {
+        ServerToClientStringCommand(player, "FrameworkInformLoadoutResponse " + args[3] + " #REJECTED #INVALIDFORMAT #NOSELECT" )
+        return false
+    }
+    
+    for( int i = 6; i < args.len(); i+= 2 )
+    {
+        if ( args[i] in PersistentVars)
+        {
+            switch(args[i])
+            {
+                case "skinIndex":
+                case "primeSkinIndex":
+                case "primarySkinIndex":
+                    SetTitanLoadoutValue(loadout, GetCorrectCamoProperty(args[i]), args[args.find(GetCorrectCamoProperty(args[i])) + 1])
+            }
+            if( !PersistentVars[args[i]](args[i+1], args[i], loadout) )
+            {
+                ServerToClientStringCommand(player, "FrameworkInformLoadoutResponse " + args[3] + " #REJECED #INVALIDLOADOUT #FAILEDVALIDATION " + args[i] + " " + args[i+1]  )
+                return false;
+            }
+            else
+            {
+                if(!TrySetTitanLoadoutValue(loadout, args[i], args[i+1]))  
+                {
+                    PersistLoadout.additionalVars[args[i]] = args[i+1]
+                }
+            }
+        }//could return false, but instead just ignore
+    }
+    if( !(player in frameworkPlayerLoadouts.playerLoadouts) )
+    {
+        table<string, frameworkPersistentTitanLoadout> new
+        frameworkPlayerLoadouts.playerLoadouts[player] <- new 
+    }
+    if(args[5] == "yes")
+    {
+        frameworkPlayerLoadouts.playerSelectedModdedLoadout[player] <- PersistLoadout.fileName
+    }
+    frameworkPlayerLoadouts.playerLoadouts[player][PersistLoadout.fileName] <- PersistLoadout
+    ServerToClientStringCommand(player, "FrameworkInformLoadoutResponse " + args[3] + " #ACCEPTED" )
+    return true
+}

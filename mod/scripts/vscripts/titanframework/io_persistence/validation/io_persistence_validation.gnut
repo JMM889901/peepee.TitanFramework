@@ -1,0 +1,151 @@
+globalize_all_functions
+bool function ValidPersistentPassiveForLoadout(string name, string property, TitanLoadoutDef validatedLoadout)
+{
+    string titanClass = validatedLoadout.titanClass
+    if(shouldPrintDevStuff())
+        print("titanclass "+titanClass)
+	if(!ItemDefined(name))
+		return false
+    int itemType = GetItemType(name)
+    return itemType == GetModdedTitanPassivePersistentType(GetModdedTitanLoadoutPassiveTypeByClass(titanClass, property))
+}
+
+#if !SERVER
+string function GetCorrectCamoProperty( string loadoutProperty ) //HACK HACK: should fix dependency between skin and camo index on UI side. Remove when done.
+{
+	string returnValue
+	switch( loadoutProperty )
+	{
+		case "skinIndex":
+			returnValue = "camoIndex"
+			break
+
+		case "primeSkinIndex":
+			returnValue = "primeCamoIndex"
+			break
+
+		case "primarySkinIndex":
+			returnValue = "primaryCamoIndex"
+			break
+
+		case "secondarySkinIndex":
+			returnValue = "secondaryCamoIndex"
+			break
+
+		case "weapon3SkinIndex":
+			returnValue = "weapon3CamoIndex"
+			break
+
+		default:
+			unreachable
+	}
+
+	return returnValue
+}
+#endif
+bool function ValidDecalProperty(string name, string property, TitanLoadoutDef validatedLoadout )
+{
+	string titanClass = validatedLoadout.titanClass
+	if(GetModdedTitanClasses().contains(titanClass))
+		titanClass = GetModdedTitanClassForMods(titanClass)
+	return ( GetNoseArtRefFromTitanClassAndPersistenceValue( titanClass , name.tointeger() ) != INVALID_REF )
+}
+bool function ValidSkinCamoPair(string name, string property, TitanLoadoutDef validatedLoadout)
+{
+
+	bool isSkinIndex = false
+	switch( property  )
+	{
+		case "skinIndex":
+		case "primeSkinIndex":
+		case "primarySkinIndex":
+		case "secondarySkinIndex":
+		case "weapon3SkinIndex":
+			isSkinIndex = true
+			break
+	}
+
+	if ( !isSkinIndex )
+		return true
+
+    string camoProperty = GetCorrectCamoProperty( property )
+	int camoIndexValue = GetTitanLoadoutValue(validatedLoadout, camoProperty).tointeger()
+    int valueAsInt = name.tointeger()
+    switch(property)
+    {
+        case "skinIndex":
+        {
+            if ( valueAsInt == TITAN_SKIN_INDEX_CAMO ) //This is a camo skin
+            {
+                if ( camoIndexValue <= CAMO_INDEX_BASE )
+                {
+                    SetTitanLoadoutValue(validatedLoadout, property, "0")
+                    SetTitanLoadoutValue(validatedLoadout, camoProperty, "0")
+                    return true
+                }
+            }
+            else //i.e. this is a warpaint
+            {
+                SetTitanLoadoutValue(validatedLoadout, camoProperty, "0")
+                return true
+            }
+            break
+        }
+        case "primeSkinIndex": //switching between prime and non-prime doesn't have problems where skin is unlocked on non-prime but is locked on prime, so no need to return false
+		{
+			if ( valueAsInt == TITAN_SKIN_INDEX_CAMO && camoIndexValue <= CAMO_INDEX_BASE )
+			{
+                SetTitanLoadoutValue(validatedLoadout, property, "0")
+                SetTitanLoadoutValue(validatedLoadout, camoProperty, "0")
+				return true
+			}
+            return true//Fuck it i dont care just always accept 
+		}
+		case "primarySkinIndex":
+		{
+			if ( valueAsInt == WEAPON_SKIN_INDEX_CAMO )
+			{
+				if ( camoIndexValue <= CAMO_INDEX_BASE )
+				{
+                    SetTitanLoadoutValue(validatedLoadout, property, "0")
+                    SetTitanLoadoutValue(validatedLoadout, camoProperty, "0")
+					return true // HACK: Work around fact that when we switch weapons we don't do a corresponding call to set camo and skin indexes
+				}
+			}
+			else
+			{
+                SetTitanLoadoutValue(validatedLoadout, camoProperty, "0")
+                return true
+			}
+
+			break
+		}
+    }
+    return false
+}
+bool function propertyDoesNotRequireValidation(string name, string property, TitanLoadoutDef validatedLoadout)
+{
+    return true
+}
+table<string, bool functionref(string value, string property, TitanLoadoutDef validatedLoadout)> function getBaseLoadoutValidationTable()
+{
+    table <string, bool functionref(string value, string property, TitanLoadoutDef validatedLoadout) > validationTable
+    validationTable["passive1"] <- ValidPersistentPassiveForLoadout
+    validationTable["passive2"] <- ValidPersistentPassiveForLoadout
+    validationTable["passive3"] <- ValidPersistentPassiveForLoadout
+    validationTable["passive4"] <- ValidPersistentPassiveForLoadout
+    validationTable["passive5"] <- ValidPersistentPassiveForLoadout
+    validationTable["passive6"] <- ValidPersistentPassiveForLoadout
+    validationTable["skinIndex"] <- ValidSkinCamoPair
+    validationTable["camoIndex"] <- ValidSkinCamoPair
+	validationTable["decalIndex"] <- ValidDecalProperty
+    validationTable["primeSkinIndex"] <- ValidSkinCamoPair
+    validationTable["primeCamoIndex"] <- ValidSkinCamoPair
+    validationTable["primeDecalIndex"] <- ValidDecalProperty
+    validationTable["primarySkinIndex"] <- ValidSkinCamoPair
+    validationTable["primaryCamoIndex"] <- ValidSkinCamoPair
+    validationTable["showArmBadge"] <- propertyDoesNotRequireValidation
+	validationTable["isPrime"] <- propertyDoesNotRequireValidation
+
+    return validationTable
+}

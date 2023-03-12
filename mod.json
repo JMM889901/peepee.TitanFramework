@@ -1,12 +1,38 @@
 {
 	"Name": "Peepee.TitanFramework",
 	"Description": "Pain",
-	"LoadPriority": 50,
+	"LoadPriority": 7,
 	"RequiredOnClient": true,
 	"Version": "1.2.1",
+	
 	"Scripts": [
 		{
-			"Path": "titanFramework/FrameworkUtil.gnut",
+			"Path": "titanframework/io_persistence/io_persistence_util_shared.gnut",
+			"RunOn": "SERVER || CLIENT || UI"
+		},
+		{
+			"Path": "titanframework/io_persistence/validation/io_persistence_validation.gnut",
+			"RunOn": "SERVER || CLIENT || UI"
+		},
+		{
+			"Path": "titanframework/io_persistence/client/io_persistence_util.gnut",
+			"RunOn": "UI || CLIENT",
+			"ClientCallback": {
+				"After": "cl_titanFrameworkPersistenceInit"
+			},
+			"UICallback": {
+				"After": "cl_titanFrameworkPersistenceInit"
+			}
+		},
+		{
+			"Path": "titanframework/io_persistence/server/io_persistence_server.gnut",
+			"RunOn": "SERVER",
+			"ServerCallback": {
+				"Before": "frameworkIOPersistInit"
+			}
+		},
+		{
+			"Path": "titanframework/titanframework_util.gnut",
 			"RunOn": "UI || SERVER || CLIENT",
 			"ServerCallback": {
 				"Before": "PreInit",
@@ -23,18 +49,41 @@
 			}
 		},
 		{
-			"Path": "titanFramework/UI/FrameworkLoadoutSelectionUtil.gnut",
+			"Path": "titanframework/ui/framework_custom_titan_loadout_menu/framework_edit_custom_titan_loadout_menu.gnut",
 			"RunOn": "UI"
 		},
 		{
-			"Path": "titanFramework/UI/FrameworkLoadoutSelectionMenu.gnut",
+			"Path": "titanframework/ui/framework_custom_titan_loadout_menu/framework_titan_loadouts_shared.gnut",
+			"RunOn": "UI"
+		},
+		{
+			"Path": "titanframework/ui/framework_custom_titan_loadout_menu/framework_custom_camoskin_select.gnut",
+			"RunOn": "UI"
+		},
+		{
+			"Path": "titanframework/ui/framework_custom_titan_loadout_menu/framework_custom_noseart_select.gnut",
+			"RunOn": "UI"
+		},
+		{
+			"Path": "titanframework/ui/framework_loadout_selection_util.gnut",
+			"RunOn": "UI"
+		},
+		{
+			"Path": "titanframework/ui/framework_loadout_selection_menu.gnut",
 			"RunOn": "UI",
 			"UICallback": {
 				"Before": "FrameworkSelectMenuInit"
 			}
 		},
 		{
-			"Path": "titanFramework/UI/FrameworkCustomPassiveSelect.gnut",
+			"Path": "titanframework/ui/framework_custom_loadouts_menu.gnut",
+			"RunOn": "UI",
+			"UICallback": {
+				"Before": "InitModdedLoadoutsSelection"
+			}
+		},
+		{
+			"Path": "titanframework/ui/framework_custom_titan_loadout_menu/framework_custom_passive_select.gnut",
 			"RunOn": "UI",
 			"UICallback": {
 				"Before": "FrameworkPassiveMenuInit"

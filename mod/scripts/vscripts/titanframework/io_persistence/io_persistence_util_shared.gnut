@@ -1,0 +1,262 @@
+globalize_all_functions
+global enum eLoadoutStatus 
+{
+	ACCEPTED,
+	REJECTED,
+	NO_RESPONSE
+}
+global struct frameworkLoadoutRejectionReason
+{
+    int status//TODO allow multiple rejection reasons
+	string reason //Represents the reason for the rejection
+    string cause //Represents the item that caused the rejection
+	string badValue //Represents the value that caused the rejection, when applicable
+
+}
+global struct frameworkPersistentTitanLoadout
+{
+    string loadoutName
+    string titanName
+    string sourceMod
+    string sourceModVersion
+    string fileName//This should always be populated in saveNewTitanLoadout
+    TitanLoadoutDef loadout
+    table additionalVars
+    frameworkLoadoutRejectionReason response//Only used if rejected is true
+
+}
+string function GetFrameworkLoadoutValue(frameworkPersistentTitanLoadout loadout, string propertyName)
+{
+	string value = GetTitanLoadoutValue(loadout.loadout, propertyName)
+	if( value == "" )
+	{
+		if( value in loadout.additionalVars )
+		{
+			value = expect string(loadout.additionalVars[propertyName])
+		}
+	}
+
+	return value
+}
+table function TitanLoadoutDefToTable(TitanLoadoutDef loadout)
+{
+	table Table
+	Table["name"] <- loadout.name
+	Table["titanClass"] <- loadout.titanClass
+	Table["primeTitanRef"] <- loadout.primeTitanRef
+	Table["setFile"] <- loadout.setFile
+	Table["primaryMod"] <- loadout.primaryMod
+	Table["special"] <- loadout.special
+	Table["antirodeo"] <- loadout.antirodeo
+	Table["passive1"] <- loadout.passive1
+	Table["passive2"] <- loadout.passive2
+	Table["passive3"] <- loadout.passive3
+	Table["passive4"] <- loadout.passive4
+	Table["passive5"] <- loadout.passive5
+	Table["passive6"] <- loadout.passive6
+	Table["voice"] <- loadout.voice
+	Table["skinIndex"] <- loadout.skinIndex
+	Table["camoIndex"] <- loadout.camoIndex
+	Table["decalIndex"] <- loadout.decalIndex
+	Table["primarySkinIndex"] <- loadout.primarySkinIndex
+	Table["primaryCamoIndex"] <- loadout.primaryCamoIndex
+	Table["difficulty"] <- loadout.difficulty
+	Table["isPrime"] <- loadout.isPrime
+	Table["primeSkinIndex"] <- loadout.primeSkinIndex
+	Table["primeCamoIndex"] <- loadout.primeCamoIndex
+	Table["primeDecalIndex"] <- loadout.primeDecalIndex
+	Table["showArmBadge"] <- loadout.showArmBadge
+	//Table["setFileMods"] <- loadout.setFileMods
+	Table["melee"] <- loadout.melee
+	Table["coreAbility"] <- loadout.coreAbility
+	Table["primary"] <- loadout.primary
+	Table["primaryAttachment"] <- loadout.primaryAttachment
+	//Table["primaryMods"] <- loadout.primaryMods
+	Table["ordnance"] <- loadout.ordnance
+	//Table["ordnanceMods"] <- loadout.ordnanceMods
+	//Table["specialMods"] <- loadout.specialMods
+	//Table["antirodeoMods"] <- loadout.antirodeoMods
+	Table["titanExecution"] <- loadout.titanExecution
+	return Table
+
+}
+void function TableToTitanLoadoutInplace(TitanLoadoutDef loadout, table loadoutTable)
+{
+    
+    loadout.name             = expect string(loadoutTable["name"])
+    loadout.titanClass       = expect string(loadoutTable["titanClass"])
+    loadout.primeTitanRef    = expect string(loadoutTable["primeTitanRef"])
+    loadout.setFile          = expect string(loadoutTable["setFile"])
+    loadout.primaryMod       = expect string(loadoutTable["primaryMod"])
+    loadout.special          = expect string(loadoutTable["special"])
+    loadout.antirodeo        = expect string(loadoutTable["antirodeo"])
+    loadout.passive1         = expect string(loadoutTable["passive1"])
+    loadout.passive2         = expect string(loadoutTable["passive2"])
+    loadout.passive3         = expect string(loadoutTable["passive3"])
+    loadout.passive4         = expect string(loadoutTable["passive4"])
+    loadout.passive5         = expect string(loadoutTable["passive5"])
+    loadout.passive6         = expect string(loadoutTable["passive6"])
+    loadout.voice            = expect string(loadoutTable["voice"])
+    loadout.skinIndex        = expect int(loadoutTable["skinIndex"])
+    loadout.camoIndex        = expect int(loadoutTable["camoIndex"])
+    loadout.decalIndex       = expect int(loadoutTable["decalIndex"])
+    loadout.primarySkinIndex = expect int(loadoutTable["primarySkinIndex"])
+    loadout.primaryCamoIndex = expect int(loadoutTable["primaryCamoIndex"])
+    loadout.difficulty       = expect int(loadoutTable["difficulty"])
+    loadout.isPrime          = expect string(loadoutTable["isPrime"])
+    loadout.primeSkinIndex   = expect int(loadoutTable["primeSkinIndex"])
+    loadout.primeCamoIndex   = expect int(loadoutTable["primeCamoIndex"])
+    loadout.primeDecalIndex  = expect int(loadoutTable["primeDecalIndex"])
+    loadout.showArmBadge     = expect int(loadoutTable["showArmBadge"])
+    //loadout.setFileMods      = expect string(loadoutTable["setFileMods"])
+    loadout.melee            = expect string(loadoutTable["melee"])
+    loadout.coreAbility      = expect string(loadoutTable["coreAbility"])
+    loadout.primary          = expect string(loadoutTable["primary"])
+    loadout.primaryAttachment= expect string(loadoutTable["primaryAttachment"])
+    //loadout.primaryMods      = expect string(loadoutTable["primaryMods"])
+    loadout.ordnance         = expect string(loadoutTable["ordnance"])
+    //loadout.ordnanceMods     = expect string(loadoutTable["ordnanceMods"])
+
+    //loadout.specialMods      = expect string(loadoutTable["specialMods"])
+    //loadout.antirodeoMods    = expect string(loadoutTable["antirodeoMods"])
+    loadout.titanExecution   = expect string(loadoutTable["titanExecution"])
+
+}
+
+
+void function overrideTitanLoadoutWithTitanLoadout(TitanLoadoutDef loadout1, TitanLoadoutDef loadout2)
+{
+    loadout1.name              = loadout2.name
+    loadout1.titanClass        = loadout2.titanClass
+    loadout1.primeTitanRef     = loadout2.primeTitanRef 
+    loadout1.setFile           = loadout2.setFile
+    loadout1.primaryMod        = loadout2.primaryMod
+    loadout1.special           = loadout2.special
+    loadout1.antirodeo         = loadout2.antirodeo
+    loadout1.passive1          = loadout2.passive1
+    loadout1.passive2          = loadout2.passive2
+    loadout1.passive3          = loadout2.passive3
+    loadout1.passive4          = loadout2.passive4
+    loadout1.passive5          = loadout2.passive5
+    loadout1.passive6          = loadout2.passive6
+    loadout1.voice             = loadout2.voice
+    loadout1.skinIndex         = loadout2.skinIndex
+    loadout1.camoIndex         = loadout2.camoIndex
+    loadout1.decalIndex        = loadout2.decalIndex
+    loadout1.primarySkinIndex  = loadout2.primarySkinIndex
+    loadout1.primaryCamoIndex  = loadout2.primaryCamoIndex
+    loadout1.difficulty        = loadout2.difficulty
+    loadout1.isPrime           = loadout2.isPrime
+    loadout1.primeSkinIndex    = loadout2.primeSkinIndex
+    loadout1.primeCamoIndex    = loadout2.primeCamoIndex
+    loadout1.primeDecalIndex   = loadout2.primeDecalIndex
+    loadout1.showArmBadge      = loadout2.showArmBadge
+    loadout1.setFileMods       = loadout2.setFileMods
+    loadout1.melee             = loadout2.melee
+    loadout1.coreAbility       = loadout2.coreAbility
+    loadout1.primary           = loadout2.primary
+    loadout1.primaryAttachment = loadout2.primaryAttachment
+    loadout1.primaryMods       = loadout2.primaryMods
+    loadout1.ordnance          = loadout2.ordnance
+    loadout1.ordnanceMods      = loadout2.ordnanceMods
+    loadout1.specialMods       = loadout2.specialMods
+    loadout1.antirodeoMods     = loadout2.antirodeoMods
+    loadout1.titanExecution    = loadout2.titanExecution
+}
+
+bool function TrySetTitanLoadoutValue( TitanLoadoutDef loadout, string property, string value )
+{
+	switch ( property )
+	{
+		case "name":
+			loadout.name = value
+			break
+
+		case "setFile":
+			loadout.setFile = value
+			break
+
+		case "primaryMod":
+			loadout.primaryMod = value
+			break
+
+		case "special":
+			loadout.special = value
+			break
+
+		case "antirodeo":
+			loadout.antirodeo = value
+			break
+
+		case "passive1":
+			loadout.passive1 = value
+			break
+
+		case "passive2":
+			loadout.passive2 = value
+			break
+
+		case "passive3":
+			loadout.passive3 = value
+			break
+
+		case "passive4":
+			loadout.passive4 = value
+			break
+
+		case "passive5":
+			loadout.passive5 = value
+			break
+
+		case "passive6":
+			loadout.passive6 = value
+			break
+
+		case "skinIndex":
+			loadout.skinIndex = int( value )
+			break
+
+		case "camoIndex":
+			loadout.camoIndex = int( value )
+			break
+
+		case "decalIndex":
+			loadout.decalIndex = int( value )
+			break
+
+		case "primarySkinIndex":
+			loadout.primarySkinIndex = int( value )
+			break
+
+		case "primaryCamoIndex":
+			loadout.primaryCamoIndex = int( value )
+			break
+
+		case "isPrime":
+			loadout.isPrime =  value
+			break
+
+		case "primeSkinIndex":
+			loadout.primeSkinIndex = int( value )
+			break
+
+		case "primeCamoIndex":
+			loadout.primeCamoIndex = int( value )
+			break
+
+		case "primeDecalIndex":
+			loadout.primeDecalIndex = int( value )
+			break
+
+		case "titanExecution":
+			loadout.titanExecution = value
+			break
+
+		case "showArmBadge":
+			loadout.showArmBadge = int( value )
+			break
+        default:
+            return false
+	}
+    return true
+}

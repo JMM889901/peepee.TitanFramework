@@ -3531,6 +3531,10 @@ string function Loadouts_GetSetFileForRequestedClass( entity player )
 		#endif
 			loadout = GetTitanLoadoutFromPersistentData( player, loadoutIndex )
 
+		if(playerHasModdedLoadout(player))
+		{
+			loadout = getPlayerModdedLoadout(player).loadout
+		}
 		OverwriteLoadoutWithDefaultsForSetFile_ExceptSpecialAndAntiRodeo( loadout )
 
 		if ( player.IsBot() && !player.IsPlayback() )
@@ -3653,7 +3657,11 @@ string function Loadouts_GetSetFileForRequestedClass( entity player )
 	TitanLoadoutDef function GetTitanSpawnLoadout( entity player )
 	{
 		int loadoutIndex = GetPersistentSpawnLoadoutIndex( player, "titan" )
-		TitanLoadoutDef loadout = GetTitanLoadoutFromPersistentData( player, loadoutIndex )
+		TitanLoadoutDef loadout
+		if(playerHasModdedLoadout(player))
+			loadout = getPlayerModdedLoadout(player).loadout
+		else
+			loadout = GetTitanLoadoutFromPersistentData( player, loadoutIndex )
 		//print("==========GetTitanSpawnLoadout===============")
 		//PrintTitanLoadout(loadout)
 		//print("In modded titans " + loadout.titanClass + " " + GetModdedTitanClasses().contains(loadout.titanClass))
@@ -3854,6 +3862,15 @@ string function Loadouts_GetSetFileForRequestedClass( entity player )
 
 	TitanLoadoutDef function GetActiveTitanLoadout( entity player )
 	{
+		#if CLIENT
+		if(playerHasModdedLoadout())
+			return clientframeworkPersistentTitanLoadouts.loadouts[GetModdedPersistentTitanLoadoutIndex()].loadout
+		#endif
+		#if SERVER
+		if(playerHasModdedLoadout(player))
+			return getPlayerModdedLoadout(player).loadout
+		#endif
+		//TODO, REMOVE OLD FRAMEWORK STUFF
 		TitanLoadoutDef loadout
 		loadout.name 				= string( player.GetPersistentVar( "activeTitanLoadout.name" ) )
 		if(GetModdedTitanClasses().contains(loadout.name))

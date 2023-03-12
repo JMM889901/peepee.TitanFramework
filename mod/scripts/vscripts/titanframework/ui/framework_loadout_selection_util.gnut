@@ -1,4 +1,4 @@
-global function AddTitanLoadoutToSelectionList //How the fuck did i go from a stupid organisational thing to a shitty bootleg file system without files
+global function AddTitanLoadoutToSelectionList 
 global function AddTitanLoadoutToSelectionListSimple
 global function AddTitanGroupToSelectionList
 global function GetTitanCollection

@@ -832,7 +832,7 @@ void function RegisterModdedTitanCustomPassiveType(string name, array<ItemData> 
 	foreach(ItemData item in passives)
 	{
 		CreateGenericSubItemData(  eItemTypes[propertyname], name, item.ref )
-		GenerateModdedTitanPassiveStringForPersistence(name, (slot), item.ref, masktype  )
+		//GenerateModdedTitanPassiveStringForPersistence(name, (slot), item.ref, masktype  )
 		if(item.ref in ePassives)
 			continue
 		
@@ -881,6 +881,21 @@ void function CreateModdedTitanSimple( ModdedTitanData Titan )
 	ModdedTitanReadyMessage[Titan.Name] <- Titan.titanReadyMessageOverride
 	ModdedTitanPassiveHasAsset[Titan.Name] <- {}
 	//ModdedTitan[Titan.Name]
+	table<string,  bool functionref(string name, string property, TitanLoadoutDef validatedLoadout)> validation = Titan.derivedData.PersistentValuesValidation
+	foreach(string name,  bool functionref(string name, string property, TitanLoadoutDef validatedLoadout) func in getBaseLoadoutValidationTable())
+	{
+		validation[name] <- func
+	}
+	foreach(string name, array<ModdedPassiveData> passives in Titan.additionalPassivesTable)
+	{
+		validation[name] <- ValidPersistentPassiveForLoadout
+	}
+	//Custom passives come first, then overwritten by custom functions if needed
+	foreach(string name, bool functionref(string name, string property, TitanLoadoutDef validatedLoadout) func in Titan.ValidationOverrides)
+	{
+		validation[name] <- func
+	}
+
 	if(Titan.titanHints.len() > 0)
 		ModdedTitanHints[Titan.Name] <- Titan.titanHints
 	//TitanSetFilesForAnims[SetFile] <- BaseSetFile
@@ -1122,7 +1137,20 @@ void function RegisterModdedTitanItemsSimple( ModdedTitanData titan )
 		//if(passive.customIcon)
 		//	ModdedTitanPassiveHasAsset[titan.Name]["passive2"] <- true
 	}
-
+	array<ItemData> passivesExtra
+	foreach(string name, array<ModdedPassiveData> passives in titan.additionalPassivesTable)
+	{
+		passivesExtra.clear()
+		foreach(int index, ModdedPassiveData passive in passives)
+		{
+			if(shouldPrintDevStuff())
+				print("Creating additional passive data for "+passive.Name)
+			passivesExtra.append(CreateGenericItem(1000+index, passive2, passive.Name, passive.Name, passive.description, passive.description, passive.image, 0, false))
+			if(passive.customIcon)
+				ModdedTitanPassiveHasAsset[titan.Name][name] <- true
+		}
+		RegisterModdedTitanCustomPassiveType(titan.Name, passivesExtra, name)
+	}
 
 
 	foreach(string ref, SubItemData subitemstuff in GetItemData(titan.BaseName).subitems)

@@ -4,6 +4,7 @@ global function InitEditTitanLoadoutsMenu
 global function UpdateTitanXP
 global function UpdateEditTitanLoadoutsMenu
 global function UpdateFDPanel
+global function CycleWeaponLoadouts
 
 struct
 {
@@ -59,11 +60,13 @@ void function InitEditTitanLoadoutsMenu()
 
 	AddMenuFooterOption( menu, BUTTON_A, "#A_BUTTON_SELECT" )
 	AddMenuFooterOption( menu, BUTTON_B, "#B_BUTTON_BACK", "#BACK" )
+	AddMenuFooterOption( menu, BUTTON_X, "#MODDED_LOADOUTS_CONTROLLER", "#MODDED_LOADOUTS_KEY", AdvanceMenuEventHandler( GetMenu( "EditCustomTitanLoadoutsMenu" ) ) )
 }
 
 
 void function OnTitanLoadoutsMenu_Open()
 {
+	uiSetUsingCustomTitanLoadoutsMenu(false)
 	entity player = GetUIPlayer()
 	if ( player == null )
 		return
@@ -376,6 +379,7 @@ void function OnLoadoutButton_Activate( var button )
 
 		uiGlobal.titanSpawnLoadoutIndex = loadoutIndex
 		ClientCommand( "RequestTitanLoadout " + loadoutIndex )
+		setModdedTitanLoadoutIndex("")
 	}
 
 	if ( PRE_RELEASE_DEMO && loadoutIndex < 2 )

@@ -67,7 +67,10 @@ void function UpdateTitanLoadoutButtons( int selectedIndex, var[NUM_PERSISTENT_T
 			print("Overwrote titan loadout with default")
 			print(loadout.titanClass)
 		}
-		Hud_SetSelected( button, index == selectedIndex )
+		if(!playerHasModdedLoadout())
+			Hud_SetSelected( button, index == selectedIndex )
+		else
+			Hud_SetSelected( button, false )
 		if(loadout.titanClass != "")
 		{
 			if(loadout.titanClass == "vanguard")
@@ -103,7 +106,7 @@ void function UpdateTitanLoadoutButtons( int selectedIndex, var[NUM_PERSISTENT_T
 		}
 	}
 
-	if ( focusSelected )
+	if ( focusSelected && !playerHasModdedLoadout() )
 		Hud_SetFocused( buttons[ selectedIndex ] )
 }
 
@@ -370,7 +373,7 @@ void function UpdateTitanItemButton( var button, TitanLoadoutDef loadout )
 
 	string itemRef = GetTitanLoadoutValue( loadout, propertyName )
 	IsTitanLoadoutPrime( loadout )
-
+	print( itemRef + " " + propertyName + " " + loadout.titanClass + " " + loadout.name + " " + useAltView)
 	string titanclass = loadout.titanClass
 	if(loadout.titanClass in GetModdedTitansByClassNoPersist())
 		titanclass = GetModdedTitanClassForMods(titanclass)
@@ -378,7 +381,7 @@ void function UpdateTitanItemButton( var button, TitanLoadoutDef loadout )
 	int itemType = GetItemTypeFromTitanLoadoutProperty( propertyName, nonPrimeSetFile, loadout.titanClass )
 	asset image = GetImage( itemType, itemRef )
 
-	//print(image + " Image "+Hud_GetHudName(button))
+	print(image + " Image "+Hud_GetHudName(button))
 	var rui = Hud_GetRui( button )
 	if(Hud_GetHudName(button) == "PassiveButton")
 	{

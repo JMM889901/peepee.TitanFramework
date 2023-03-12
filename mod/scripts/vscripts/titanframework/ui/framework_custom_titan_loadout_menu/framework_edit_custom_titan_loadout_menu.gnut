@@ -1,4 +1,6 @@
-global function InitEditTitanLoadoutMenu
+untyped
+global function InitEditCustomTitanLoadoutMenu
+global function UpdateFrameworkTitanLoadout
 
 struct {
 	var menu
@@ -25,14 +27,14 @@ struct {
 	bool menuClosing = false
 } file
 
-void function InitEditTitanLoadoutMenu()
+void function InitEditCustomTitanLoadoutMenu()
 {
-	file.menu = GetMenu( "EditTitanLoadoutMenu" )
+	file.menu = GetMenu( "EditCustomTitanLoadoutMenu" )
 	var menu = file.menu
 
-	AddMenuEventHandler( menu, eUIEvent.MENU_OPEN, OnOpenEditTitanLoadoutMenu )
-	AddMenuEventHandler( menu, eUIEvent.MENU_CLOSE, OnCloseEditTitanLoadoutMenu )
-	AddMenuEventHandler( menu, eUIEvent.MENU_ENTITLEMENTS_CHANGED, OnEditTitanLoadoutMenu_EntitlementsChanged )
+	AddMenuEventHandler( menu, eUIEvent.MENU_OPEN, OnOpenEditCustomTitanLoadoutMenu )
+	AddMenuEventHandler( menu, eUIEvent.MENU_CLOSE, OnCloseEditCustomTitanLoadoutMenu )
+	AddMenuEventHandler( menu, eUIEvent.MENU_ENTITLEMENTS_CHANGED, OnEditCustomTitanLoadoutMenu_EntitlementsChanged )
 
 	file.loadoutPanel = Hud_GetChild( menu, "TitanLoadoutButtons" )
 	file.xpPanel = Hud_GetChild( file.loadoutPanel, "TitanXP" )
@@ -130,21 +132,24 @@ void function InitEditTitanLoadoutMenu()
 	SetNavLeftRight( buttons )
 }
 
-void function OnOpenEditTitanLoadoutMenu()
+void function OnOpenEditCustomTitanLoadoutMenu()
 {
 	var menu = file.menu
 
 	AddDefaultTitanElementsToTitanLoadoutMenu( menu )
 
-	TitanLoadoutDef loadout = GetCachedTitanLoadout( uiGlobal.editingLoadoutIndex )
+    frameworkPersistentTitanLoadout titan = GetModdedPersistentTitanLoadout()
+	TitanLoadoutDef loadout = titan.loadout
 	
 	Hud_SetUTF8Text( file.menuTitle, GetTitanLoadoutName( loadout ) )
 	file.menuClosing = false
 
-	RunMenuClientFunction( "UpdateTitanModel", uiGlobal.editingLoadoutIndex )
+
+	UI_SetPresentationType( ePresentationType.TITAN_LOADOUT_EDIT )
+	RunMenuClientFunction( "UpdateTitanModelFrameworkLoadout", titan.fileName ) // TODO: Titan model for custom loadouts
 
 	UpdateTitanLoadoutPanel( file.loadoutPanel, loadout )
-	UpdateTitanXP( file.xpPanel, uiGlobal.editingLoadoutIndex )
+	UpdateFrameworkTitanXP( file.xpPanel, titan )
 	if(!(loadout.titanClass in GetModdedTitansByClassNoPersist()))
 	{
 		Hud_SetNew( file.camoSkinButton, ButtonShouldShowNew( eItemTypes.CAMO_SKIN_TITAN, "", loadout.titanClass ) || ButtonShouldShowNew( eItemTypes.TITAN_WARPAINT, "", loadout.titanClass ) )
@@ -156,7 +161,7 @@ void function OnOpenEditTitanLoadoutMenu()
 	}
 	UpdateTitanCosmeticButtons()
 
-	UI_SetPresentationType( ePresentationType.TITAN_LOADOUT_EDIT )
+	
 
 	Hud_SetText( file.appearanceLabel, "" )
 
@@ -218,14 +223,15 @@ void function OnOpenEditTitanLoadoutMenu()
 
 void function UpdateTitanCosmeticButtons()
 {
-	TitanLoadoutDef loadout = GetCachedTitanLoadout( uiGlobal.editingLoadoutIndex )
+	frameworkPersistentTitanLoadout titan = GetModdedPersistentTitanLoadout()
+	TitanLoadoutDef loadout = titan.loadout
 
 	bool isLoadoutPrime = IsTitanLoadoutPrime( loadout )
 
 	asset titanCamoImage
-	int camoIndex = GetCachedTitanLoadoutCamoIndex( uiGlobal.editingLoadoutIndex ) //Needs to account for prime/not prime status
-	int skinIndex = GetCachedTitanLoadoutSkinIndex( uiGlobal.editingLoadoutIndex ) //Needs to account for prime/not prime status
-	int decalIndex = GetCachedTitanLoadoutDecalIndex( uiGlobal.editingLoadoutIndex ) //Needs to account for prime/not prime status
+	int camoIndex = GetTitanCamoIndexFromLoadoutAndPrimeStatus( loadout ) //Needs to account for prime/not prime status
+	int skinIndex = GetTitanSkinIndexFromLoadoutAndPrimeStatus( loadout ) //Needs to account for prime/not prime status
+	int decalIndex = GetTitanDecalIndexFromLoadoutAndPrimeStatus( loadout ) //Needs to account for prime/not prime status
 	if ( camoIndex == 0 && skinIndex == 0 )
 	{
 		titanCamoImage = $"rui/menu/common/appearance_button_swatch"
@@ -342,8 +348,8 @@ void function ResetSkinAndCamoIndex( bool isLoadoutPrime)
 	else
 		editingCamoProperty = "camoIndex"
 	//printt( "editingLoadoutType: "  + uiGlobal.editingLoadoutType + ", editingLoadoutIndex: " + uiGlobal.editingLoadoutIndex + ", editingLoadoutProperty: " + uiGlobal.editingLoadoutProperty )
-	SetCachedLoadoutValue( player, uiGlobal.editingLoadoutType, uiGlobal.editingLoadoutIndex, editingCamoProperty, "0" )
-	SetCachedLoadoutValue( player, uiGlobal.editingLoadoutType, uiGlobal.editingLoadoutIndex, GetSkinPropertyName( editingCamoProperty ), "0" )
+	setFrameworkTitanLoadoutValue( GetModdedPersistentTitanLoadoutIndex(), editingCamoProperty, "0" )
+	setFrameworkTitanLoadoutValue( GetModdedPersistentTitanLoadoutIndex(), GetSkinPropertyName( editingCamoProperty ), "0" )
 }
 
 void function OnEditTitanCamoSkinButton_LoseFocus( var button )
@@ -358,7 +364,7 @@ void function OnEditTitanCamoSkinButton_LoseFocus( var button )
 void function OnEditTitanCamoSkinButton_Focus( var button )
 {
 	string desc
-	TitanLoadoutDef loadout = GetCachedTitanLoadout( uiGlobal.editingLoadoutIndex )
+	TitanLoadoutDef loadout = GetCurrentModdedTitanLoadoutDef()
 	switch ( Hud_GetHudName( button ) )
 	{
 		case "ButtonCamoSkin":
@@ -390,7 +396,7 @@ void function OnEditTitanNoseArtButton_Focus( var button )
 {
 	string desc
 
-	TitanLoadoutDef loadout = GetCachedTitanLoadout( uiGlobal.editingLoadoutIndex )
+	TitanLoadoutDef loadout = GetCurrentModdedTitanLoadoutDef()
 
 	desc = "#ITEM_TYPE_TITAN_NOSE_ART_CHOICE"
 
@@ -410,7 +416,7 @@ void function OnEditTitanNoseArtButton_Focus( var button )
 
 void function OnPrimeTitanButton_Focus( var button )
 {
-	TitanLoadoutDef loadout = GetCachedTitanLoadout( uiGlobal.editingLoadoutIndex )
+	TitanLoadoutDef loadout = GetCurrentModdedTitanLoadoutDef()
 	string desc
 	if ( !TitanClassHasPrimeTitan( loadout.titanClass ) )
 	{
@@ -452,27 +458,27 @@ void function OnPrimeTitanButton_Focus( var button )
 void function OnEditTitanWeaponSkinButton_Activate( var button )
 {
 	uiGlobal.editingLoadoutProperty = "primaryCamoIndex"
-	AdvanceMenu( GetMenu( "CamoSelectMenu" ) )
+	AdvanceMenu( GetMenu( "FrameworkCamoSelectMenu" ) )
 }
 
 void function OnEditTitanCamoSkinButton_Activate( var button )
 {
-	TitanLoadoutDef loadout = GetCachedTitanLoadout( uiGlobal.editingLoadoutIndex )
+	TitanLoadoutDef loadout = GetCurrentModdedTitanLoadoutDef()
 	if ( IsTitanLoadoutPrime( loadout ) )
 		uiGlobal.editingLoadoutProperty = "primeCamoIndex"
 	else
 		uiGlobal.editingLoadoutProperty = "camoIndex"
-	AdvanceMenu( GetMenu( "CamoSelectMenu" ) )
+	AdvanceMenu( GetMenu( "FrameworkCamoSelectMenu" ) )
 }
 
 void function OnEditTitanNoseArtButton_Activate( var button )
 {
-	TitanLoadoutDef loadout = GetCachedTitanLoadout( uiGlobal.editingLoadoutIndex )
+	TitanLoadoutDef loadout = GetCurrentModdedTitanLoadoutDef()
 	if ( IsTitanLoadoutPrime( loadout ) )
 		uiGlobal.editingLoadoutProperty = "primeDecalIndex"
 	else
 		uiGlobal.editingLoadoutProperty = "decalIndex"
-	AdvanceMenu( GetMenu( "NoseArtSelectMenu" ) )
+	AdvanceMenu( GetMenu( "FrameworkNoseArtSelectMenu" ) )
 }
 
 
@@ -483,31 +489,29 @@ void function OnArmBadgeButton_Focus( var button )
 
 void function OnArmBadgeButton_Activate( var button )
 {
-	entity player = GetUIPlayer()
-
-	TitanLoadoutDef loadout = GetCachedTitanLoadout( uiGlobal.editingLoadoutIndex )
+	TitanLoadoutDef loadout = GetCurrentModdedTitanLoadoutDef()
 	var rui = Hud_GetRui( button )
 
 	if ( loadout.showArmBadge )
 	{
-		SetCachedLoadoutValue( player, "titan", uiGlobal.editingLoadoutIndex, "showArmBadge", "0" )
+		setFrameworkTitanLoadoutValue( GetModdedPersistentTitanLoadoutIndex(), "showArmBadge", "0")
 		Hud_SetSelected( button, false )
 		RuiSetString( rui, "buttonText", "#SHOW_ARM_BADGE" )
 
 	}
 	else
 	{
-		SetCachedLoadoutValue( player, "titan", uiGlobal.editingLoadoutIndex, "showArmBadge", "1" )
+		setFrameworkTitanLoadoutValue( GetModdedPersistentTitanLoadoutIndex(), "showArmBadge", "1")
 		Hud_SetSelected( button, true )
 		RuiSetString( rui, "buttonText", "#HIDE_ARM_BADGE" )
 	}
 
-	RunMenuClientFunction( "UpdateTitanModel", uiGlobal.editingLoadoutIndex )
+	RunMenuClientFunction( "UpdateTitanModelFramework", GetModdedPersistentTitanLoadoutIndex() )
 }
 
 void function OnPrimeTitanButton_Activate( var button )
 {
-	TitanLoadoutDef loadout = GetCachedTitanLoadout( uiGlobal.editingLoadoutIndex )
+	TitanLoadoutDef loadout = GetCurrentModdedTitanLoadoutDef()
 	if ( !TitanClassHasPrimeTitan( loadout.titanClass ) )
 		return
 
@@ -536,14 +540,15 @@ void function OnPrimeTitanButton_Activate( var button )
 	index %= count
 	isPrime = PersistenceGetEnumItemNameForIndex( "titanIsPrimeTitan", index )
 
-	if ( !IsLobby() && uiGlobal.editingLoadoutIndex == uiGlobal.titanSpawnLoadoutIndex )
-		uiGlobal.updateTitanSpawnLoadout = true
 
-	SetCachedLoadoutValue( player, uiGlobal.editingLoadoutType, uiGlobal.editingLoadoutIndex, "isPrime", isPrime )
+
+	setFrameworkTitanLoadoutValue( GetModdedPersistentTitanLoadoutIndex(), "isPrime", isPrime )
 	/*string appropriateSetFile = GetSetFileForTitanClassAndPrimeStatus( loadout.titanClass, IsTitanLoadoutPrime( loadout ) )
 	SetCachedLoadoutValue( player, uiGlobal.editingLoadoutType, uiGlobal.editingLoadoutIndex, "setFile", appropriateSetFile )*/
 
 	OnPrimeTitanButton_Focus( button )
+
+	RunMenuClientFunction( "UpdateTitanModelFrameworkLoadout", GetModdedPersistentTitanLoadoutIndex() )
 
 	UpdateTitanCosmeticButtons()
 
@@ -572,7 +577,7 @@ bool function ShouldCosmeticButtonShowNew( entity player, string parentRef, int 
 	return false
 }
 
-void function OnCloseEditTitanLoadoutMenu()
+void function OnCloseEditCustomTitanLoadoutMenu()
 {
 	RunMenuClientFunction( "ClearAllTitanPreview" )
 	file.menuClosing = true
@@ -593,7 +598,7 @@ void function OnEditTitanSlotButton_OnFocus( var button )
 			return
 	}
 
-	TitanLoadoutDef loadout = GetCachedTitanLoadout( uiGlobal.editingLoadoutIndex )
+	TitanLoadoutDef loadout = GetCurrentModdedTitanLoadoutDef()
 
 	if ( !ShouldShowVanguardButtons( loadout.titanClass ) )
 	{
@@ -624,8 +629,8 @@ void function OnEditTitanSlotButton_Activate( var button )
 		case "passive4":
 		case "passive5":
 		case "passive6":
-			AdvanceMenu( GetMenu( "PassiveSelectMenu" ) )
-			break
+            AdvanceMenu( GetMenu( "PassiveSelectMenuAlt" ) )
+            break
 
 		case "decal":
 			AdvanceMenu( GetMenu( "DecalSelectMenu" ) )
@@ -648,7 +653,7 @@ void function OnEditTitanSlotButton_Activate( var button )
 
 void function PlayTitanVideo( var button )
 {
-	TitanLoadoutDef loadout = GetCachedTitanLoadout( uiGlobal.editingLoadoutIndex )
+	TitanLoadoutDef loadout = GetCurrentModdedTitanLoadoutDef()
 
 	string titanClass = loadout.titanClass
 	if ( titanClass == "vanguard" )
@@ -662,7 +667,7 @@ bool function IsTitanVideoAvailable()
 	return IsLobby()
 }
 
-void function OnEditTitanLoadoutMenu_EntitlementsChanged()
+void function OnEditCustomTitanLoadoutMenu_EntitlementsChanged()
 {
 	if ( !Hud_IsFocused( file.primeTitanButton ) )
 		return
@@ -735,7 +740,7 @@ void function SetDefaultTitanUpgradeText()
 void function TitanUpgradeButton_OnFocused( var button )
 {
 	int scriptID = int( Hud_GetScriptID( button ) )
-	TitanLoadoutDef loadout = GetCachedTitanLoadout( uiGlobal.titanSpawnLoadoutIndex )
+	TitanLoadoutDef loadout = GetCurrentModdedTitanLoadoutDef()
 	array<ItemDisplayData> titanUpgrades = FD_GetUpgradesForTitanClass( loadout.titanClass )
 
 	ItemDisplayData item = titanUpgrades[ scriptID ]
@@ -758,7 +763,7 @@ void function TitanUpgradeButton_OnFocused( var button )
 void function SetFDNav()
 {
 	var passive3Btn = Hud_GetChild( file.loadoutPanel, "ButtonPassive3" )
-	TitanLoadoutDef loadout = GetCachedTitanLoadout( uiGlobal.titanSpawnLoadoutIndex )
+	TitanLoadoutDef loadout = GetCurrentModdedTitanLoadoutDef()
 
 	for ( int i=0; i<7; i++ )
 	{
@@ -793,3 +798,18 @@ void function SetFDNav()
 	Hud_SetNavDown( Hud_GetChild( file.loadoutPanel, "ButtonPassive5" ), Hud_GetChild( file.fdProperties, "BtnSub5" ) )
 	Hud_SetNavDown( Hud_GetChild( file.loadoutPanel, "ButtonPassive6" ), Hud_GetChild( file.fdProperties, "BtnSub6" ) )
 }
+
+
+void function UpdateFrameworkTitanLoadout( var button )
+{
+	frameworkPersistentTitanLoadout titan = clientframeworkPersistentTitanLoadouts.loadouts[ expect string(button.s.loadoutID) ]
+	TitanLoadoutDef loadout = titan.loadout
+
+	//UpdateTitanLoadoutPanel( file.loadoutPanel, loadout )
+	array<var> loadoutPanelButtons = GetElementsByClassname( file.menu, "TitanLoadoutPanelButtonClass" )
+	foreach ( button in loadoutPanelButtons )
+		Hud_SetEnabled( button, false )
+	print(titan.fileName)
+	RunMenuClientFunction( "UpdateTitanModelFrameworkLoadout", titan.fileName )// TODO: Add titan models for custom loadouts
+}
+

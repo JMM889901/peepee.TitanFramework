@@ -7,7 +7,6 @@ struct{
 void function FrameworkSelectMenuInit()
 {
 	AddMenu( "EditTitanClassMenu", $"resource/ui/menus/titanClasses.menu", InitEditTitanClassMenu )
-	
 	InitEditTitanClassMenu()
 }
 
@@ -54,35 +53,40 @@ void function OnClassSelectButton_Activate(var button)
 		return
 	if(shouldPrintDevStuff())
 		print(button.s.rowIndex)
-	if(GetModdedTitanClasses().contains(string(button.s.titanClass)))
-	{
-		int index = expect int(button.s.rowIndex)
-		OverwriteGlobalTitanLoadoutByIndex(uiGlobal.editingLoadoutIndex, GetModdedTitanByClassNoPersist(expect string(button.s.titanClass)), true)
-		shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive1 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(expect string(button.s.titanClass), "passive1"))[0].ref
-		shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive2 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(expect string(button.s.titanClass), "passive2"))[0].ref
-		shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive3 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(expect string(button.s.titanClass), "passive3"))[0].ref
-		shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive4 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(expect string(button.s.titanClass), "passive4"))[0].ref
-		shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive5 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(expect string(button.s.titanClass), "passive5"))[0].ref
-		shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive6 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(expect string(button.s.titanClass), "passive6"))[0].ref
-		shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].titanExecution = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(expect string(button.s.titanClass), "titanExecution"))[0].ref
+	string titanName = expect string(button.s.titanClass)
+	string fileName = GetModdedPersistentTitanLoadoutIndex()
+	SetTitanLoadoutFromClass(titanName, fileName)
 
-		ClientCommand( "SetTitanClass "+uiGlobal.editingLoadoutIndex+" modded " + (button.s.titanClass) )
-	}
-	else if (IsBaseTitan(expect string(button.s.titanClass)))
-	{
-		int index = expect int(button.s.rowIndex)
-		OverwriteGlobalTitanLoadoutByIndex(uiGlobal.editingLoadoutIndex, GetBaseTitanByClassNoPersist(expect string(button.s.titanClass)), true)
-		shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive1 = GetBaseTitanByClassNoPersist(expect string(button.s.titanClass)).passive1
-		shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive2 = GetBaseTitanByClassNoPersist(expect string(button.s.titanClass)).passive2
-		shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive3 = GetBaseTitanByClassNoPersist(expect string(button.s.titanClass)).passive3
-		shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive4 = GetBaseTitanByClassNoPersist(expect string(button.s.titanClass)).passive4
-		shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive5 = GetBaseTitanByClassNoPersist(expect string(button.s.titanClass)).passive5
-		shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive6 = GetBaseTitanByClassNoPersist(expect string(button.s.titanClass)).passive6
-		shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].titanExecution = GetBaseTitanByClassNoPersist(expect string(button.s.titanClass)).titanExecution
-
-
-		ClientCommand( "SetTitanClass "+uiGlobal.editingLoadoutIndex+" default " + (button.s.titanClass) )
-	}
+	//RunClientScript("ServerCallback_UpdateTitanModel", -1, 0, fileName)
+	//if(GetModdedTitanClasses().contains(string(button.s.titanClass)))
+	//{
+	//	int index = expect int(button.s.rowIndex)
+	//	OverwriteGlobalTitanLoadoutByIndex(uiGlobal.editingLoadoutIndex, GetModdedTitanByClassNoPersist(expect string(button.s.titanClass)), true)
+	//	shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive1 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(expect string(button.s.titanClass), "passive1"))[0].ref
+	//	shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive2 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(expect string(button.s.titanClass), "passive2"))[0].ref
+	//	shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive3 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(expect string(button.s.titanClass), "passive3"))[0].ref
+	//	shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive4 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(expect string(button.s.titanClass), "passive4"))[0].ref
+	//	shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive5 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(expect string(button.s.titanClass), "passive5"))[0].ref
+	//	shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive6 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(expect string(button.s.titanClass), "passive6"))[0].ref
+	//	shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].titanExecution = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(expect string(button.s.titanClass), "titanExecution"))[0].ref
+//
+	//	ClientCommand( "SetTitanClass "+uiGlobal.editingLoadoutIndex+" modded " + (button.s.titanClass) )
+	//}
+	//else if (IsBaseTitan(expect string(button.s.titanClass)))
+	//{
+	//	int index = expect int(button.s.rowIndex)
+	//	OverwriteGlobalTitanLoadoutByIndex(uiGlobal.editingLoadoutIndex, GetBaseTitanByClassNoPersist(expect string(button.s.titanClass)), true)
+	//	shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive1 = GetBaseTitanByClassNoPersist(expect string(button.s.titanClass)).passive1
+	//	shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive2 = GetBaseTitanByClassNoPersist(expect string(button.s.titanClass)).passive2
+	//	shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive3 = GetBaseTitanByClassNoPersist(expect string(button.s.titanClass)).passive3
+	//	shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive4 = GetBaseTitanByClassNoPersist(expect string(button.s.titanClass)).passive4
+	//	shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive5 = GetBaseTitanByClassNoPersist(expect string(button.s.titanClass)).passive5
+	//	shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].passive6 = GetBaseTitanByClassNoPersist(expect string(button.s.titanClass)).passive6
+	//	shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex].titanExecution = GetBaseTitanByClassNoPersist(expect string(button.s.titanClass)).titanExecution
+//
+//
+	//	ClientCommand( "SetTitanClass "+uiGlobal.editingLoadoutIndex+" default " + (button.s.titanClass) )
+	//}
 	if(shouldPrintDevStuff())
 		PrintTitanLoadout(shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex])
 	//uiGlobal.editingLoadoutIndex

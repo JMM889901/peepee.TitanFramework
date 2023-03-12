@@ -19,7 +19,6 @@ global function OnPassiveSelectButton_Focused
 global function OnPassiveSelectButton_LostFocus
 global function OnAbilityOrPassiveSelectButton_Activate
 
-global function SetupLoadoutItemButtonsAlt
 
 global function ShowItemPanel
 global function HideItemPanel
@@ -182,121 +181,7 @@ void function OnModSelectBGScreen_Activate( var button )
 }
 
 
-//Modified passives panel for custom icons because rui is dumb
-void function SetupLoadoutItemButtonsAlt( array<var> buttons, array<ItemDisplayData> items, string currentItemRef, array<ItemDisplayData> unavailableItems = [], string parentItemRef = "" )
-{
-	entity player = GetUIPlayer()
-	if ( player == null )
-		return
 
-	//printt( "SetupLoadoutItemButtons() | currentItemRef:", currentItemRef, "item count:", items.len() )
-	//foreach ( item in items )
-	//	printt( item.ref )
-
-	SetButtonItemData( buttons, items )
-
-	// Disable buttons first because otherwise disabling the currently active button will cause code to set a new focus which interferes with script setting it
-	foreach ( buttonPanel in buttons )
-	{
-		if ( file.buttonItemData[ buttonPanel ].ref == "" )
-		{
-			var button = Hud_GetChild(buttonPanel, "PassiveButton")
-			Hud_SetNew( button, false )
-			Hud_SetText( button, "" )
-			Hud_SetEnabled( button, false )
-			Hud_SetLocked( button, false )
-			Hud_SetSelected( button, false )
-
-			//RuiSetBool( Hud_GetRui( Hud_GetChild(buttonPanel, "PassiveImage") ), "isVisible", false )
-			Hud_Hide(buttonPanel)
-			//RuiSetBool( Hud_GetRui( button ), "isVisible", false )
-		}
-	}
-
-	var newFocus = buttons[0]
-
-	foreach ( index, buttonPanel in buttons )
-	{
-		var button = Hud_GetChild(buttonPanel, "PassiveButton")
-		var imageScreen = Hud_GetChild(buttonPanel, "PassiveImage")
-		ItemDisplayData item = file.buttonItemData[ buttonPanel ]
-		if ( item.ref == "" )
-			continue
-
-		string itemRef = item.ref
-		int itemType = item.itemType
-		asset image
-
-		//RuiSetBool( Hud_GetRui( button ), "isVisible", true )
-		//RuiSetBool( Hud_GetRui( imageScreen ), "isVisible", true )
-		Hud_Show(buttonPanel)
-		image = GetImage( itemType, itemRef )
-
-
-
-		var rui = Hud_GetRui( imageScreen )
-
-		if ( image == $"" )
-		{
-			Hud_Hide(imageScreen)
-		}
-		else
-		{
-			Hud_Show(imageScreen)
-			RuiSetImage( rui, "buttonImage", image )
-		}
-
-		bool isEnabled = true
-		if ( unavailableItems.contains( item ) )
-			isEnabled = false
-
-		bool isLocked
-		if ( item.ref == "none" )
-		{
-			isLocked = false
-		}
-		else if ( GetItemRequiresPrime( item.ref ) == true && !HasPrimeToMatchExecutionType( player, item.itemType ) )
-		{
-			isLocked = true
-		}
-		else
-		{
-			if ( IsSubItemType( itemType ) )
-				isLocked = IsSubItemLocked( player, item.ref, parentItemRef )
-			else
-				isLocked = IsItemLocked( player, item.ref )
-		}
-
-		Hud_SetEnabled( button, isEnabled )
-		Hud_SetLocked( button, isLocked )
-		Hud_SetVisible( button, true )
-
-		//printt( "if (", item.ref, "==", currentItemRef, ") is", item.ref == currentItemRef )
-		if ( item.ref == currentItemRef )
-		{
-			Hud_SetSelected( button, true )
-			newFocus = button
-		}
-		else
-		{
-			Hud_SetSelected( button, false )
-		}
-
-		if ( isLocked )
-			continue
-
-
-
-	}
-
-
-	if ( items.len() != unavailableItems.len() ) // don't try to set focus if there are no available items at all
-	{
-		var lastFocus = GetFocus()
-		Assert( Hud_IsEnabled( newFocus ) )
-		Hud_SetFocused( newFocus )
-	}
-}
 
 
 
@@ -1212,7 +1097,7 @@ void function AbilityOrPassive_Equip( var button)
 		else if ( uiGlobal.editingLoadoutType == "titan" && uiGlobal.editingLoadoutIndex == uiGlobal.titanSpawnLoadoutIndex )
 			uiGlobal.updateTitanSpawnLoadout = true
 	}
-
+	//TODO: Get executions working
 	SetCachedLoadoutValue( player, uiGlobal.editingLoadoutType, uiGlobal.editingLoadoutIndex, uiGlobal.editingLoadoutProperty, itemRef )
 	if ( uiGlobal.editingLoadoutType == "pilot" )
 	{

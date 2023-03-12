@@ -160,10 +160,10 @@ global function ClearItemOwned
 global function CodeCallback_GivePersistentItem
 global function Player_AddRecentUnlock
 global function PersistenceCleanup
-global function GetNoseArtRefFromTitanClassAndPersistenceValue
 global function GetSkinRefFromTitanClassAndPersistenceValue
 global function UnlockUltimateEdition
 #endif
+global function GetNoseArtRefFromTitanClassAndPersistenceValue
 global function GetSkinRefFromWeaponRefAndPersistenceValue
 global function GetUnlockItemsForPlayerLevels
 global function GetUnlockItemsForTitanLevels
@@ -404,27 +404,13 @@ global struct ItemData
 }
 
 
-global enum ModdedTitanAltChassisMethod
-{
-	NO_ALT,
-	PRIME_TITAN,
-	ALT_CHASSIS
-}
-global enum ModdedTitanChassisType
-{
-	setFile,
-	modelKey //Unimplemented
-}
-global enum ModdedTitanGroupType{
-	Collection,//Organisational, display names function as normal, just exists to keep list organised
-	Variant //Name and 
-}
 global struct FrameworkChassisStruct
 {
 	string setFile
-	string Name
+	string name
+	string description
 	asset icon
-	int ModdedTitanChassisType = ModdedTitanChassisType.setFile
+	string modelOverride
 }
 global struct ModdedPassiveData{
 	string Name
@@ -443,7 +429,6 @@ global struct ModdedTitanWeaponAbilityData{
 	bool scriptHandled = false
 }
 global struct ModdedTitanGroupSettings{
-	int groupType = ModdedTitanGroupType.Collection
 	string Name = "base"
 	array<string> path = []
 	bool createPathOnNoneFound = false //Should cover the entire path or create group on first not found node
@@ -451,15 +436,22 @@ global struct ModdedTitanGroupSettings{
 	bool showTagAsPrefix = false
 	bool showTagAsSuffix = true
 }
-
+global struct ModdedTitanDerivedData{
+	table<string, bool functionref(string value, string property, TitanLoadoutDef validatedLoadout)> PersistentValuesValidation //Stores which values are saved and validated
+}
 global struct ModdedTitanData{
+	string DisplayName
 	string Name
 	string Tag //Only used for titan groups
+	string sourceMod = "titanFramework"
+	string sourceModVersion = "1.2.1"
 	string passiveDisplayNameOverride = "#TITAN_KIT_DEFAULT"
 	string titanReadyMessageOverride = "#TITAN_READY_DEFAULT"
 	array<string> titanHints
 
 	ModdedTitanGroupSettings& groupSettings
+
+	ModdedTitanDerivedData derivedData
 
 	ModdedTitanWeaponAbilityData& Primary
 	ModdedTitanWeaponAbilityData& Left 
@@ -467,10 +459,7 @@ global struct ModdedTitanData{
 	ModdedTitanWeaponAbilityData& Right 
 	ModdedTitanWeaponAbilityData& Core
 
-	int AltTitanMethod //Unimplemented
 	bool startsAsPrime = false
-
-	array<FrameworkChassisStruct> altChassis
 
 	string Description
 	int dashStat = 2
@@ -480,10 +469,11 @@ global struct ModdedTitanData{
 	int difficulty = 3
 
 	string BaseSetFile
+	array<FrameworkChassisStruct> altChassisArray
 	string BaseName
 	
 	asset icon = $"ui/temp"
-	asset coreIconOverride = $"ui/temp"
+	asset coreIconOverride = $"ui/temp"//typically found from weapon keyvalues
 
 	
 	array<ModdedPassiveData> passive2Array
@@ -491,10 +481,17 @@ global struct ModdedTitanData{
 	array<ModdedPassiveData> passive5Array
 	array<ModdedPassiveData> passive6Array
 	array<ModdedPassiveData> passiveFDArray
-	
+	table<string, array<ModdedPassiveData> > additionalPassivesTable //Custom passive slots
+
+	table<string, bool functionref(string value, string property, TitanLoadoutDef validatedLoadout)> ValidationOverrides //Stores which values are saved and validated
+
 	int ExecutionType = 0
 	string Melee = "melee_titan_punch_scorch"
 	string Voice = "titanos_bt"
+
+	string customLoadoutMenu = "EditTitanLoadoutMenu"
+
+	bool functionref(table) FullValidationOverride
 }
 
 
@@ -10691,14 +10688,6 @@ int function CheckItemUnlockType( string ref, string parentRef = "" )
 
 	unreachable
 }
-
-#if SERVER
-void function PersistenceCleanup( entity player )
-{
-	ClearTargetNew( player )
-	FixupLevelCamosForRegen( player )
-}
-
 string function GetNoseArtRefFromTitanClassAndPersistenceValue( string titanClass, int persistenceValue ) //TODO: Replace NoseArtIndexToRef() with this eventually
 {
 	if ( !( titanClass in file.titanClassAndPersistenceValueToNoseArtRefTable ) )
@@ -10709,6 +10698,14 @@ string function GetNoseArtRefFromTitanClassAndPersistenceValue( string titanClas
 
 	return file.titanClassAndPersistenceValueToNoseArtRefTable[ titanClass ][ persistenceValue ]
 }
+#if SERVER
+void function PersistenceCleanup( entity player )
+{
+	ClearTargetNew( player )
+	FixupLevelCamosForRegen( player )
+}
+
+
 
 string function GetSkinRefFromTitanClassAndPersistenceValue( string titanClass, int persistenceValue )
 {

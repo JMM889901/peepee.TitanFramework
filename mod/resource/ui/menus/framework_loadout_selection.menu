@@ -1,0 +1,85 @@
+#base "customLoadoutSelectionButtons.res"
+resource/ui/menus/framework_loadout_selection.menu
+{
+	menu
+	{
+		ControlName				Frame
+		xpos					0
+		ypos					0
+		zpos					3
+		wide					f0
+		tall					f0
+		autoResize				0
+		pinCorner				0
+		visible					1
+		enabled					1
+		PaintBackgroundType		0
+		infocus_bgcolor_override	"0 0 0 0"
+		outoffocus_bgcolor_override	"0 0 0 0"
+
+        Vignette
+        {
+            ControlName             ImagePanel
+            InheritProperties       MenuVignette
+        }
+
+		MenuTitle
+		{
+			ControlName				Label
+			InheritProperties		MenuTitle
+			labelText				"#MENU_TITAN_LOADOUTS"
+		}
+
+		ImgTopBar
+		{
+			ControlName				ImagePanel
+			InheritProperties		MenuTopBar
+		}
+
+		MatchmakingStatus
+		{
+			ControlName				CNestedPanel
+			wide					f0
+			tall					f0
+			visible					1
+			controlSettingsFile		"resource/ui/menus/panels/matchmaking_status.res"
+		}
+        ModelRotateMouseCapture
+        {
+            ControlName				CMouseMovementCapturePanel
+            xpos                    950
+            zpos					12
+            wide                    1070
+            tall                    764
+        }
+
+	    ButtonTooltip
+		{
+			ControlName				CNestedPanel
+			InheritProperties		ButtonTooltip
+		}
+
+	    UnlockReq
+	    {
+	        ControlName             RuiPanel
+	       	InheritProperties       UnlockReqProperties
+	       	xpos                    157
+			ypos					600
+			visible                 1
+	        font                    Default_23
+			labelText               ""
+			fgcolor_override        "255 184 0 255"
+			rui                     "ui/unlock_req_label.rpak"
+
+			wide                    650
+	    }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		FooterButtons
+		{
+			ControlName				CNestedPanel
+			InheritProperties       FooterButtons
+		}
+	}
+}

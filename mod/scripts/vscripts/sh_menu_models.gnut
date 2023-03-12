@@ -135,6 +135,7 @@
 
 	global function UpdatePilotModel
 	global function UpdateTitanModel
+	global function UpdateTitanModelFrameworkLoadout
 	global function UpdateFactionModel
 	global function UpdateBoostModel
 	global function UpdateStoreBackground
@@ -627,7 +628,10 @@
 			loadoutIndex = clGlobal.editingTitanLoadoutIndex
 		else
 			loadoutIndex = GetPersistentSpawnLoadoutIndex( player, "titan" )
-		UpdateTitanModel( player, loadoutIndex )
+		if(frameworkHelperValues.usingCustomTitanLoadoutsMenu)
+			UpdateTitanModelFrameworkLoadout( player, GetModdedPersistentTitanLoadoutIndex())
+		else
+			UpdateTitanModel( player, loadoutIndex )
 	}
 
 	void function OnClientScriptInit( entity player )
@@ -1304,7 +1308,10 @@
 	{
 		int team = player.GetTeam()
 		int loadoutIndex = GetPersistentSpawnLoadoutIndex( player, "titan" )
+
 		string setFile = GetTitanLoadoutSetFile( loadoutIndex )
+		if(playerHasModdedLoadout())
+			setFile = GetCurrentModdedTitanLoadoutDef().setFile
 		asset chassisModel = GetSetFileModel( setFile )
 
 		vector refOrigin = mover.GetOrigin()
@@ -1470,14 +1477,16 @@
 		UpdatePilotModelDisplay( player )
 	}
 
-	void function ServerCallback_UpdateTitanModel( int loadoutIndex, int flags = 0 )
+	void function ServerCallback_UpdateTitanModel( int loadoutIndex, int flags = 0, string frameworkLoadout = "" )
 	{
 		if ( !clGlobal.mapSupportsMenuModels )
 			return
 
 		entity player = GetLocalClientPlayer()
-
-		UpdateTitanModel( player, loadoutIndex, flags )
+		if( frameworkLoadout == "")
+			UpdateTitanModel( player, loadoutIndex, flags )
+		else
+			UpdateTitanModelFrameworkLoadout( player, frameworkLoadout, flags)
 	}
 
 	void function UpdateTitanModel( entity player, int loadoutIndex, int flags = 0 )
@@ -1540,6 +1549,79 @@
 		clGlobal.currentMenuTitanModels.armBadgeBodyGroupIndex = armBadgeModel != $"" ? 0 : 0
 		clGlobal.currentMenuTitanModels.showArmBadge = showArmBadge
 
+		UpdateTitanModelDisplay( player )
+	}
+	void function UpdateTitanModelFrameworkLoadout( entity player, string loadoutIndex, int flags = 0 )
+	{
+
+		if ( !clGlobal.initializedMenuModels ) // Handle early calls that UI script can trigger before client is ready
+			return
+
+		if ( loadoutIndex == "" )
+		{
+			file.menuTitan.body.Hide()
+			file.menuTitan.weapon.Hide()
+
+			return
+		}
+
+
+		file.menuTitan.body.Show()
+		file.menuTitan.weapon.Show()
+
+		frameworkPersistentTitanLoadout loadout = clientframeworkPersistentTitanLoadouts.loadouts[ loadoutIndex ]
+		TitanLoadoutDef cachedLoadout = loadout.loadout
+
+		TitanLoadoutDef baseTitan = clone cachedLoadout
+		if(GetModdedTitanClasses().contains(baseTitan.titanClass))
+			baseTitan.titanClass = GetModdedTitanClassForMods(baseTitan.titanClass)
+
+			
+		string setFile
+		if ( flags & TITANMENU_FORCE_NON_PRIME )
+			setFile = GetSetFileForTitanClassAndPrimeStatus( baseTitan.titanClass, false )
+		else if ( flags & TITANMENU_FORCE_PRIME )
+			setFile = GetSetFileForTitanClassAndPrimeStatus( baseTitan.titanClass, true )
+		else
+			setFile = GetSetFileForTitanClassAndPrimeStatus( cachedLoadout.titanClass, (cachedLoadout.isPrime == "titan_is_prime"))
+
+		string weapon = GetFrameworkLoadoutValue( loadout, "primary" )
+		asset chassisModel = GetSetFileModel( setFile )
+		asset weaponModel = GetWeaponModel( weapon )
+		string idleAnim = GetMenuTitanAnim( GetTitanAnimType(), setFile )
+		int camoIndex
+		int skinIndex
+		int decalIndex
+		int weaponCamoIndex
+		int showArmBadge
+
+		if ( !( flags & TITANMENU_NO_CUSTOMIZATION ) )
+		{
+			camoIndex = GetTitanCamoIndexFromLoadoutAndPrimeStatus( cachedLoadout )
+			skinIndex = GetTitanSkinIndexFromLoadoutAndPrimeStatus( cachedLoadout )
+			decalIndex = GetTitanDecalIndexFromLoadoutAndPrimeStatus( cachedLoadout )
+			weaponCamoIndex = cachedLoadout.primaryCamoIndex
+			showArmBadge = cachedLoadout.showArmBadge
+		}
+
+		clGlobal.currentMenuTitanModels.isPrime = Dev_GetPlayerSettingByKeyField_Global( setFile, "isPrime" ) == 1
+		//clGlobal.currentMenuTitanModels.loadoutIndex = loadoutIndex
+		clGlobal.currentMenuTitanModels.bodyModel = chassisModel
+		clGlobal.currentMenuTitanModels.camoIndex = camoIndex
+		clGlobal.currentMenuTitanModels.skinIndex = skinIndex
+		clGlobal.currentMenuTitanModels.decalIndex = decalIndex
+		clGlobal.currentMenuTitanModels.idleAnim = idleAnim
+
+		clGlobal.currentMenuTitanModels.weaponModel = weaponModel
+		clGlobal.currentMenuTitanModels.weaponCamoIndex = weaponCamoIndex
+
+
+		
+		asset armBadgeModel = GetTitanArmBadgeFromLoadoutAndPrimeStatus( baseTitan )
+		
+		clGlobal.currentMenuTitanModels.armBadgeModel = armBadgeModel
+		clGlobal.currentMenuTitanModels.armBadgeBodyGroupIndex = armBadgeModel != $"" ? 0 : 0
+		clGlobal.currentMenuTitanModels.showArmBadge = showArmBadge
 		UpdateTitanModelDisplay( player )
 	}
 
@@ -1667,7 +1749,6 @@
 
 		int camoIndex = clGlobal.previewMenuTitanModels.camoIndex
 		int skinIndex = clGlobal.previewMenuTitanModels.skinIndex
-
 		bool usedCurrentValues = false
 		if ( camoIndex == -1 && skinIndex == 0 )
 		{
@@ -1680,7 +1761,6 @@
 			camoIndex = clGlobal.previewMenuTitanModels.camoIndex
 			skinIndex = clGlobal.previewMenuTitanModels.skinIndex
 		}
-
 		if ( camoIndex > 0 )
 		{
 			skinIndex = TITAN_SKIN_INDEX_CAMO
@@ -1689,7 +1769,6 @@
 		{
 			camoIndex = -1
 		}
-
 		file.menuTitan.body.SetSkin( skinIndex )
 		file.menuTitan.body.SetCamo( camoIndex )
 

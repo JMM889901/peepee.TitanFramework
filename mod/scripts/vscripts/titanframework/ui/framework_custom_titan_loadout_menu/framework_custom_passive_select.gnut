@@ -1,0 +1,241 @@
+global function FrameworkPassiveMenuInit
+struct{
+	array<var> activateButtons
+	table<var, ItemDisplayData> buttonItemData
+} file
+void function FrameworkPassiveMenuInit()
+{
+	AddMenu( "PassiveSelectMenuAlt", $"resource/ui/menus/passiveselectAlt.menu", InitPassiveSelectMenuAlt )
+	
+	InitEditTitanClassMenu()
+}
+void function InitPassiveSelectMenuAlt()
+{
+	var menu = GetMenu( "PassiveSelectMenuAlt" )
+
+	AddMenuEventHandler( menu, eUIEvent.MENU_OPEN, OnPassiveSelectMenuAlt_Open )
+	//AddMenuEventHandler( menu, eUIEvent.MENU_CLOSE, OnPassiveSelectMenu_Close )
+
+	AddEventHandlerToButtonClass( menu, "TitanLoadoutPanelButtonClass", UIE_GET_FOCUS, FrameworkOnPassiveSelectButton_Focused )
+	AddEventHandlerToButtonClass( menu, "TitanLoadoutPanelButtonClass", UIE_CLICK, FrameworkOnAbilityOrPassiveSelectButton_Activate )
+	//AddEventHandlerToButtonClass( menu, "PassiveSelectClass", UIE_LOSE_FOCUS, OnPassiveSelectButton_LostFocus )
+	
+	AddMenuFooterOption( menu, BUTTON_A, "#A_BUTTON_SELECT" )
+	AddMenuFooterOption( menu, BUTTON_B, "#B_BUTTON_BACK", "#BACK" )
+}
+void function OnPassiveSelectMenuAlt_Open()
+{
+	Assert( uiGlobal.editingLoadoutType == "pilot" || uiGlobal.editingLoadoutType == "titan" )
+	Assert( uiGlobal.editingLoadoutProperty == "passive1" || uiGlobal.editingLoadoutProperty == "passive2" || uiGlobal.editingLoadoutProperty == "passive3" || uiGlobal.editingLoadoutProperty == "passive4" || uiGlobal.editingLoadoutProperty == "passive5" || uiGlobal.editingLoadoutProperty == "passive6" )
+
+	array<ItemDisplayData> unavailableItems
+
+	string parentItemRef
+	frameworkPersistentTitanLoadout titan = GetModdedPersistentTitanLoadout()
+	TitanLoadoutDef editLoadout = titan.loadout
+	parentItemRef = editLoadout.titanClass
+	string nonPrimeSetFile = GetSetFileForTitanClassAndPrimeStatus( editLoadout.titanClass, false )
+	uiGlobal.editingItemType = GetItemTypeFromTitanLoadoutProperty( uiGlobal.editingLoadoutProperty, nonPrimeSetFile, editLoadout.titanClass )
+	uiGlobal.editingItemRef = GetTitanLoadoutValue( editLoadout, uiGlobal.editingLoadoutProperty )
+
+	var menu = GetMenu( "PassiveSelectMenuAlt" )
+	var menuTitle = Hud_GetChild( menu, "MenuTitle" )
+	array<ItemDisplayData> items
+	items = GetVisibleItemsOfType( uiGlobal.editingItemType, parentItemRef )
+
+	Hud_SetText( menuTitle, GetDisplayNameFromItemType( uiGlobal.editingItemType ) )
+	array<var> buttons = GetElementsByClassname( menu, "PassiveSelectClass" )
+	SetupLoadoutItemButtonsAlt( buttons, items, uiGlobal.editingItemRef, unavailableItems, parentItemRef, uiGlobal.editingLoadoutProperty )
+
+	RefreshCreditsAvailable()
+}
+//Rewritten for frameworks purposes
+void function FrameworkOnAbilityOrPassiveSelectButton_Activate( var button )
+{
+	FrameworkAilityOrPassive_Equip( button )
+	CloseActiveMenu()
+}
+void function FrameworkOnPassiveSelectButton_Focused( var button )
+{
+	var buttonIndex = button
+	buttonIndex = Hud_GetParent(button)
+	string itemRef = file.buttonItemData[ buttonIndex ].ref
+	string parentRef = file.buttonItemData[ buttonIndex ].parentRef
+	int itemType = file.buttonItemData[ buttonIndex ].itemType
+
+	ShowItemPanel( "ItemDetails" )
+	var menu = Hud_GetParent( buttonIndex )
+	string name = GetItemName( itemRef )
+	string description = GetItemLongDescription( itemRef )
+
+	string unlockReq
+	if ( IsSubItemType( itemType ) )
+		unlockReq = GetItemUnlockReqText( itemRef, parentRef )
+	else
+		unlockReq = GetItemUnlockReqText( itemRef )
+
+	UpdateItemDetails( menu, name, description, unlockReq )
+}
+//Modified passives panel for custom icons because rui is dumb
+void function SetupLoadoutItemButtonsAlt( array<var> buttons, array<ItemDisplayData> items, string currentItemRef, array<ItemDisplayData> unavailableItems = [], string parentItemRef = "", string slot = "" )
+{
+	entity player = GetUIPlayer()
+	if ( player == null )
+		return
+
+	//printt( "SetupLoadoutItemButtons() | currentItemRef:", currentItemRef, "item count:", items.len() )
+	//foreach ( item in items )
+	//	printt( item.ref )
+
+	SetButtonItemData( buttons, items )
+
+	// Disable buttons first because otherwise disabling the currently active button will cause code to set a new focus which interferes with script setting it
+	foreach ( buttonPanel in buttons )
+	{
+		if ( file.buttonItemData[ buttonPanel ].ref == "" )
+		{
+			var button = Hud_GetChild(buttonPanel, "PassiveButton")
+			Hud_SetNew( button, false )
+			Hud_SetText( button, "" )
+			Hud_SetEnabled( button, false )
+			Hud_SetLocked( button, false )
+			Hud_SetSelected( button, false )
+
+			//RuiSetBool( Hud_GetRui( Hud_GetChild(buttonPanel, "PassiveImage") ), "isVisible", false )
+			Hud_Hide(buttonPanel)
+			//RuiSetBool( Hud_GetRui( button ), "isVisible", false )
+		}
+	}
+
+	var newFocus = buttons[0]
+
+	foreach ( index, buttonPanel in buttons )
+	{
+		ItemDisplayData item = file.buttonItemData[ buttonPanel ]
+		if ( item.ref == "" )
+			continue
+
+		string itemRef = item.ref
+		int itemType = item.itemType
+		asset image
+
+		//RuiSetBool( Hud_GetRui( button ), "isVisible", true )
+		//RuiSetBool( Hud_GetRui( imageScreen ), "isVisible", true )
+		Hud_Show(buttonPanel)
+		var button = setupPassiveButtonIconForPassive( buttonPanel, item, parentItemRef, slot )
+		
+
+		bool isEnabled = true
+		if ( unavailableItems.contains( item ) )
+			isEnabled = false
+
+		bool isLocked
+		if ( item.ref == "none" )
+		{
+			isLocked = false
+		}
+		else if ( GetItemRequiresPrime( item.ref ) == true && !HasPrimeToMatchExecutionType( player, item.itemType ) )
+		{
+			isLocked = true
+		}
+		else
+		{
+			if ( IsSubItemType( itemType ) )
+				isLocked = IsSubItemLocked( player, item.ref, parentItemRef )
+			else
+				isLocked = IsItemLocked( player, item.ref )
+		}
+
+		Hud_SetEnabled( button, isEnabled )
+		Hud_SetLocked( button, isLocked )
+		Hud_SetVisible( button, true )
+
+		//printt( "if (", item.ref, "==", currentItemRef, ") is", item.ref == currentItemRef )
+		if ( item.ref == currentItemRef )
+		{
+			Hud_SetSelected( button, true )
+			newFocus = button
+		}
+		else
+		{
+			Hud_SetSelected( button, false )
+		}
+
+		if ( isLocked )
+			continue
+
+
+
+	}
+
+
+	if ( items.len() != unavailableItems.len() ) // don't try to set focus if there are no available items at all
+	{
+		var lastFocus = GetFocus()
+		Assert( Hud_IsEnabled( newFocus ) )
+		Hud_SetFocused( newFocus )
+	}
+}
+void function SetButtonItemData( array<var> buttons, array<ItemDisplayData> items )
+{
+	int i = 0
+	int itemCount = items.len()
+
+	ItemDisplayData noItemData
+	noItemData.ref = ""
+
+	foreach ( button in buttons )
+	{
+		if ( i < itemCount )
+			file.buttonItemData[ button ] <- items[i]
+		else
+			file.buttonItemData[ button ] <- noItemData
+
+		i++
+	}
+}
+void function FrameworkAilityOrPassive_Equip( var button)
+{
+	Assert( uiGlobal.editingLoadoutType == "pilot" || uiGlobal.editingLoadoutType == "titan" )
+	Assert( uiGlobal.editingLoadoutProperty != "" )
+	var buttonIndex = button
+	if(Hud_GetScriptID(button) == "internalButton" )
+		buttonIndex = Hud_GetParent(button)
+	string itemRef = file.buttonItemData[ buttonIndex ].ref
+	int itemType = file.buttonItemData[ buttonIndex ].itemType
+	entity player = GetUIPlayer()
+
+	if ( !IsLobby() && uiGlobal.editingItemRef != itemRef )
+	{
+		if ( uiGlobal.editingLoadoutType == "pilot" && uiGlobal.editingLoadoutIndex == uiGlobal.pilotSpawnLoadoutIndex )
+			uiGlobal.updatePilotSpawnLoadout = true
+		else if ( uiGlobal.editingLoadoutType == "titan" && uiGlobal.editingLoadoutIndex == uiGlobal.titanSpawnLoadoutIndex )
+			uiGlobal.updateTitanSpawnLoadout = true
+	}
+
+	//SetCachedLoadoutValue( player, uiGlobal.editingLoadoutType, uiGlobal.editingLoadoutIndex, uiGlobal.editingLoadoutProperty, itemRef )
+	setFrameworkTitanLoadoutValue( GetModdedPersistentTitanLoadoutIndex(), uiGlobal.editingLoadoutProperty, itemRef )
+	if ( uiGlobal.editingLoadoutType == "pilot" )
+	{
+		EmitUISound( "Menu_LoadOut_Ordinance_Select" )
+	}
+	else
+	{
+		if ( itemType == eItemTypes.TITAN_GENERAL_PASSIVE )
+			EmitUISound( "Menu_LoadOut_TitanKit_Select" )
+		else if ( itemType == eItemTypes.TITAN_TITANFALL_PASSIVE )
+			EmitUISound( "Menu_LoadOut_TitanFallKit_Select" )
+		else
+			EmitUISound( "Menu_LoadOut_TitanSpecificKit_Select" )
+	}
+
+	if ( itemType == eItemTypes.PILOT_SPECIAL )
+		RunMenuClientFunction( "SavePilotCharacterPreview" )
+
+	ButtonsSetSelected( GetElementsByClassname( uiGlobal.activeMenu, "AbilitySelectClass" ), false )
+	if(Hud_GetScriptID(button) == "internalButton" )
+		ButtonsSetSelected( GetElementsByClassname( uiGlobal.activeMenu, "PassiveButton" ), false )
+	else
+		ButtonsSetSelected( GetElementsByClassname( uiGlobal.activeMenu, "PassiveSelectClass" ), false )
+	Hud_SetSelected( button, true )
+}

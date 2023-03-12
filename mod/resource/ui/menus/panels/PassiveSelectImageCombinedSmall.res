@@ -1,39 +1,26 @@
-"resource/ui/menus/panels/PassiveSelectButtonCombined.res"
+"resource/ui/menus/panels/PassiveSelectImageCombinedSmall.res"
 {
-	PassiveImage
+	PassiveImageMod
 	{
 		ControlName RuiPanel
-		wide 96
-		tall 96
+		wide 64
+		tall 64
 		visible 1
 		scaleImage 1
 		zpos 0
-
+		classname				TitanPassiveIconClass
 		// Hud_GetRui() requires this to work
 		rui                     "ui/loadout_image_medium.rpak"
 	}
-	PassiveButton
-	{
-		ControlName RuiButton
-		InheritProperties RuiSmallButton
-		wide 96
-		tall 96
-		
-		Classname TitanLoadoutPanelButtonClass
-		scriptID				internalButton
-		
-		//navDown GridButton0x1
-		//navRight GridButton1x0
-		//navUp DummyTop
-	}
-	FullButton
+	PassiveImage
     {
-		ControlName				RuiButton
+		ControlName				RuiPanel
 		InheritProperties		LoadoutButtonMedium
-        classname				TitanLoadoutPanelButtonClass
-        scriptID				internalButton
-		wide 96
-		tall 96
+		rui                     "ui/loadout_image_medium.rpak"
+        classname				TitanPassiveIconClass
+        scriptID				"internalButton"
+		wide 64
+		tall 64
 
         navUp                 	ButtonPassive1
         navDown                	ButtonPassive3

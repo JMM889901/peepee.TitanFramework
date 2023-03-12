@@ -1,0 +1,402 @@
+untyped
+globalize_all_functions
+
+
+
+global struct frameworkHelperValuesStruct
+{
+    bool usingCustomTitanLoadoutsMenu
+}
+global struct clientframeworkPersistentTitanLoadoutstruct
+{
+    array<string> filesToLoad
+    string moddedLoadoutIndex
+    table<string, frameworkPersistentTitanLoadout> loadouts//Indexed by filename
+    array<frameworkPersistentTitanLoadout> loadoutsToSave //Should always be empty when not saving, used for race conditions (unless mutex already fixes that)
+}
+
+
+global clientframeworkPersistentTitanLoadoutstruct clientframeworkPersistentTitanLoadouts 
+global frameworkHelperValuesStruct frameworkHelperValues
+void function cl_titanFrameworkPersistenceInit()
+{
+    #if CLIENT
+    AddServerToClientStringCommandCallback("FrameworkInformLoadoutResponse", FrameworkInformLoadoutResponse)
+    
+    #endif
+    thread cl_titanFrameworkPersistenceInitThread()
+}
+#if CLIENT
+void function FrameworkInformLoadoutResponse(array<string> args)
+{
+    foreach(string arg in args)
+    {
+        printt("FrameworkInformLoadoutResponse", arg)
+    }
+	//TODO: Make this a popup on loadouts screen
+    if(args[0] == "#REJECED")
+    {
+        print("FrameworkInformLoadoutResponse: Loadout rejected by server due to bad format")
+    }
+    string fileName = args[0]
+    frameworkPersistentTitanLoadout loadout = clientframeworkPersistentTitanLoadouts.loadouts[fileName]
+    if(args[1] == "#REJECTED")
+    {
+        loadout.response.status = eLoadoutStatus.REJECED
+        if(args[3] != "#FAILEDVALIDATION")
+        {
+            loadout.response.reason = args[2]
+            loadout.response.cause = args[3]
+        }
+        else
+        {
+            loadout.response.reason = args[3]
+            loadout.response.cause = args[4]
+            loadout.response.badValue = args[5]
+        }    
+    
+    }
+    else
+    {
+        loadout.response.status = eLoadoutStatus.ACCEPTED
+    }
+}
+
+#endif
+void function uiSetUsingCustomTitanLoadoutsMenu(bool value) //Only call from ui initially
+{
+    frameworkHelperValues.usingCustomTitanLoadoutsMenu = value
+    #if UI
+        RunClientScript("uiSetUsingCustomTitanLoadoutsMenu", value)
+    #endif
+}
+bool function playerHasModdedLoadout()
+{
+    return clientframeworkPersistentTitanLoadouts.moddedLoadoutIndex != ""
+}
+string function GetModdedPersistentTitanLoadoutIndex()
+{
+    return clientframeworkPersistentTitanLoadouts.moddedLoadoutIndex
+}
+frameworkPersistentTitanLoadout function GetModdedPersistentTitanLoadout()
+{
+    return clientframeworkPersistentTitanLoadouts.loadouts[clientframeworkPersistentTitanLoadouts.moddedLoadoutIndex]
+}
+TitanLoadoutDef function GetCurrentModdedTitanLoadoutDef()
+{
+    return clientframeworkPersistentTitanLoadouts.loadouts[clientframeworkPersistentTitanLoadouts.moddedLoadoutIndex].loadout
+}
+void function setModdedTitanLoadoutIndex(string index, callback = false)
+{
+    clientframeworkPersistentTitanLoadouts.moddedLoadoutIndex = index
+    #if UI
+    if(!callback)
+        RunClientScript("setModdedTitanLoadoutIndex", index, true)
+    #endif
+    #if CLIENT
+    if(!callback)
+        RunUIScript( "setModdedTitanLoadoutIndex", index, true ) 
+    NSSaveJSONFile("frameworkCFG.json", {version = "1.2.1", moddedSelected = index})
+    #endif
+}
+void function cl_titanFrameworkPersistenceInitThread()
+{
+    if(!NSDoesFileExist("frameworkCFG.json"))
+    {
+        NSSaveJSONFile("frameworkCFG.json", {version = "1.2.1"});
+    }
+    NSLoadJSONFile( "frameworkCFG.json", loadPersistentData)
+}
+
+
+void function loadPersistentData(table data)
+{
+    if(data.moddedSelected != null)
+    {
+        clientframeworkPersistentTitanLoadouts.moddedLoadoutIndex = expect string(data.moddedSelected)
+    }
+    else
+    {
+        clientframeworkPersistentTitanLoadouts.moddedLoadoutIndex = ""
+    }
+    foreach(string loadout in NSGetAllFiles() )
+    {
+        if(loadout == "frameworkCFG.json")
+        {
+            continue
+        }
+        clientframeworkPersistentTitanLoadouts.filesToLoad.append(loadout)
+        NSLoadJSONFile( loadout, LoadPersistentTitanLoadout )
+    }
+
+    #if CLIENT
+        thread InformFrameworkLoadouts()
+    #endif
+}
+
+
+void function saveNewTitanLoadout(frameworkPersistentTitanLoadout loadout)
+{
+    int i = 0
+    clientframeworkPersistentTitanLoadouts.loadoutsToSave.append(loadout)
+    while(clientframeworkPersistentTitanLoadouts.loadoutsToSave[0] != loadout)
+    {
+        printt("Waiting for mutex", clientframeworkPersistentTitanLoadouts.loadoutsToSave[0].loadoutName)
+        WaitFrame() //when the shitty mutex is sus
+    }
+    array<string> loadouts = NSGetAllFiles()
+    foreach(string existingLoadout in loadouts){
+        if(existingLoadout == "frameworkCFG.json")
+        {
+            continue
+        }
+        if(existingLoadout == "LOADOUT_" + i + ".json")
+            i++
+        else
+            break
+    }
+    table loadoutTable
+    loadoutTable.loadoutName <- loadout.loadoutName
+    loadoutTable.titanName <- loadout.titanName
+    loadoutTable.sourceMod <- loadout.sourceMod
+    loadoutTable.sourceModVersion <- loadout.sourceModVersion
+    loadoutTable.loadout <- TitanLoadoutDefToTable(loadout.loadout)
+    loadoutTable.additionalVars <- loadout.additionalVars
+    loadoutTable.fileName <- ("LOADOUT_" + i + ".json")
+    NSSaveJSONFile(loadoutTable.fileName, loadoutTable)
+    clientframeworkPersistentTitanLoadouts.loadouts["LOADOUT_" + i + ".json"] <- loadout
+    clientframeworkPersistentTitanLoadouts.loadoutsToSave.remove(0)
+    setModdedTitanLoadoutIndex("LOADOUT_" + i + ".json")
+}
+void function saveTitanLoadout(frameworkPersistentTitanLoadout loadout)
+{
+    table loadoutTable
+    loadoutTable.loadoutName <- loadout.loadoutName
+    loadoutTable.titanName <- loadout.titanName
+    loadoutTable.sourceMod <- loadout.sourceMod
+    loadoutTable.sourceModVersion <- loadout.sourceModVersion
+    loadoutTable.loadout <- TitanLoadoutDefToTable(loadout.loadout)
+    loadoutTable.additionalVars <- loadout.additionalVars
+    loadoutTable.fileName <- loadout.fileName
+    NSSaveJSONFile(loadout.fileName, loadoutTable)
+    clientframeworkPersistentTitanLoadouts.loadouts[loadout.fileName] <- loadout
+}
+void function setFrameworkTitanLoadoutValue( string fileName, string property, string value, bool callback = false)
+{
+    frameworkPersistentTitanLoadout loadout = clientframeworkPersistentTitanLoadouts.loadouts[fileName]
+    table<string, bool functionref(string value, string property, TitanLoadoutDef acceptedLoadout)> validation
+    if(GetModdedTitanClasses().contains(loadout.titanName))
+    {
+        validation = GetModdedTitanData(loadout.titanName).derivedData.PersistentValuesValidation
+    }
+    else if(IsBaseTitan(loadout.titanName))
+    {
+        validation = getBaseLoadoutValidationTable()
+    }
+    if(property in validation)
+    {
+        if(validation[property](value, property, loadout.loadout))
+        {
+            printt("setting" + " " + property + " " + value + " for " + loadout.loadoutName + " from " + loadout.sourceMod + " " + loadout.sourceModVersion + " in " + fileName + " with callback " + ( callback ? "true" : "false" ) )
+            if(!TrySetTitanLoadoutValue(loadout.loadout, property, value))
+            {
+                loadout.additionalVars[property] <- value
+            }
+            if(!callback)
+            {
+                #if UI
+                RunClientScript( "setFrameworkTitanLoadoutValue", fileName, property, value, true)
+                #endif
+                #if CLIENT
+                RunUIScript( "setFrameworkTitanLoadoutValue", fileName, property, value, true)
+                #endif
+            }
+            else
+            {
+                saveTitanLoadout(loadout)
+            }
+        }
+        else
+        {
+            printt("failed validation", property, value)
+        }
+    }
+    else
+    {
+        printt("Invalid property", property)
+    }
+}
+
+void function setFrameworkTitanLoadoutValueCallback(entity player, string fileName, string property, string value, bool callback = false)
+{
+    setFrameworkTitanLoadoutValue(fileName, property, value, true)
+}
+void function LoadPersistentTitanLoadout(table Table)
+{
+    frameworkPersistentTitanLoadout loadout
+    loadout.loadoutName = expect string(Table["loadoutName"])
+    loadout.titanName = expect string(Table["titanName"])
+    loadout.sourceMod = expect string(Table["sourceMod"])
+    loadout.sourceModVersion = expect string(Table["sourceModVersion"])
+    loadout.fileName = expect string(Table["fileName"])
+    TableToTitanLoadoutInplace(loadout.loadout, expect table( Table["loadout"] ) )
+    loadout.additionalVars = expect table( Table["additionalVars"] )
+    clientframeworkPersistentTitanLoadouts.loadouts[loadout.fileName] <- loadout
+    clientframeworkPersistentTitanLoadouts.filesToLoad.removebyvalue(loadout.fileName)
+}
+void function SetTitanLoadoutFromClass( string titanClass, string fileName, callback = false )
+{
+    if(fileName == "")
+	{
+		print("Trying to use titan class select without a modded titan loadout selected")
+	}
+	frameworkPersistentTitanLoadout loadout
+	if(GetModdedTitanClasses().contains(titanClass))
+    {
+		loadout = createClientFrameworkLoadoutFromLoadoutDef( GetModdedTitanByClassNoPersist(titanClass))
+        loadout.loadout.passive1 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(titanClass, "passive1"))[0].ref
+        loadout.loadout.passive2 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(titanClass, "passive2"))[0].ref
+        loadout.loadout.passive3 = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(titanClass, "passive3"))[0].ref
+        loadout.loadout.titanExecution = GetAllItemsOfType(GetModdedTitanLoadoutPassiveTypeByClass(titanClass, "titanExecution"))[0].ref
+        
+    }    //Major todo, make this actually use titandata instead of default style loadout def, so extra values are supported
+	else if (IsBaseTitan(titanClass))
+		loadout = createClientFrameworkLoadoutFromLoadoutDef( GetBaseTitanByClassNoPersist(titanClass))
+	else
+	{
+		print("Trying to use titan class select with an invalid titan class")
+		return
+	}
+	loadout.fileName = fileName
+	saveTitanLoadout( loadout )
+    #if CLIENT
+    ServerCallback_UpdateTitanModel( -1, 0, fileName )//hehe, servercallback on client go brrrrrrr 
+    #endif
+    if(!callback)
+    {
+        #if UI
+        RunClientScript( "SetTitanLoadoutFromClass", titanClass, fileName, true)
+        #endif
+        #if CLIENT
+        RunUIScript( "SetTitanLoadoutFromClass", titanClass, fileName, true)
+        #endif
+    }
+}
+
+frameworkPersistentTitanLoadout function createClientFrameworkLoadoutFromLoadoutDef(TitanLoadoutDef loadout)
+{
+    frameworkPersistentTitanLoadout frameworkLoadout
+    frameworkLoadout.loadoutName = loadout.name
+    frameworkLoadout.titanName = loadout.titanClass
+    frameworkLoadout.sourceMod = "titanFramework"
+    frameworkLoadout.sourceModVersion = "1.2.1"
+    frameworkLoadout.loadout.name = loadout.name
+
+    frameworkLoadout.loadout.name             = loadout.name
+    frameworkLoadout.loadout.titanClass       = loadout.titanClass
+    frameworkLoadout.loadout.primeTitanRef    = loadout.primeTitanRef 
+    frameworkLoadout.loadout.setFile          = loadout.setFile
+    frameworkLoadout.loadout.primaryMod       = loadout.primaryMod
+    frameworkLoadout.loadout.special          = loadout.special
+    frameworkLoadout.loadout.antirodeo        = loadout.antirodeo
+    frameworkLoadout.loadout.passive1         = loadout.passive1
+    frameworkLoadout.loadout.passive2         = loadout.passive2
+    frameworkLoadout.loadout.passive3         = loadout.passive3
+    frameworkLoadout.loadout.passive4         = loadout.passive4
+    frameworkLoadout.loadout.passive5         = loadout.passive5
+    frameworkLoadout.loadout.passive6         = loadout.passive6
+    frameworkLoadout.loadout.voice            = loadout.voice
+    frameworkLoadout.loadout.skinIndex        = loadout.skinIndex
+    frameworkLoadout.loadout.camoIndex        = loadout.camoIndex
+    frameworkLoadout.loadout.decalIndex       = loadout.decalIndex
+    frameworkLoadout.loadout.primarySkinIndex = loadout.primarySkinIndex
+    frameworkLoadout.loadout.primaryCamoIndex = loadout.primaryCamoIndex
+    frameworkLoadout.loadout.difficulty       = loadout.difficulty
+    frameworkLoadout.loadout.isPrime          = loadout.isPrime
+    frameworkLoadout.loadout.primeSkinIndex   = loadout.primeSkinIndex
+    frameworkLoadout.loadout.primeCamoIndex   = loadout.primeCamoIndex
+    frameworkLoadout.loadout.primeDecalIndex  = loadout.primeDecalIndex
+    frameworkLoadout.loadout.showArmBadge     = loadout.showArmBadge
+    frameworkLoadout.loadout.setFileMods      = loadout.setFileMods
+    frameworkLoadout.loadout.melee            = loadout.melee
+    frameworkLoadout.loadout.coreAbility      = loadout.coreAbility
+    frameworkLoadout.loadout.primary          = loadout.primary
+    frameworkLoadout.loadout.primaryAttachment= loadout.primaryAttachment
+    frameworkLoadout.loadout.primaryMods      = loadout.primaryMods
+    frameworkLoadout.loadout.ordnance         = loadout.ordnance
+    frameworkLoadout.loadout.ordnanceMods     = loadout.ordnanceMods
+    frameworkLoadout.loadout.specialMods      = loadout.specialMods
+    frameworkLoadout.loadout.antirodeoMods    = loadout.antirodeoMods
+    frameworkLoadout.loadout.titanExecution   = loadout.titanExecution
+
+    return frameworkLoadout
+}//script_client saveNewTitanLoadout(createClientFrameworkLoadoutFromLoadoutDef(shGlobal.cachedTitanLoadouts[0]))
+
+void function InformFrameworkLoadouts()
+{//Clientcommand limit is around 33 per second, but lets leave it at 15 to be safe
+    //WaitSignal( level, "CachedLoadoutsReady" ) unneeded i think
+    while(clientframeworkPersistentTitanLoadouts.filesToLoad.len() > 0)
+    {
+        printt("Waiting for loadouts to load")
+        WaitFrame()
+    }
+    if(clientframeworkPersistentTitanLoadouts.moddedLoadoutIndex != "")
+    {
+        print("Informing server of new loadout")
+        describeNewLoadoutToServer(clientframeworkPersistentTitanLoadouts.loadouts[clientframeworkPersistentTitanLoadouts.moddedLoadoutIndex])
+    }
+    int i = 0
+    //foreach(frameworkPersistentTitanLoadout loadout in clientframeworkPersistentTitanLoadouts.loadouts)
+    //{
+    //    if(loadout.fileName == clientframeworkPersistentTitanLoadouts.moddedLoadoutIndex)
+    //    {
+    //        continue
+    //    }
+    //    if(i > 15)
+    //    {
+    //        wait 1
+    //        i = 0
+    //        printt("Too many loadouts to inform server of")
+    //    }
+    //    describeNewLoadoutToServer(loadout)
+    //    i++
+    //} //Literally just do the used loadout, send the rest only if used or if the server requests it
+    //Do ui validation client side
+}
+void function describeNewLoadoutToServer(frameworkPersistentTitanLoadout loadout)
+{
+
+    string resultString = ""
+    resultString += "titanName" + " " + loadout.titanName  + " " 
+    resultString += "fileName" + " " + loadout.fileName + " "
+    if(clientframeworkPersistentTitanLoadouts.moddedLoadoutIndex == loadout.fileName)
+    {
+        resultString += "select" + " " + "yes "
+    }
+    else
+    {
+        resultString += "select" + " " + "no "
+    }
+    table<string, bool functionref(string value, string property, TitanLoadoutDef acceptedLoadout)> PersistentVars
+    if(GetModdedTitanClasses().contains(loadout.titanName))
+       PersistentVars = GetModdedTitanData(loadout.titanName).derivedData.PersistentValuesValidation
+    else if(IsBaseTitan(loadout.titanName))
+    {
+        PersistentVars = getBaseLoadoutValidationTable()
+    } 
+    table loadoutTable = TitanLoadoutDefToTable(loadout.loadout)
+    foreach(string varName, bool functionref(string value, string property, TitanLoadoutDef acceptedLoadout) valid in PersistentVars)
+    {
+        if(varName in loadout.additionalVars)
+            resultString += varName + " " + loadout.additionalVars[varName] + " "
+        else if (varName in loadoutTable)
+            resultString += varName + " " + loadoutTable[varName] + " "
+    }
+    printt("resultString", resultString)
+    if(shouldPrintDevStuff())
+    {    
+        PrintTable(loadoutTable)
+        PrintTable(loadout.additionalVars)
+    }
+    GetLocalClientPlayer().ClientCommand("titanFrameworkNewLoadout " + resultString) 
+}//script_client thread describeNewLoadoutToServer(clientframeworkPersistentTitanLoadouts.loadouts["LOADOUT_0.json"])
