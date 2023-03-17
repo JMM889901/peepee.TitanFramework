@@ -285,6 +285,7 @@ resource/ui/menus/customLoadoutSelectionButtons.res
 	    pin_to_sibling_corner	TOP_RIGHT
 	}
 
+
     buttonNext
     {
 			ControlName RuiButton
@@ -310,5 +311,18 @@ resource/ui/menus/customLoadoutSelectionButtons.res
 			pin_to_sibling Button6
 			pin_corner_to_sibling TOP_LEFT
 			pin_to_sibling_corner BOTTOM_LEFT
+    }
+    buttonRejected
+    {
+			ControlName RuiButton
+			InheritProperties RuiSmallButton
+			labelText "#SHOW_REJECTED_LOADOUTS"
+            auto_wide_tocontents 	1
+			//image "vgui/hud/white"
+			//drawColor "255 255 255 128"
+	
+			pin_to_sibling Button7
+			pin_corner_to_sibling TOP
+			pin_to_sibling_corner BOTTOM
     }
 }

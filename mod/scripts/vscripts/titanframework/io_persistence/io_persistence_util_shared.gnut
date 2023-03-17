@@ -7,7 +7,7 @@ global enum eLoadoutStatus
 }
 global struct frameworkLoadoutRejectionReason
 {
-    int status//TODO allow multiple rejection reasons
+    int status = eLoadoutStatus.NO_RESPONSE //TODO allow multiple rejection reasons
 	string reason //Represents the reason for the rejection
     string cause //Represents the item that caused the rejection
 	string badValue //Represents the value that caused the rejection, when applicable
@@ -25,6 +25,7 @@ global struct frameworkPersistentTitanLoadout
     frameworkLoadoutRejectionReason response//Only used if rejected is true
 
 }
+global const FRAMEWORK_TITAN_OFFSET = 10
 string function GetFrameworkLoadoutValue(frameworkPersistentTitanLoadout loadout, string propertyName)
 {
 	string value = GetTitanLoadoutValue(loadout.loadout, propertyName)
@@ -38,6 +39,7 @@ string function GetFrameworkLoadoutValue(frameworkPersistentTitanLoadout loadout
 
 	return value
 }
+
 table function TitanLoadoutDefToTable(TitanLoadoutDef loadout)
 {
 	table Table
@@ -163,7 +165,54 @@ void function overrideTitanLoadoutWithTitanLoadout(TitanLoadoutDef loadout1, Tit
     loadout1.antirodeoMods     = loadout2.antirodeoMods
     loadout1.titanExecution    = loadout2.titanExecution
 }
+frameworkPersistentTitanLoadout function createClientFrameworkLoadoutFromLoadoutDef(TitanLoadoutDef loadout)
+{
+    frameworkPersistentTitanLoadout frameworkLoadout
+    frameworkLoadout.loadoutName = loadout.name
+    frameworkLoadout.titanName = loadout.titanClass
+    frameworkLoadout.sourceMod = "titanFramework"
+    frameworkLoadout.sourceModVersion = "1.2.1"
+    frameworkLoadout.loadout.name = loadout.name
 
+    frameworkLoadout.loadout.name             = loadout.name
+    frameworkLoadout.loadout.titanClass       = loadout.titanClass
+    frameworkLoadout.loadout.primeTitanRef    = loadout.primeTitanRef 
+    frameworkLoadout.loadout.setFile          = loadout.setFile
+    frameworkLoadout.loadout.primaryMod       = loadout.primaryMod
+    frameworkLoadout.loadout.special          = loadout.special
+    frameworkLoadout.loadout.antirodeo        = loadout.antirodeo
+    frameworkLoadout.loadout.passive1         = loadout.passive1
+    frameworkLoadout.loadout.passive2         = loadout.passive2
+    frameworkLoadout.loadout.passive3         = loadout.passive3
+    frameworkLoadout.loadout.passive4         = loadout.passive4
+    frameworkLoadout.loadout.passive5         = loadout.passive5
+    frameworkLoadout.loadout.passive6         = loadout.passive6
+    frameworkLoadout.loadout.voice            = loadout.voice
+    frameworkLoadout.loadout.skinIndex        = loadout.skinIndex
+    frameworkLoadout.loadout.camoIndex        = loadout.camoIndex
+    frameworkLoadout.loadout.decalIndex       = loadout.decalIndex
+    frameworkLoadout.loadout.primarySkinIndex = loadout.primarySkinIndex
+    frameworkLoadout.loadout.primaryCamoIndex = loadout.primaryCamoIndex
+    frameworkLoadout.loadout.difficulty       = loadout.difficulty
+    frameworkLoadout.loadout.isPrime          = loadout.isPrime
+    frameworkLoadout.loadout.primeSkinIndex   = loadout.primeSkinIndex
+    frameworkLoadout.loadout.primeCamoIndex   = loadout.primeCamoIndex
+    frameworkLoadout.loadout.primeDecalIndex  = loadout.primeDecalIndex
+    frameworkLoadout.loadout.showArmBadge     = loadout.showArmBadge
+    frameworkLoadout.loadout.setFileMods      = loadout.setFileMods
+    frameworkLoadout.loadout.melee            = loadout.melee
+    frameworkLoadout.loadout.coreAbility      = loadout.coreAbility
+    frameworkLoadout.loadout.primary          = loadout.primary
+    frameworkLoadout.loadout.primaryAttachment= loadout.primaryAttachment
+    frameworkLoadout.loadout.primaryMods      = loadout.primaryMods
+    frameworkLoadout.loadout.ordnance         = loadout.ordnance
+    frameworkLoadout.loadout.ordnanceMods     = loadout.ordnanceMods
+    frameworkLoadout.loadout.specialMods      = loadout.specialMods
+    frameworkLoadout.loadout.antirodeoMods    = loadout.antirodeoMods
+    frameworkLoadout.loadout.titanExecution   = loadout.titanExecution
+
+    return frameworkLoadout
+}//script_client saveNewTitanLoadout(createClientFrameworkLoadoutFromLoadoutDef(shGlobal.cachedTitanLoadouts[0]))
 bool function TrySetTitanLoadoutValue( TitanLoadoutDef loadout, string property, string value )
 {
 	switch ( property )
@@ -255,8 +304,49 @@ bool function TrySetTitanLoadoutValue( TitanLoadoutDef loadout, string property,
 		case "showArmBadge":
 			loadout.showArmBadge = int( value )
 			break
+        case "primary":
+            loadout.primary = value
+            break
+        case "ordnance":
+            loadout.ordnance = value
+            break
+        case "melee":
+            loadout.melee = value
+            break
+        case "coreAbility":
+            loadout.coreAbility = value
+            break
         default:
             return false
 	}
     return true
+}
+int function GetModdedTitanLoadoutNameIndex(string name)
+{
+    array<string> words = split(name, "_" )
+    return words[1].tointeger()
+}
+int function SortFrameworkTitanLoadouts(frameworkPersistentTitanLoadout a, frameworkPersistentTitanLoadout b)
+{
+    if(GetModdedTitanLoadoutNameIndex(a.fileName) < GetModdedTitanLoadoutNameIndex(b.fileName) )
+    {
+        return -1
+    }
+    if(GetModdedTitanLoadoutNameIndex( a.fileName ) > GetModdedTitanLoadoutNameIndex( b.fileName ))
+    {
+        return 1
+    }
+    return 0
+}
+int function SortFrameworkTitanLoadoutsByName(string a, string b)
+{
+	if(GetModdedTitanLoadoutNameIndex(a) < GetModdedTitanLoadoutNameIndex(b) )
+	{
+		return -1
+	}
+	if(GetModdedTitanLoadoutNameIndex( a ) > GetModdedTitanLoadoutNameIndex( b ))
+	{
+		return 1
+	}
+	return 0
 }

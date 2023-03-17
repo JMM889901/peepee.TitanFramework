@@ -67,7 +67,7 @@ void function UpdateTitanLoadoutButtons( int selectedIndex, var[NUM_PERSISTENT_T
 			print("Overwrote titan loadout with default")
 			print(loadout.titanClass)
 		}
-		if(!playerHasModdedLoadout())
+		if(!PlayerHasModdedTitanLoadout())
 			Hud_SetSelected( button, index == selectedIndex )
 		else
 			Hud_SetSelected( button, false )
@@ -106,7 +106,7 @@ void function UpdateTitanLoadoutButtons( int selectedIndex, var[NUM_PERSISTENT_T
 		}
 	}
 
-	if ( focusSelected && !playerHasModdedLoadout() )
+	if ( focusSelected && !PlayerHasModdedTitanLoadout() )
 		Hud_SetFocused( buttons[ selectedIndex ] )
 }
 
@@ -139,6 +139,32 @@ void function UpdateTitanLoadoutPanel( var loadoutPanel, TitanLoadoutDef loadout
 
 		var rui = Hud_GetRui( elem )
 		RuiSetImage( rui, "buttonImage", image )
+	}
+	array<var> weaponButtons = GetElementsByClassname( menu, "TitanPropertySelectionButton" )
+	array<var> weaponButtonsUsed
+	foreach ( elem in weaponButtons )
+	{
+		if(IsBaseTitan(titanRef))
+		{
+			Hud_SetVisible(elem, false)
+			continue
+		}
+		string propertyName = Hud_GetScriptID( elem )
+		table<string, CustomPersistentVar> customValues = GetModdedTitanData(titanRef).ValidationOverrides
+		if(propertyName in customValues)
+		{
+			//Hud_SetText( elem, "")
+			Hud_Show(elem)
+			weaponButtonsUsed.append(elem)
+		}
+		else
+		{
+			Hud_Hide(elem)
+		}
+	}
+	if(weaponButtonsUsed.len() > 0)
+	{
+		SetNavUpDown(weaponButtonsUsed )
 	}
 
 	if ( ItemDefined( titanRef ) )
@@ -365,23 +391,41 @@ void function UpdateTitanItemButton( var button, TitanLoadoutDef loadout )
 	string propertyName = Hud_GetScriptID( button )
 	if(propertyName == "internalButton")
 		propertyName = Hud_GetScriptID( Hud_GetParent(button) )
+
+
+	print(GetModdedTitanLoadoutPassiveTypeByClass( loadout.titanClass , propertyName ) + " " + propertyName + " " + loadout.titanClass + " " + loadout.name)
 	bool useAltView = ModdedTitanPassiveHasCustomAssets(loadout.name, propertyName)
 	if ( useAltView == (Hud_GetHudName(button) != "PassiveButton") || !ShouldDisplayIfVanguardPassive( loadout.titanClass, propertyName ))
+	{
 		DisableButton( button )
+	}
 	else
 		EnableButton( button )
-
+	
 	string itemRef = GetTitanLoadoutValue( loadout, propertyName )
 	IsTitanLoadoutPrime( loadout )
-	print( itemRef + " " + propertyName + " " + loadout.titanClass + " " + loadout.name + " " + useAltView)
+	//print( itemRef + " " + propertyName + " " + loadout.titanClass + " " + loadout.name + " " + useAltView)
 	string titanclass = loadout.titanClass
 	if(loadout.titanClass in GetModdedTitansByClassNoPersist())
+	{
 		titanclass = GetModdedTitanClassForMods(titanclass)
+	}
 	string nonPrimeSetFile = GetSetFileForTitanClassAndPrimeStatus( titanclass, false )
-	int itemType = GetItemTypeFromTitanLoadoutProperty( propertyName, nonPrimeSetFile, loadout.titanClass )
-	asset image = GetImage( itemType, itemRef )
+	bool titanDoesExist = IsBaseTitan(loadout.titanClass) || GetModdedTitanClasses().contains(loadout.titanClass)
+	asset image
+	int itemType
+	if(titanDoesExist)
+	{
+		itemType = GetItemTypeFromTitanLoadoutProperty( propertyName, nonPrimeSetFile, loadout.titanClass )
+		image = GetImage( itemType, itemRef )
+	}
+	else
+	{
+		image = $"ui/temp"
+	}
 
-	print(image + " Image "+Hud_GetHudName(button))
+
+	//print(image + " Image "+Hud_GetHudName(button))
 	var rui = Hud_GetRui( button )
 	if(Hud_GetHudName(button) == "PassiveButton")
 	{
@@ -500,6 +544,9 @@ bool function ShouldDisplayIfVanguardPassive( string titanClass, string property
 
 	if ( propertyName == "passive6" )
 		return false
+	
+	if ( propertyName == "titanClass" )
+		return true
 
-	return true
+	return ModdedTitanHasPassiveSlot(titanClass, propertyName)
 }

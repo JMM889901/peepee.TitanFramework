@@ -84,12 +84,10 @@ void function AddCallback_OnTryGetTitanLoadout( TryGetTitanLoadoutCallbackType c
 
 TitanLoadoutDef function GetTitanLoadoutForPlayer( entity player )
 {
+
 	SetActiveTitanLoadout( player ) // set right loadout
 	TitanLoadoutDef loadout = GetActiveTitanLoadout( player )
-	if(playerHasModdedLoadout(player))
-	{
-		loadout = getPlayerModdedLoadout(player).loadout
-	}
+
 	// fix bug with titan weapons having null mods
 	// null mods aren't valid and crash if we try to give them to npc
 	loadout.primaryMods.removebyvalue( "null" )

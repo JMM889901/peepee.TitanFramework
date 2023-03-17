@@ -15,13 +15,17 @@
 			"RunOn": "SERVER || CLIENT || UI"
 		},
 		{
+			"Path": "titanframework/audio/frameworkAudioOverrides.gnut",
+			"RunOn": "CLIENT"
+		},
+		{
 			"Path": "titanframework/io_persistence/client/io_persistence_util.gnut",
 			"RunOn": "UI || CLIENT",
 			"ClientCallback": {
-				"After": "cl_titanFrameworkPersistenceInit"
+				"Before": "cl_titanFrameworkPersistenceInit"
 			},
 			"UICallback": {
-				"After": "cl_titanFrameworkPersistenceInit"
+				"Before": "cl_titanFrameworkPersistenceInit"
 			}
 		},
 		{

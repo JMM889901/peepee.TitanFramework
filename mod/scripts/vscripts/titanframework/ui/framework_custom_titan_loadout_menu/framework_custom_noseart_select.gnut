@@ -104,7 +104,7 @@ void function OnFrameworkNoseArtSelectMenu_Open()
 	Assert( uiGlobal.editingLoadoutType == "titan" )
 	Assert( uiGlobal.editingLoadoutProperty == "decalIndex" || uiGlobal.editingLoadoutProperty == "primeDecalIndex"  )
 
-    frameworkPersistentTitanLoadout titan = GetModdedPersistentTitanLoadout()
+    frameworkPersistentTitanLoadout titan = GetCurrentModdedPersistentTitanLoadout()
 	TitanLoadoutDef loadout = titan.loadout
 	string titanRef = loadout.titanClass
 	array<ItemDisplayData> visibleElems
@@ -152,7 +152,7 @@ void function OnFrameworkNoseArtSelectMenu_NavigateBack()
 
 bool function NoseArtButton_Init( var button, int elemNum )
 {
-    if(!playerHasModdedLoadout())
+    if(!PlayerHasModdedTitanLoadout())
         return false
 	TitanLoadoutDef loadout = GetCurrentModdedTitanLoadoutDef()
 	string titanRef = loadout.titanClass
@@ -256,7 +256,7 @@ void function NoseArtButton_Activate( var button, int elemNum )
 	ItemDisplayData item = GetNoseArtItem( loadout, titanRef, elemNum )
 	int decalIndex = NoseArtRefToIndex( titanRef, item.ref )
 	//SetCachedLoadoutValue( player, uiGlobal.editingLoadoutType, uiGlobal.editingLoadoutIndex, uiGlobal.editingLoadoutProperty, string( decalIndex ) ) TODO: Actually let you change values lol
-	setFrameworkTitanLoadoutValue(GetModdedPersistentTitanLoadoutIndex(), uiGlobal.editingLoadoutProperty, string(decalIndex))
+	setFrameworkTitanLoadoutValue(GetCurrentModdedPersistentTitanLoadoutIndex(), uiGlobal.editingLoadoutProperty, string(decalIndex))
     EmitUISound( "Menu_LoadOut_TitanNoseArt_Select" )
 
 	Grid_InitPage( file.menu, file.gridData )

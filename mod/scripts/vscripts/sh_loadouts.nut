@@ -120,18 +120,6 @@ void function PopulateDefaultTitanLoadouts( TitanLoadoutDef[ NUM_PERSISTENT_TITA
 		//ValidateDefaultLoadoutData( "titan", loadout.passive1 )
 		//ValidateDefaultLoadoutData( "titan", loadout.passive2 )
 	}
-	for ( int i = 7; i < 10; i++ )
-	{
-		OverwriteDefaultTitanLoadoutByIndex(i, GetDefaultTitanLoadout(i - 7))
-		//PrintTitanLoadout(loadout)
-
-		//ValidateDefaultLoadoutData( "titan", loadout.setFile )
-		////loadout.primaryMod
-		//ValidateDefaultLoadoutData( "titan", loadout.special )
-		//ValidateDefaultLoadoutData( "titan", loadout.antirodeo )
-		//ValidateDefaultLoadoutData( "titan", loadout.passive1 )
-		//ValidateDefaultLoadoutData( "titan", loadout.passive2 )
-	}
 	//foreach( void functionref() pain in GetNewItemInitCallbacks())
 	//{
 	//	print("Default population is activating a function")
@@ -1831,6 +1819,14 @@ void function SetCachedPilotLoadoutValue( entity player, int loadoutIndex, strin
 
 void function SetCachedTitanLoadoutValue( entity player, int loadoutIndex, string loadoutProperty, string value )
 {
+	if(loadoutIndex >= FRAMEWORK_TITAN_OFFSET)
+	{
+		setFrameworkTitanLoadoutValue( "LOADOUT_" + (loadoutIndex-FRAMEWORK_TITAN_OFFSET) + ".json", loadoutProperty, value, true ) //Callback is true as this is already on both client and ui
+		#if CLIENT
+		UpdateTitanModel( GetLocalClientPlayer(),  loadoutIndex)
+		#endif
+		return
+	}
 	if ( !IsValidTitanLoadoutProperty( loadoutProperty ) )
 	{
 		CodeWarning( "Tried to set titan " + loadoutProperty + " to invalid value: " + value )
@@ -2053,7 +2049,7 @@ void function UpdateCachedLoadouts()
 string function GetPilotLoadoutValue( PilotLoadoutDef loadout, string property )
 {
 	string value
-	printt( "GetPilotLoadoutValue, property: " + property )
+	//printt( "GetPilotLoadoutValue, property: " + property )
 
 	switch ( property )
 	{
@@ -2784,13 +2780,12 @@ int function GetItemTypeFromTitanLoadoutProperty( string loadoutProperty, string
 		case "passive6":
 			Assert( setFile != "" )
 			itemType = GetModdedTitanLoadoutPassiveTypeByClass(titanClass, loadoutProperty)
-			if(itemType == -1)
+			if(itemType == -1 && IsBaseTitan(titanClass))
 				itemType = GetTitanLoadoutPropertyPassiveType( setFile, loadoutProperty )
 			break
 
 		case "titanExecution":
 			Assert( setFile != "" )
-			setFile = GetModdedTitanSetFileForAnims(setFile)
 			itemType = GetTitanLoadoutPropertyExecutionType( setFile, loadoutProperty )
 			break
 
@@ -3065,7 +3060,7 @@ void function SetPersistentSpawnLoadoutIndex( entity player, string loadoutType,
 	{
 		string text = ""
 
-		if ( ref != "" )
+		if ( ref != "" && ItemDefined(ref) )
 			text = GetItemName( ref )
 
 		Hud_SetText( element, text )
@@ -3075,7 +3070,7 @@ void function SetPersistentSpawnLoadoutIndex( entity player, string loadoutType,
 	{
 		string text = ""
 
-		if ( ref != "" )
+		if ( ref != "" && ItemDefined(ref) )
 			text = GetItemDescription( ref )
 
 		Hud_SetText( element, text )
@@ -3085,7 +3080,7 @@ void function SetPersistentSpawnLoadoutIndex( entity player, string loadoutType,
 	{
 		string text = ""
 
-		if ( ref != "" )
+		if ( ref != "" && ItemDefined(ref) )
 			text = GetItemLongDescription( ref )
 
 		Hud_SetText( element, text )
@@ -3093,7 +3088,7 @@ void function SetPersistentSpawnLoadoutIndex( entity player, string loadoutType,
 
 	void function SetImageFromItemImage( var element, string ref )
 	{
-		if ( ref != "" )
+		if ( ref != "" && ItemDefined(ref) )
 		{
 			Hud_SetImage( element, GetItemImage( ref ) )
 			Hud_Show( element )
@@ -3249,8 +3244,9 @@ void function SetPersistentSpawnLoadoutIndex( entity player, string loadoutType,
 
 	TitanLoadoutDef function GetCachedTitanLoadout( int loadoutIndex )
 	{
-		Assert( loadoutIndex >= 0 && loadoutIndex < shGlobal.cachedTitanLoadouts.len() )
-
+		Assert( loadoutIndex >= 0 )
+		if( loadoutIndex >= FRAMEWORK_TITAN_OFFSET )
+			return clientframeworkPersistentTitanLoadouts.loadouts["LOADOUT_" + (loadoutIndex-FRAMEWORK_TITAN_OFFSET) + ".json"].loadout //TODO change this is i change filenames
 		return shGlobal.cachedTitanLoadouts[ loadoutIndex ]
 	}
 
@@ -3531,7 +3527,7 @@ string function Loadouts_GetSetFileForRequestedClass( entity player )
 		#endif
 			loadout = GetTitanLoadoutFromPersistentData( player, loadoutIndex )
 
-		if(playerHasModdedLoadout(player))
+		if(PlayerHasModdedTitanLoadout(player))
 		{
 			loadout = getPlayerModdedLoadout(player).loadout
 		}
@@ -3658,7 +3654,7 @@ string function Loadouts_GetSetFileForRequestedClass( entity player )
 	{
 		int loadoutIndex = GetPersistentSpawnLoadoutIndex( player, "titan" )
 		TitanLoadoutDef loadout
-		if(playerHasModdedLoadout(player))
+		if(PlayerHasModdedTitanLoadout(player))
 			loadout = getPlayerModdedLoadout(player).loadout
 		else
 			loadout = GetTitanLoadoutFromPersistentData( player, loadoutIndex )
@@ -3730,6 +3726,14 @@ string function Loadouts_GetSetFileForRequestedClass( entity player )
 		Assert( player.IsPlayer(), "Titan spawn loadout makes sense for players not NPCs")
 		TitanLoadoutDef loadout = GetTitanSpawnLoadout( player )
 
+		if(PlayerHasModdedTitanLoadout(player))
+		{
+			return
+		}
+		else
+		{
+			loadout = GetTitanLoadoutFromPersistentData( player, GetPersistentSpawnLoadoutIndex( player, "titan" ) )
+		}
 		player.SetPersistentVar( "activeTitanLoadout.name", 				loadout.name )
 		if(GetModdedTitanClasses().contains(loadout.titanClass))
 		{
@@ -3863,11 +3867,11 @@ string function Loadouts_GetSetFileForRequestedClass( entity player )
 	TitanLoadoutDef function GetActiveTitanLoadout( entity player )
 	{
 		#if CLIENT
-		if(playerHasModdedLoadout())
-			return clientframeworkPersistentTitanLoadouts.loadouts[GetModdedPersistentTitanLoadoutIndex()].loadout
+		if(PlayerHasModdedTitanLoadout())
+			return clientframeworkPersistentTitanLoadouts.loadouts[GetCurrentModdedPersistentTitanLoadoutIndex()].loadout
 		#endif
 		#if SERVER
-		if(playerHasModdedLoadout(player))
+		if(PlayerHasModdedTitanLoadout(player))
 			return getPlayerModdedLoadout(player).loadout
 		#endif
 		//TODO, REMOVE OLD FRAMEWORK STUFF
@@ -3967,6 +3971,8 @@ void function UpdateDerivedPilotLoadoutData( PilotLoadoutDef loadout, bool doOve
 bool function TitanClassHasPrimeTitan( string titanClass )
 {
 
+	if(!(GetModdedTitanClasses().contains(titanClass) || IsBaseTitan(titanClass)))
+		return false
 	string nonPrimeSetFile = GetSetFileForTitanClassAndPrimeStatus( titanClass, false )
 	//if(titanClass in GetModdedTitansByClassNoPersist())
 	//	return false

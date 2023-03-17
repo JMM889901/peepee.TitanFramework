@@ -66,7 +66,7 @@ void function InitEditTitanLoadoutsMenu()
 
 void function OnTitanLoadoutsMenu_Open()
 {
-	uiSetUsingCustomTitanLoadoutsMenu(false)
+	//uiSetUsingCustomTitanLoadoutsMenu(false)
 	entity player = GetUIPlayer()
 	if ( player == null )
 		return

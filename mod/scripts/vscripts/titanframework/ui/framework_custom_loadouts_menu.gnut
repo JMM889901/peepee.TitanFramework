@@ -50,6 +50,7 @@ void function InitModdedLoadoutsSelectionMenu()
 
     foreach(var loadoutButton in file.loadoutButtons)
     {
+        RHud_SetText( loadoutButton, "")
         Hud_AddEventHandler( loadoutButton, UIE_GET_FOCUS, UpdateFrameworkTitanLoadout ) //TODO
         Hud_AddEventHandler( loadoutButton, UIE_CLICK, OnFrameworkLoadoutButton_Press )
     }
@@ -58,23 +59,33 @@ void function InitModdedLoadoutsSelectionMenu()
     Hud_AddEventHandler( nextButton, UIE_CLICK, OnFrameworkLoadoutsMenu_Next )
     Hud_AddEventHandler( previousButton, UIE_CLICK, OnFrameworkLoadoutsMenu_Previous )
 
+    var RejectButton = Hud_GetChild(menu, "buttonRejected")
+    Hud_AddEventHandler( RejectButton, UIE_CLICK, showRejectedLoadouts )
+
 	AddMenuFooterOption( menu, BUTTON_A, "#A_BUTTON_SELECT" )
 	AddMenuFooterOption( menu, BUTTON_B, "#B_BUTTON_BACK", "#BACK" )
-//    AddMenuFooterOption( menu, BUTTON_B, "#SHOW_REJECTED_LOADOUTS", "#SHOW_REJECTED_LOADOUTS", showRejectedLoadouts )
+    //AddMenuFooterOption( menu, BUTTON_X, "#SHOW_REJECTED_LOADOUTS", "#SHOW_REJECTED_LOADOUTS", showRejectedLoadouts )
 }
 array<frameworkPersistentTitanLoadout> UILoadouts
 int UILoadoutIndex = 0
-bool UIShowRejectedLoadouts//TODO 
+bool UIShowRejectedLoadouts = false//TODO 
+
+void function showRejectedLoadouts(var button)
+{
+    UIShowRejectedLoadouts = !UIShowRejectedLoadouts
+    OnFrameworkLoadoutsMenu_Open()
+    Hud_SetText(button, Localize( UIShowRejectedLoadouts ? "#HIDE_REJECTED_LOADOUTS" : "#SHOW_REJECTED_LOADOUTS" ) )
+}
 void function OnFrameworkLoadoutsMenu_Open()
 {
-    uiSetUsingCustomTitanLoadoutsMenu(true)
+    //uiSetUsingCustomTitanLoadoutsMenu(true)
     var menu = GetMenu( "EditCustomTitanLoadoutsMenu" )
     UILoadouts = []
     foreach(string loadoutName, frameworkPersistentTitanLoadout loadout in clientframeworkPersistentTitanLoadouts.loadouts )
     {
         if(loadout.response.status == eLoadoutStatus.REJECTED && !UIShowRejectedLoadouts)
         {
-            print("Rejected " + loadoutName)
+            print("Rejected " + loadoutName +" for reason " + loadout.response.reason + " and status " + loadout.response.cause + " with bad value (if applicable) " + loadout.response.badValue)
             continue
         }
         UILoadouts.append(loadout)
@@ -90,7 +101,7 @@ void function OnFrameworkLoadoutsMenu_Next( var button )
 }
 bool function FrameworkSelectionMenu_HasNext()
 {
-    return UILoadoutIndex < UILoadouts.len()
+    return UILoadoutIndex <= UILoadouts.len()
 }
 bool function FrameworkSelectionMenu_HasPrevious()
 {
@@ -102,18 +113,7 @@ void function OnFrameworkLoadoutsMenu_Previous( var button )
     UILoadoutIndex -= file.loadoutButtons.len() * 2
     updateFrameworkLoadoutsMenu(menu)
 }
-int function SortFrameworkTitanLoadouts(frameworkPersistentTitanLoadout a, frameworkPersistentTitanLoadout b)
-{
-    if(a.fileName < b.fileName)
-    {
-        return -1
-    }
-    if(a.fileName > b.fileName)
-    {
-        return 1
-    }
-    return 0
-}
+
 void function updateFrameworkLoadoutsMenu(var menu)
 {
     for(int i = 0; i < file.loadoutInfo.len(); i++)
@@ -123,11 +123,19 @@ void function updateFrameworkLoadoutsMenu(var menu)
         if(UILoadoutIndex < UILoadouts.len())
         {
             frameworkPersistentTitanLoadout loadout = UILoadouts[UILoadoutIndex]
-            Hud_SetText(loadoutButton, loadout.loadoutName)
+            //Hud_SetText(loadoutButton, loadout.loadoutName)
             loadoutButton.s.loadoutID <- loadout.fileName
             UpdateTitanButtonInfo(loadoutInfo, loadout)
+            Hud_SetSelected(loadoutButton, (loadout.fileName == GetCurrentModdedPersistentTitanLoadoutIndex()))
             Hud_SetVisible(loadoutButton, true)
             Hud_SetVisible(loadoutInfo, true)
+        }
+        else if(UILoadoutIndex == UILoadouts.len())
+        {
+            loadoutButton.s.loadoutID <- "CreateNewTitanLoadout"
+            Hud_SetVisible(loadoutButton, true)
+            Hud_SetVisible(loadoutInfo, true)
+            SetCreateTitanButton(loadoutInfo)
         }
         else
         {
@@ -162,19 +170,31 @@ void function updateFrameworkLoadoutsMenu(var menu)
 }
 void function UpdateTitanButtonInfo(var menu, frameworkPersistentTitanLoadout loadout)
 {
-    //var TitanIcon = Hud_GetChild(menu, "TitanIcon") 
+    bool titanDoesExist = IsBaseTitan(loadout.titanName) || GetModdedTitanClasses().contains(loadout.titanName)
     foreach(var button in file.loadoutPassiveIcons[menu])
     {
+
         var imagePanel
         if(ModdedTitanPassiveHasCustomAssets(loadout.titanName, Hud_GetScriptID(button)))
         {
             imagePanel = Hud_GetChild(button, "PassiveImageMod")
             Hud_Hide(Hud_GetChild(button, "PassiveImage"))
         }
-        else
+        else if(ShouldDisplayIfVanguardPassive( loadout.titanName, Hud_GetScriptID(button) ))
         {
             imagePanel = Hud_GetChild(button, "PassiveImage")
             Hud_Hide(Hud_GetChild(button, "PassiveImageMod"))
+        }
+        else
+        {
+            Hud_Hide(Hud_GetChild(button, "PassiveImageMod"))
+            Hud_Hide(Hud_GetChild(button, "PassiveImage"))
+            continue
+        }
+        if(!titanDoesExist)
+        {
+            RuiSetImage( Hud_GetRui(imagePanel), "buttonImage",  $"ui/temp" )
+            continue
         }
         Hud_Show(imagePanel)
         string itemRef = GetTitanLoadoutValue( loadout.loadout, Hud_GetScriptID(button) )
@@ -184,15 +204,33 @@ void function UpdateTitanButtonInfo(var menu, frameworkPersistentTitanLoadout lo
         RuiSetImage( Hud_GetRui(imagePanel), "buttonImage", image )
     }
     var TitanIcon = Hud_GetChild(menu, "TitanIcon")
-    //if(IsBaseTitan(loadout.titanName) || GetModdedTitanClasses().contains(loadout.titanName))
-    //{
-    //    Hud_SetImage(TitanIcon, GetIconForTitanClass(loadout.titanName))
-    //}
-    //else
-    //{
-    //    Hud_SetImage(TitanIcon, $"ui/temp")
-    //}
-    //Hud_SetText(Hud_GetChild(menu, "TitanName"), loadout.titanName)
+    var rui = Hud_GetRui( TitanIcon )
+    if(titanDoesExist)
+    {
+        RuiSetImage(rui, "basicImage", GetIconForTitanClass(loadout.titanName))
+    }
+    else
+    {
+        RuiSetImage(rui, "basicImage", $"ui/temp")
+    }
+
+    Hud_SetText(Hud_GetChild(menu, "titanName"), Localize(loadout.titanName))
+    Hud_SetText(Hud_GetChild(menu, "loadoutName"), Localize(loadout.loadoutName))//Loadout names shouldnt be localized but just incase
+}
+void function SetCreateTitanButton( var menu )
+{
+    foreach(var button in file.loadoutPassiveIcons[menu])
+    {
+
+        Hud_Hide(Hud_GetChild(button, "PassiveImageMod"))
+        Hud_Hide(Hud_GetChild(button, "PassiveImage"))
+    }
+
+    Hud_SetText(Hud_GetChild(menu, "loadoutName"), Localize("#CREATE_NEW_TITAN_LOADOUT"))
+    Hud_Hide(Hud_GetChild(menu, "TitanIcon"))
+    Hud_Hide(Hud_GetChild(menu, "titanName"))
+
+
 }
 void function OnFrameworkLoadoutButton_Press( var button )
 {
@@ -201,13 +239,58 @@ void function OnFrameworkLoadoutButton_Press( var button )
 
     if(button.s.loadoutID == "")
     {
+        print("clicked empty button")
+        return
+    }
+    if( button.s.loadoutID == "CreateNewTitanLoadout" )
+    {
+        button.s.loadoutID = "" //Prevent double presses
+        MenuCreateNewTitan(button)
         return
     }
     setModdedTitanLoadoutIndex( expect string(button.s.loadoutID) )
-    ClientCommand( "moddedTitanLoadoutSelect " + button.s.loadoutID )
+    ClientCommand( "titanFrameworkSelectLoadout " + button.s.loadoutID )
+    int index = GetModdedTitanLoadoutNameIndex( expect string(button.s.loadoutID) )
+    SetEditLoadout( "titan", index + FRAMEWORK_TITAN_OFFSET )
+    RunMenuClientFunction( "SetEditingTitanLoadoutIndex", index + FRAMEWORK_TITAN_OFFSET )
+
     //TODO Check that server has the loadout and if not send it
     
     //UpdateFrameworkTitanLoadout(button)
-    AdvanceMenu( GetMenu( "EditCustomTitanLoadoutMenu" ) )
+    AdvanceMenu( GetMenu( GetTitanEditLoadoutMenu( GetCurrentModdedPersistentTitanLoadout().titanName ) ) )
 
+}
+void function MenuCreateNewTitan(var button)
+{
+    CreateNewTitanLoadout()
+    while(frameworkHelperValues.savingNewLoadout)
+    {
+        printt("Waiting" )
+        WaitFrame() //when the shitty mutex is sus
+    }
+    var menu = GetMenu( "EditCustomTitanLoadoutsMenu" )
+    UILoadoutIndex -= file.loadoutButtons.len()
+    OnFrameworkLoadoutsMenu_Open()
+    while(FrameworkSelectionMenu_HasNext())
+    {
+        OnFrameworkLoadoutsMenu_Next(menu)
+    }
+    return
+}
+
+bool function ShouldDisplayIfVanguardPassive( string titanClass, string propertyName )
+{
+	if ( titanClass == "vanguard" || ModdedTitanHasPassiveSlot(titanClass, propertyName) )
+		return true
+
+	if ( propertyName == "passive4" )
+		return false
+
+	if ( propertyName == "passive5" )
+		return false
+
+	if ( propertyName == "passive6" )
+		return false
+
+	return ModdedTitanHasPassiveSlot(titanClass, propertyName)
 }

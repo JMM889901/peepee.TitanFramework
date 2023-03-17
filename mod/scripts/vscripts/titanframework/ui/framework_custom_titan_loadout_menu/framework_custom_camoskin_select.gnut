@@ -176,7 +176,7 @@ void function OnFrameworkCamoSelectMenu_Open()
 
 	file.gridData.currentPage = 0
 
-	if ( !playerHasModdedLoadout() )
+	if ( !PlayerHasModdedTitanLoadout() )
 		return
 
 	var panel = GetMenuChild( file.menu, "GridPanel" )
@@ -315,7 +315,7 @@ bool function CamoButton_Init( var button, int elemNum )
 {
 	var rui = Hud_GetRui( button )
 
-	if ( !playerHasModdedLoadout() )
+	if ( !PlayerHasModdedTitanLoadout() )
 		return false
 
 	ItemDisplayData displayData = file.skinItemData[elemNum]
@@ -371,7 +371,7 @@ bool function CamoButton_Init( var button, int elemNum )
 
 void function CamoButton_GetFocus( var button, int elemNum )
 {
-	if ( !playerHasModdedLoadout() )
+	if ( !PlayerHasModdedTitanLoadout() )
 		return
 
 	ItemDisplayData displayData = file.skinItemData[elemNum]
@@ -544,8 +544,8 @@ void function CamoButton_Activate( var button, int elemNum )
 			camoIndex = GetItemPersistenceId( displayData.ref, displayData.parentRef )
 			skinIndex = GetSkinIndexForCamo( uiGlobal.editingLoadoutType, uiGlobal.editingLoadoutProperty, camoIndex )
 		}
-        setFrameworkTitanLoadoutValue( GetModdedPersistentTitanLoadoutIndex(), uiGlobal.editingLoadoutProperty, string ( camoIndex ) )
-        setFrameworkTitanLoadoutValue( GetModdedPersistentTitanLoadoutIndex(), GetSkinPropertyName( uiGlobal.editingLoadoutProperty ), string( skinIndex ) )
+        setFrameworkTitanLoadoutValue( GetCurrentModdedPersistentTitanLoadoutIndex(), uiGlobal.editingLoadoutProperty, string ( camoIndex ) )
+        setFrameworkTitanLoadoutValue( GetCurrentModdedPersistentTitanLoadoutIndex(), GetSkinPropertyName( uiGlobal.editingLoadoutProperty ), string( skinIndex ) )
 		if ( uiGlobal.editingLoadoutType == "titan" )
 		{
 			if ( uiGlobal.editingLoadoutProperty == "camoIndex" || uiGlobal.editingLoadoutProperty == "primeCamoIndex" )

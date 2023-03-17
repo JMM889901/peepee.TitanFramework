@@ -1,19 +1,35 @@
 global function FrameworkPassiveMenuInit
+global function SetupLoadoutItemButtonsAlt
 struct{
 	array<var> activateButtons
 	table<var, ItemDisplayData> buttonItemData
+	table<var, FrameworkChassisStruct> buttonChassisData
 } file
 void function FrameworkPassiveMenuInit()
 {
 	AddMenu( "PassiveSelectMenuAlt", $"resource/ui/menus/passiveselectAlt.menu", InitPassiveSelectMenuAlt )
+	AddMenu( "ChassisSelectMenu", $"resource/ui/menus/passiveselectAlt.menu", InitChassisMenu ) //Utility menu added by framework
 	
-	InitEditTitanClassMenu()
 }
 void function InitPassiveSelectMenuAlt()
 {
 	var menu = GetMenu( "PassiveSelectMenuAlt" )
 
 	AddMenuEventHandler( menu, eUIEvent.MENU_OPEN, OnPassiveSelectMenuAlt_Open )
+	//AddMenuEventHandler( menu, eUIEvent.MENU_CLOSE, OnPassiveSelectMenu_Close )
+
+	AddEventHandlerToButtonClass( menu, "TitanLoadoutPanelButtonClass", UIE_GET_FOCUS, FrameworkOnPassiveSelectButton_Focused )
+	AddEventHandlerToButtonClass( menu, "TitanLoadoutPanelButtonClass", UIE_CLICK, FrameworkOnAbilityOrPassiveSelectButton_Activate )
+	//AddEventHandlerToButtonClass( menu, "PassiveSelectClass", UIE_LOSE_FOCUS, OnPassiveSelectButton_LostFocus )
+	
+	AddMenuFooterOption( menu, BUTTON_A, "#A_BUTTON_SELECT" )
+	AddMenuFooterOption( menu, BUTTON_B, "#B_BUTTON_BACK", "#BACK" )
+}
+void function InitChassisMenu()
+{
+	var menu = GetMenu( "ChassisSelectMenu" )
+
+	AddMenuEventHandler( menu, eUIEvent.MENU_OPEN, OnChassisSelectMenuOpen )
 	//AddMenuEventHandler( menu, eUIEvent.MENU_CLOSE, OnPassiveSelectMenu_Close )
 
 	AddEventHandlerToButtonClass( menu, "TitanLoadoutPanelButtonClass", UIE_GET_FOCUS, FrameworkOnPassiveSelectButton_Focused )
@@ -31,11 +47,13 @@ void function OnPassiveSelectMenuAlt_Open()
 	array<ItemDisplayData> unavailableItems
 
 	string parentItemRef
-	frameworkPersistentTitanLoadout titan = GetModdedPersistentTitanLoadout()
+	frameworkPersistentTitanLoadout titan = GetCurrentModdedPersistentTitanLoadout()
 	TitanLoadoutDef editLoadout = titan.loadout
 	parentItemRef = editLoadout.titanClass
 	string nonPrimeSetFile = GetSetFileForTitanClassAndPrimeStatus( editLoadout.titanClass, false )
-	uiGlobal.editingItemType = GetItemTypeFromTitanLoadoutProperty( uiGlobal.editingLoadoutProperty, nonPrimeSetFile, editLoadout.titanClass )
+	uiGlobal.editingItemType = GetModdedTitanLoadoutPassiveTypeByClass( editLoadout.titanClass, uiGlobal.editingLoadoutProperty )
+	if( uiGlobal.editingItemType == -1 )
+		uiGlobal.editingItemType = GetItemTypeFromTitanLoadoutProperty( uiGlobal.editingLoadoutProperty, nonPrimeSetFile, editLoadout.titanClass )
 	uiGlobal.editingItemRef = GetTitanLoadoutValue( editLoadout, uiGlobal.editingLoadoutProperty )
 
 	var menu = GetMenu( "PassiveSelectMenuAlt" )
@@ -49,6 +67,28 @@ void function OnPassiveSelectMenuAlt_Open()
 
 	RefreshCreditsAvailable()
 }
+void function OnChassisSelectMenuOpen()
+{
+	string parentItemRef
+	frameworkPersistentTitanLoadout titan = GetCurrentModdedPersistentTitanLoadout()
+	TitanLoadoutDef editLoadout = titan.loadout
+	parentItemRef = editLoadout.titanClass
+	string nonPrimeSetFile = GetSetFileForTitanClassAndPrimeStatus( editLoadout.titanClass, false )
+	uiGlobal.editingLoadoutProperty = "setFile"
+	uiGlobal.editingItemType = GetModdedTitanLoadoutPassiveTypeByClass( editLoadout.titanClass, uiGlobal.editingLoadoutProperty )
+	uiGlobal.editingItemRef = GetTitanLoadoutValue( editLoadout, uiGlobal.editingLoadoutProperty )
+
+	var menu = GetMenu( "ChassisSelectMenu" )
+	var menuTitle = Hud_GetChild( menu, "MenuTitle" )
+	array<FrameworkChassisStruct> items
+	items = GetModdedTitanData(editLoadout.titanClass).altChassisArray
+
+	Hud_SetText( menuTitle, "#CHASSIS_SELECT" )
+	array<var> buttons = GetElementsByClassname( menu, "PassiveSelectClass" )
+	SetupChassisButtons( buttons, items, uiGlobal.editingItemRef , parentItemRef, uiGlobal.editingLoadoutProperty )
+
+	RefreshCreditsAvailable()
+}
 //Rewritten for frameworks purposes
 void function FrameworkOnAbilityOrPassiveSelectButton_Activate( var button )
 {
@@ -59,21 +99,30 @@ void function FrameworkOnPassiveSelectButton_Focused( var button )
 {
 	var buttonIndex = button
 	buttonIndex = Hud_GetParent(button)
+	var menu = Hud_GetParent( buttonIndex )
+	if(uiGlobal.editingLoadoutProperty == "setFile")
+	{
+		string unlockReq = ""
+		string name = file.buttonChassisData[ buttonIndex ].name
+		string description = file.buttonChassisData[ buttonIndex ].description
+		UpdateItemDetails( menu, name, description, unlockReq )
+		return
+	}
+
 	string itemRef = file.buttonItemData[ buttonIndex ].ref
 	string parentRef = file.buttonItemData[ buttonIndex ].parentRef
 	int itemType = file.buttonItemData[ buttonIndex ].itemType
 
 	ShowItemPanel( "ItemDetails" )
-	var menu = Hud_GetParent( buttonIndex )
-	string name = GetItemName( itemRef )
-	string description = GetItemLongDescription( itemRef )
+	string name = Localize(GetItemName( itemRef ))
+	string description = Localize(GetItemLongDescription( itemRef ))
 
 	string unlockReq
 	if ( IsSubItemType( itemType ) )
 		unlockReq = GetItemUnlockReqText( itemRef, parentRef )
 	else
 		unlockReq = GetItemUnlockReqText( itemRef )
-
+	
 	UpdateItemDetails( menu, name, description, unlockReq )
 }
 //Modified passives panel for custom icons because rui is dumb
@@ -95,6 +144,13 @@ void function SetupLoadoutItemButtonsAlt( array<var> buttons, array<ItemDisplayD
 		if ( file.buttonItemData[ buttonPanel ].ref == "" )
 		{
 			var button = Hud_GetChild(buttonPanel, "PassiveButton")
+			Hud_SetNew( button, false )
+			Hud_SetText( button, "" )
+			Hud_SetEnabled( button, false )
+			Hud_SetLocked( button, false )
+			Hud_SetSelected( button, false )
+
+			button = Hud_GetChild(buttonPanel, "FullButton")
 			Hud_SetNew( button, false )
 			Hud_SetText( button, "" )
 			Hud_SetEnabled( button, false )
@@ -176,6 +232,93 @@ void function SetupLoadoutItemButtonsAlt( array<var> buttons, array<ItemDisplayD
 		Hud_SetFocused( newFocus )
 	}
 }
+//Mostly just a rewrite of the above but for frameworkChassisStruct, There is definitely a better way to do this but I dont want to find it
+void function SetupChassisButtons( array<var> buttons, array<FrameworkChassisStruct> items, string currentItemRef, string parentItemRef = "", string slot = "" )
+{
+	entity player = GetUIPlayer()
+	if ( player == null )
+		return
+
+	//printt( "SetupLoadoutItemButtons() | currentItemRef:", currentItemRef, "item count:", items.len() )
+	//foreach ( item in items )
+	//	printt( item.ref )
+
+	int i = 0
+	int itemCount = items.len()
+
+	FrameworkChassisStruct noItemData
+	noItemData.name = ""
+
+	foreach ( button in buttons )
+	{
+		if ( i < itemCount )
+			file.buttonChassisData[ button ] <- items[i]
+		else
+			file.buttonChassisData[ button ] <- noItemData
+
+		i++
+	}
+
+	// Disable buttons first because otherwise disabling the currently active button will cause code to set a new focus which interferes with script setting it
+	foreach ( buttonPanel in buttons )
+	{
+		if ( file.buttonChassisData[ buttonPanel ].name == "" )
+		{
+			var button = Hud_GetChild(buttonPanel, "PassiveButton")
+			Hud_SetNew( button, false )
+			Hud_SetText( button, "" )
+			Hud_SetEnabled( button, false )
+			Hud_SetLocked( button, false )
+			Hud_SetSelected( button, false )
+
+			//RuiSetBool( Hud_GetRui( Hud_GetChild(buttonPanel, "PassiveImage") ), "isVisible", false )
+			Hud_Hide(buttonPanel)
+			//RuiSetBool( Hud_GetRui( button ), "isVisible", false )
+		}
+	}
+
+	var newFocus = buttons[0]
+
+	foreach ( index, buttonPanel in buttons )
+	{
+		FrameworkChassisStruct item = file.buttonChassisData[ buttonPanel ]
+		if ( item.name == "" )
+			continue
+
+		//RuiSetBool( Hud_GetRui( button ), "isVisible", true )
+		//RuiSetBool( Hud_GetRui( imageScreen ), "isVisible", true )
+		Hud_Show(buttonPanel)
+		var button = setupPassiveButtonIconForImageAndIsModded( buttonPanel, item.icon , item.iconIsModded )
+		
+
+
+		Hud_SetEnabled( button, true )
+		Hud_SetLocked( button, false )
+		Hud_SetVisible( button, true )
+
+		//printt( "if (", item.ref, "==", currentItemRef, ") is", item.ref == currentItemRef )
+		if ( item.setFile == currentItemRef )
+		{
+			Hud_SetSelected( button, true )
+			newFocus = button
+		}
+		else
+		{
+			Hud_SetSelected( button, false )
+		}
+
+
+
+	}
+
+
+	if ( items.len() ) // don't try to set focus if there are no available items at all
+	{
+		var lastFocus = GetFocus()
+		Assert( Hud_IsEnabled( newFocus ) )
+		Hud_SetFocused( newFocus )
+	}
+}
 void function SetButtonItemData( array<var> buttons, array<ItemDisplayData> items )
 {
 	int i = 0
@@ -201,8 +344,19 @@ void function FrameworkAilityOrPassive_Equip( var button)
 	var buttonIndex = button
 	if(Hud_GetScriptID(button) == "internalButton" )
 		buttonIndex = Hud_GetParent(button)
-	string itemRef = file.buttonItemData[ buttonIndex ].ref
-	int itemType = file.buttonItemData[ buttonIndex ].itemType
+
+	int itemType
+	string itemRef
+	if( uiGlobal.editingLoadoutProperty == "setFile")
+	{
+		itemRef = file.buttonChassisData[ buttonIndex ].setFile
+		itemType = -1
+	}
+	else
+	{
+		itemRef = file.buttonItemData[ buttonIndex ].ref
+		itemType = file.buttonItemData[ buttonIndex ].itemType
+	}
 	entity player = GetUIPlayer()
 
 	if ( !IsLobby() && uiGlobal.editingItemRef != itemRef )
@@ -214,7 +368,7 @@ void function FrameworkAilityOrPassive_Equip( var button)
 	}
 
 	//SetCachedLoadoutValue( player, uiGlobal.editingLoadoutType, uiGlobal.editingLoadoutIndex, uiGlobal.editingLoadoutProperty, itemRef )
-	setFrameworkTitanLoadoutValue( GetModdedPersistentTitanLoadoutIndex(), uiGlobal.editingLoadoutProperty, itemRef )
+	setFrameworkTitanLoadoutValue( GetCurrentModdedPersistentTitanLoadoutIndex(), uiGlobal.editingLoadoutProperty, itemRef )
 	if ( uiGlobal.editingLoadoutType == "pilot" )
 	{
 		EmitUISound( "Menu_LoadOut_Ordinance_Select" )

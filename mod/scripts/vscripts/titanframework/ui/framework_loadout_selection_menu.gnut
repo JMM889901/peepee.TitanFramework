@@ -7,7 +7,6 @@ struct{
 void function FrameworkSelectMenuInit()
 {
 	AddMenu( "EditTitanClassMenu", $"resource/ui/menus/titanClasses.menu", InitEditTitanClassMenu )
-	InitEditTitanClassMenu()
 }
 
 void function InitEditTitanClassMenu()
@@ -54,8 +53,9 @@ void function OnClassSelectButton_Activate(var button)
 	if(shouldPrintDevStuff())
 		print(button.s.rowIndex)
 	string titanName = expect string(button.s.titanClass)
-	string fileName = GetModdedPersistentTitanLoadoutIndex()
-	SetTitanLoadoutFromClass(titanName, fileName)
+	string fileName = GetCurrentModdedPersistentTitanLoadoutIndex()
+	if(titanName != GetCurrentModdedPersistentTitanLoadout().titanName )
+		SetTitanLoadoutFromClass(titanName, fileName)
 
 	//RunClientScript("ServerCallback_UpdateTitanModel", -1, 0, fileName)
 	//if(GetModdedTitanClasses().contains(string(button.s.titanClass)))

@@ -84,6 +84,7 @@ global function GetSubitemCost
 global function HasSubitem
 
 global function GetAllItemsOfType
+global function GetAllSubItemsOfType
 global function GetAllItemRefsOfType
 global function GetVisibleItemsOfType
 global function GetVisibleItemsOfTypeForCategory
@@ -203,6 +204,7 @@ global function GetWeaponBasedDefaultMod
 global function GetTitanLoadoutPropertyPassiveType
 global function GetTitanLoadoutPropertyExecutionType
 global function GetPrimeTitanSetFileFromNonPrimeSetFile
+global function GetBaseTitanSetFileFromPrimeSetFile
 
 global function CheckEverythingUnlockedAchievement
 
@@ -403,17 +405,25 @@ global struct ItemData
 	table< var, var > i
 }
 
-
+global enum frameworkAltChassisMethod
+{
+	ALT_TITAN, 
+	PRIME_TITAN,
+	NONE
+}
 global struct FrameworkChassisStruct
 {
 	string setFile
 	string name
 	string description
-	asset icon
+	asset icon = $"ui/temp"
+	bool iconIsModded
+	int executionAnimationType
 	string modelOverride
 }
 global struct ModdedPassiveData{
 	string Name
+	string DisplayName
 	string Type //For FD
 	string description
 	asset image = $"ui/temp"
@@ -439,6 +449,24 @@ global struct ModdedTitanGroupSettings{
 global struct ModdedTitanDerivedData{
 	table<string, bool functionref(string value, string property, TitanLoadoutDef validatedLoadout)> PersistentValuesValidation //Stores which values are saved and validated
 }
+global enum eItemsMethod
+{
+	CREATE, //Create items like standard titan kit
+	FIND, //Find existing items, such as using weapons in kits, requires item type to be specified
+	FIND_FORCE, //Find existing items, regardless of item types and other limits, not ideal so try to avoid
+	SPECIFY, //Specify item refs directly
+	NONE //Do not create or find, useful you want to use a custom validation function
+}
+global struct CustomPersistentVar
+{
+	string property // is this even like, needed?
+	string defaultValue
+	bool functionref(string value, string property, TitanLoadoutDef validatedLoadout) validationFunc
+	int itemTypeOverride = -1
+	int passiveItemsMethod = eItemsMethod.CREATE
+	array<ModdedPassiveData> acceptedItems
+	
+}
 global struct ModdedTitanData{
 	string DisplayName
 	string Name
@@ -447,6 +475,7 @@ global struct ModdedTitanData{
 	string sourceModVersion = "1.2.1"
 	string passiveDisplayNameOverride = "#TITAN_KIT_DEFAULT"
 	string titanReadyMessageOverride = "#TITAN_READY_DEFAULT"
+
 	array<string> titanHints
 
 	ModdedTitanGroupSettings& groupSettings
@@ -469,10 +498,12 @@ global struct ModdedTitanData{
 	int difficulty = 3
 
 	string BaseSetFile
-	array<FrameworkChassisStruct> altChassisArray
+	int altChassisType = frameworkAltChassisMethod.PRIME_TITAN
+	array<FrameworkChassisStruct> altChassisArray //Only used with frameworkAltChassisMethod.ALT_TITAN
 	string BaseName
 	
 	asset icon = $"ui/temp"
+	asset ltsIcon = $"ui/temp"//TODO: make this a thing
 	asset coreIconOverride = $"ui/temp"//typically found from weapon keyvalues
 
 	
@@ -481,10 +512,10 @@ global struct ModdedTitanData{
 	array<ModdedPassiveData> passive5Array
 	array<ModdedPassiveData> passive6Array
 	array<ModdedPassiveData> passiveFDArray
-	table<string, array<ModdedPassiveData> > additionalPassivesTable //Custom passive slots
+	//table<string, array<ModdedPassiveData> > additionalPassivesTable //Custom passive slots
 
-	table<string, bool functionref(string value, string property, TitanLoadoutDef validatedLoadout)> ValidationOverrides //Stores which values are saved and validated
-
+	table<string, CustomPersistentVar > ValidationOverrides //Stores custom saved values and their validation functions
+	//TODO: There is literally no reason for this to be a table, it should be an array
 	int ExecutionType = 0
 	string Melee = "melee_titan_punch_scorch"
 	string Voice = "titanos_bt"
@@ -492,6 +523,7 @@ global struct ModdedTitanData{
 	string customLoadoutMenu = "EditTitanLoadoutMenu"
 
 	bool functionref(table) FullValidationOverride
+
 }
 
 
@@ -4536,21 +4568,29 @@ int function GetItemId( string ref )
 
 string function GetItemName( string ref )
 {
+	if( !ItemDefined( ref ) )
+		return ""
 	return file.itemData[ref].name
 }
 
 string function GetItemLongName( string ref )
 {
+	if( !ItemDefined( ref ) )
+		return ""
 	return file.itemData[ref].longname
 }
 
 string function GetItemDescription( string ref )
 {
+	if( !ItemDefined( ref ) )
+		return ""
 	return file.itemData[ref].desc
 }
 
 string function GetItemLongDescription( string ref )
 {
+	if( !ItemDefined( ref ) )
+		return ""
 	return file.itemData[ref].longdesc
 }
 
@@ -4623,7 +4663,7 @@ string function GetPurchasableEntitlementMenu( string ref, string parentRef )
 
 string function GetItemUnlockReqText( string ref, string parentRef = "", bool alwaysShow = false )
 {
-	if(GetModdedTitanClasses().contains(parentRef) )
+	if( !IsBaseTitan(parentRef) )
 		return " "
 	entity player = GetUIPlayer()
 	if ( !IsValid( player ) )
@@ -4794,6 +4834,9 @@ string function GetUnlockProgressText( string ref, string parentRef = "" )
 	if ( !IsValid( player ) )
 		return ""
 
+	if (!ItemDefined( parentRef ))
+		return ""
+
 	if ( IsItemInRandomUnlocks( ref, parentRef ) )
 		return ""
 
@@ -4843,6 +4886,9 @@ float function GetUnlockProgressFrac( string ref, string parentRef = "" )
 {
 	entity player = GetUIPlayer()
 	if ( !IsValid( player ) )
+		return 0.0
+
+	if (!ItemDefined( parentRef ))
 		return 0.0
 
 	if ( IsItemInRandomUnlocks( ref, parentRef ) )
@@ -5074,6 +5120,8 @@ string function GetStatUnlockReq( string ref, string parentRef = "" )
 
 asset function GetItemImage( string ref )
 {
+	if( IsRefValid( ref ) == false )
+		return $"ui/temp"
 	return file.itemData[ref].image
 }
 
@@ -5197,6 +5245,8 @@ int function GetTitanStat( string ref, int statType )
 {
 	int statValue = 0
 
+	if( !(ref in file.itemData) )
+		return statValue
 	switch ( statType )
 	{
 		case eTitanStatType.SPEED:
@@ -5378,23 +5428,27 @@ array<ItemDisplayData> function GetVisibleItemsOfType( int itemType, string pare
 
 	array<ItemDisplayData> items = []
 	//print("parentref is "+parentRef)
-	if ( file.globalItemRefsOfType[ itemType ].len() )
+	if( !(itemType in file.globalItemRefsOfType) )
+		return items
+	if ( file.globalItemRefsOfType[ itemType ].len() && !TitanHasForcedItemsForType(parentRef, itemType) )
 	{
 		array<GlobalItemRef> genericItemData = file.globalItemRefsOfType[ itemType ]
 		foreach ( itemData in genericItemData )
 		{
-			//print("GET VISIBLE ITEMS OF TYPE")
-			//print(itemData.ref)
-			// print("////////////////////")
 			if ( itemData.hidden )
 				continue
-			// print("Not hidden")
-			// print("IsSubItemType "+IsSubItemType( itemType ))
-			//print("HasNoSubItem "+!HasSubitem( parentRef, itemData.ref ))
-			if ( IsSubItemType( itemType ) && !HasSubitem( parentRef, itemData.ref ) )
+			if ( parentRef != "" && !HasSubitem( parentRef, itemData.ref ) )
 				continue
 			items.append( GetItemDisplayData( itemData.ref, parentRef ) )
-			//print(items.len())
+		}
+	}
+	else if (TitanHasForcedItemsForType( parentRef, itemType))
+	{
+		array<ItemData> forcedItems = GetTitanForcedItemsForType(parentRef, itemType)
+		foreach ( itemData in forcedItems )
+		{
+			print(itemData.ref + " is a forced item for "+parentRef + " of type "+itemType)
+			items.append( GetItemDisplayData( itemData.ref, parentRef ) )
 		}
 	}
 
@@ -5645,7 +5699,7 @@ ItemData function CreateModdedTitanItem( int dataTableIndex, int itemType, strin
 	item.cost				= cost
 	item.i.passive1Type <- PassiveID[1]
 	item.i.passive2Type <- PassiveID[2]
-	item.i.passive3Type <- PassiveID[0]
+	item.i.passive3Type <- PassiveID[0]//why god did i put them in the wrong order
 	item.i.passive4Type <- PassiveID[3]
 	item.i.passive5Type <- PassiveID[4]
 	item.i.passive6Type <- PassiveID[5]
@@ -7292,7 +7346,7 @@ bool function ButtonShouldShowNew( int itemType, string ref = "", string parentR
 	entity player = GetUIPlayer()
 	if ( !IsValid( player ) )
 		return false
-	if(GetModdedTitanClasses().contains(parentRef))
+	if(GetModdedTitanClasses().contains(parentRef) || !IsBaseTitan(parentRef))
 		return false
 	string menu = expect string( uiGlobal.activeMenu._name )
 
@@ -9559,6 +9613,17 @@ string function GetPrimeTitanSetFileFromNonPrimeSetFile( string nonPrimeSetFile 
 	var dataTable = GetDataTable( $"datatable/titan_properties.rpak" )
 	int row = GetDataTableRowMatchingStringValue( dataTable, GetDataTableColumnByName( dataTable, "setFile" ), nonPrimeSetFile )
 	int column = GetDataTableColumnByName( dataTable, "primeSetFile" )
+	if( row == -1 )
+		return ""
+	return GetDataTableString( dataTable, row, column )
+}
+string function GetBaseTitanSetFileFromPrimeSetFile( string primeSetFile )
+{
+	var dataTable = GetDataTable( $"datatable/titan_properties.rpak" )
+	int row = GetDataTableRowMatchingStringValue( dataTable, GetDataTableColumnByName( dataTable, "primeSetFile" ), primeSetFile )
+	int column = GetDataTableColumnByName( dataTable, "setFile" )
+	if( row == -1 )
+		return ""
 	return GetDataTableString( dataTable, row, column )
 }
 

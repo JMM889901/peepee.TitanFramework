@@ -1,0 +1,94 @@
+//Setter
+global function RegisterTitanAudioEventAliasFunction
+global function RegisterTitanAudioAliasFunction
+global function RegisterTitanAudioFunctionByEvent
+global function RegisterTitanAudioFunctionByTitan
+//Getter
+global function GetTitanAudioAliasFunctions
+global function GetTitanAudioEventAlias
+global function PlayAudioEventFunction
+
+struct {
+    table<string, string functionref(string titanName, string eventName, string loadoutRef, entity player) > titanAudioOverrideFunctions
+    table<string, table< string, string functionref(string titanName, string eventName, string loadoutRef, entity player)> > titanAudioEventOverrides //this is kind of pointless
+    table<string, void functionref(string titanName, string eventName, string eventAlias, string loadoutRef, entity player, entity titan, int priority)> titanAudioFunctionsByTitan
+    table<string, void functionref(string titanName, string eventName, string eventAlias, string loadoutRef, entity player, entity titan, int priority)> titanAudioFunctionsByEvent 
+} file
+
+array<string functionref(string titanName, string eventName, string loadoutRef, entity player)> function GetTitanAudioAliasFunctions(string titanName, string eventName)
+{
+    array<string functionref(string titanName, string eventName, string loadoutRef, entity player)> functions
+    if(titanName in file.titanAudioOverrideFunctions)
+    {
+        functions.append(file.titanAudioOverrideFunctions[titanName])
+    }
+    if(titanName in file.titanAudioEventOverrides)
+    {
+        if(eventName in file.titanAudioEventOverrides[titanName])
+        {
+            functions.append(file.titanAudioEventOverrides[titanName][eventName])
+        }
+    }
+    return functions
+}
+string function GetTitanAudioEventAlias(string titanName, string eventName, string loadoutRef, entity player)
+{
+    array<string functionref(string titanName, string eventName, string loadoutRef, entity player)> functions = GetTitanAudioAliasFunctions(titanName, eventName)
+    foreach(string functionref(string titanName, string eventName, string loadoutRef, entity player) functionRef in functions)
+    {
+        string alias = functionRef(titanName, eventName, loadoutRef, player)
+        if(alias != "")
+        {
+            return alias
+        }
+    }
+    return ""
+}
+
+void function PlayAudioEventFunction(string titanName, string eventName, string eventAlias, string loadoutRef, entity player, int priority )
+{
+    entity titan = player.GetPetTitan()
+    if(eventName in file.titanAudioFunctionsByEvent)
+    {
+        file.titanAudioFunctionsByEvent[eventName](titanName, eventName, eventAlias, loadoutRef, player, titan, priority)
+        return
+    }
+    if(titanName in file.titanAudioFunctionsByTitan)
+    {
+        file.titanAudioFunctionsByTitan[titanName](titanName, eventName, eventAlias, loadoutRef, player, titan, priority)
+        return
+    }
+	if ( IsAlive( titan ) ) //TODO: Should probably play on the soul instead of playing on the weapon. Next game.
+	{
+		entity weapon = titan.GetOffhandWeapon( OFFHAND_EQUIPMENT )
+		if ( IsValid( weapon ) )
+			PlayOneLinerConversationOnEntWithPriority( eventName, eventAlias, weapon, priority )
+		else
+			PlayOneLinerConversationOnEntWithPriority( eventName, eventAlias, player, priority )
+	}
+	else
+	{
+		PlayOneLinerConversationOnEntWithPriority( eventName, eventAlias, player, priority )
+	}
+}
+
+void function RegisterTitanAudioAliasFunction(string titanName, string functionref(string titanName, string eventName, string loadoutRef, entity player) functionRef)
+{
+    file.titanAudioOverrideFunctions[titanName] <- functionRef
+}
+void function RegisterTitanAudioEventAliasFunction(string titanName, string eventName, string functionref(string titanName, string eventName, string loadoutRef, entity player) functionRef)
+{
+    if(!(titanName in file.titanAudioEventOverrides))
+    {
+        file.titanAudioEventOverrides[titanName] <- {}
+    }
+    file.titanAudioEventOverrides[titanName][eventName] <- functionRef
+}
+void function RegisterTitanAudioFunctionByEvent(string eventName, void functionref(string titanName, string eventName,string eventAlias, string loadoutRef, entity player, entity titan, int priority) functionRef)
+{
+    file.titanAudioFunctionsByEvent[eventName] <- functionRef
+}
+void function RegisterTitanAudioFunctionByTitan(string titanName, void functionref(string titanName, string eventName,string eventAlias, string loadoutRef, entity player, entity titan, int priority) functionRef)
+{
+    file.titanAudioFunctionsByTitan[titanName] <- functionRef
+}

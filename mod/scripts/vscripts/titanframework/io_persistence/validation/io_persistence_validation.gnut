@@ -5,9 +5,15 @@ bool function ValidPersistentPassiveForLoadout(string name, string property, Tit
     if(shouldPrintDevStuff())
         print("titanclass "+titanClass)
 	if(!ItemDefined(name))
+	{
+		if(shouldPrintDevStuff())
+			print("item not defined "+name)
 		return false
-    int itemType = GetItemType(name)
-    return itemType == GetModdedTitanPassivePersistentType(GetModdedTitanLoadoutPassiveTypeByClass(titanClass, property))
+	}
+	int itemType = GetItemType(name)
+	if(validatedLoadout.titanClass != "vanguard" && IsBaseTitan(validatedLoadout.titanClass) )
+		return true
+    return itemType == GetModdedTitanLoadoutPassiveTypeByClass(titanClass, property)
 }
 
 #if !SERVER
@@ -123,6 +129,29 @@ bool function ValidSkinCamoPair(string name, string property, TitanLoadoutDef va
     }
     return false
 }
+bool function IsValidSetFile(string name, string property, TitanLoadoutDef validatedLoadout)
+{
+	switch(name)
+	{
+		case "titan_ogre_meteor":
+		case "titan_ogre_minigun":
+		case "titan_stryder_leadwall":
+		case "titan_stryder_sniper":
+		case "titan_atlas_stickybomb":
+		case "titan_atlas_vanguard":
+		case "titan_atlas_tracker":
+		case "titan_atlas_tone_prime":
+		case "titan_atlas_ion_prime":
+		case "titan_ogre_scorch_prime":
+		case "titan_ogre_legion_prime":
+		case "titan_stryder_ronin_prime":
+		case "titan_stryder_northstar_prime":
+		    return true
+		default:
+		    return false
+	}	
+	return false
+}
 bool function propertyDoesNotRequireValidation(string name, string property, TitanLoadoutDef validatedLoadout)
 {
     return true
@@ -136,6 +165,7 @@ table<string, bool functionref(string value, string property, TitanLoadoutDef va
     validationTable["passive4"] <- ValidPersistentPassiveForLoadout
     validationTable["passive5"] <- ValidPersistentPassiveForLoadout
     validationTable["passive6"] <- ValidPersistentPassiveForLoadout
+	validationTable["titanExecution"] <- ValidPersistentPassiveForLoadout
     validationTable["skinIndex"] <- ValidSkinCamoPair
     validationTable["camoIndex"] <- ValidSkinCamoPair
 	validationTable["decalIndex"] <- ValidDecalProperty

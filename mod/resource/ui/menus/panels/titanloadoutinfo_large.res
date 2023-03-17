@@ -1,11 +1,36 @@
 "resource/ui/menus/panels/titanloadoutinfo_large.res"
 {
+	loadoutName
+	{
+		ControlName				Label
+		auto_wide_tocontents 	1
+		tall					50
+		visible					1
+		font					DefaultBold_38
+		allcaps					0
+		fgcolor_override		"255 255 255 255"
+		classname				loadoutName
+	}
 	ImgTopBar
 	{
 		ControlName				ImagePanel
 		ypos					50
 		wide					250			
 		InheritProperties		MenuTopBar
+	}
+	titanName
+	{
+		ControlName				Label
+		auto_wide_tocontents 	1
+		tall					30
+		visible					1
+		font					DefaultBold_30
+		allcaps					1
+		fgcolor_override		"255 255 255 255"
+		pin_to_sibling          ImgTopBar
+	    pin_corner_to_sibling	TOP_LEFT
+	    pin_to_sibling_corner	TOP_LEFT
+		classname				titanName
 	}
 	TitanIcon
 	{
@@ -27,7 +52,7 @@
 		tall 64
         classname				TitanLoadoutPassiveCombinedImageClass
 	    scriptID				"passive1"
-	    ypos					50
+	    ypos					-50
         pin_to_sibling          ImgTopBar
 	    pin_corner_to_sibling	TOP_LEFT
 	    pin_to_sibling_corner	TOP_LEFT
@@ -40,10 +65,10 @@
 		tall 64
         classname				TitanLoadoutPassiveCombinedImageClass
 	    scriptID				"passive2"
-	    ypos					10
+	    xpos					10
         pin_to_sibling          passive1
-	    pin_corner_to_sibling	TOP_RIGHT
-	    pin_to_sibling_corner	BOTTOM_RIGHT
+	    pin_corner_to_sibling	TOP_LEFT
+	    pin_to_sibling_corner	TOP_RIGHT
 	}
     passive3
 	{
@@ -53,10 +78,10 @@
 		tall 64
         classname				TitanLoadoutPassiveCombinedImageClass
 	    scriptID				"passive3"
-	    ypos					10
+	    xpos					10
         pin_to_sibling          passive2
-	    pin_corner_to_sibling	TOP_RIGHT
-	    pin_to_sibling_corner	BOTTOM_RIGHT
+	    pin_corner_to_sibling	TOP_LEFT
+	    pin_to_sibling_corner	TOP_RIGHT
 	}
     passive4
 	{
@@ -66,10 +91,10 @@
 		tall 64
         classname				TitanLoadoutPassiveCombinedImageClass
 	    scriptID				"passive4"
-	    ypos					50
+	    ypos					-130
         pin_to_sibling          ImgTopBar
-	    pin_corner_to_sibling	TOP_RIGHT
-	    pin_to_sibling_corner	TOP_RIGHT
+	    pin_corner_to_sibling	TOP_LEFT
+	    pin_to_sibling_corner	TOP_LEFT
 	}
     passive5
 	{
@@ -79,10 +104,10 @@
 		tall 64
         classname				TitanLoadoutPassiveCombinedImageClass
 	    scriptID				"passive5"
-	    ypos					10
+	    xpos					10
         pin_to_sibling          passive4
-	    pin_corner_to_sibling	TOP_RIGHT
-	    pin_to_sibling_corner	BOTTOM_RIGHT
+	    pin_corner_to_sibling	TOP_LEFT
+	    pin_to_sibling_corner	TOP_RIGHT
 	}
     passive6
 	{
@@ -92,10 +117,10 @@
 		tall 64
         classname				TitanLoadoutPassiveCombinedImageClass
 	    scriptID				"passive6"
-	    ypos					10
+	    xpos					10
         pin_to_sibling          passive5
-	    pin_corner_to_sibling	TOP_RIGHT
-	    pin_to_sibling_corner	BOTTOM_RIGHT
+	    pin_corner_to_sibling	TOP_LEFT
+	    pin_to_sibling_corner	TOP_RIGHT
 	}
 
 }

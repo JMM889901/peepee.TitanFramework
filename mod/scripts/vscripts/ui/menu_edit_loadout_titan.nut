@@ -1,3 +1,4 @@
+untyped
 global function InitEditTitanLoadoutMenu
 
 struct {
@@ -22,6 +23,7 @@ struct {
 	var fdProperties
 	var fdPropertiesData
 	var armBadgeButton
+	var deleteTitanButton
 	bool menuClosing = false
 } file
 
@@ -43,12 +45,19 @@ void function InitEditTitanLoadoutMenu()
 		Hud_AddEventHandler( button, UIE_LOSE_FOCUS, OnEditTitanCamoSkinButton_LoseFocus )
 		Hud_AddEventHandler( button, UIE_CLICK, OnEditTitanSlotButton_Activate )
 	}
-
+	foreach( button in GetElementsByClassname( menu, "TitanPropertySelectionButton" ) )
+	{
+		Hud_AddEventHandler( button, UIE_CLICK, OnEditTitanSlotButton_Activate )
+	}
 	file.menuTitle = Hud_GetChild( menu, "MenuTitle" )
 
 	array<var> hintButtons = GetElementsByClassname( menu, "LoadoutHintLabel" )
 	foreach ( button in hintButtons )
 		Hud_EnableKeyBindingIcons( button )
+
+	var nameEdit = Hud_GetChild( menu, "RenameEditBox" )
+	Hud_AddEventHandler( nameEdit, UIE_LOSE_FOCUS, OnRenameEditBox_LostFocus )
+
 
 	file.weaponCamoButton = Hud_GetChild( file.loadoutPanel, "ButtonWeaponCamo" )
 	RuiSetImage( Hud_GetRui( file.weaponCamoButton ), "buttonImage", $"rui/menu/common/weapon_appearance_button" )
@@ -84,9 +93,7 @@ void function InitEditTitanLoadoutMenu()
 	AddButtonEventHandler( file.primeTitanButton, UIE_CLICK, OnPrimeTitanButton_Activate )
 
 	file.ClassSelectButton = Hud_GetChild( file.loadoutPanel, "ButtonClass" )
-	//AddButtonEventHandler( file.ClassSelectButton, UIE_GET_FOCUS, OnPrimeTitanButton_Focus )
-	//AddButtonEventHandler( file.ClassSelectButton, UIE_LOSE_FOCUS, OnEditTitanCamoSkinButton_LoseFocus )
-	//AddButtonEventHandler( file.ClassSelectButton, UIE_CLICK, OnPrimeTitanButton_Activate )
+
 
 	file.titanExecutionButton = Hud_GetChild( file.loadoutPanel, "ButtonTitanExecutions" )
 
@@ -97,6 +104,7 @@ void function InitEditTitanLoadoutMenu()
 	AddMenuFooterOption( menu, BUTTON_A, "#A_BUTTON_SELECT" )
 	AddMenuFooterOption( menu, BUTTON_B, "#B_BUTTON_BACK", "#BACK" )
 	AddMenuFooterOption( menu, BUTTON_X, "#X_BUTTON_VIEW_TITAN_BRIEFING", "#VIEW_TITAN_BRIEFING", PlayTitanVideo, IsTitanVideoAvailable )
+	AddMenuFooterOption( menu, BUTTON_Y, "#Y_BUTTON_DELETE_TITAN", "#DELETE_TITAN", OnDeleteTitanButton_Activate, IsDeleteTitanButtonEnabled )
 
 	file.appearanceLabel = Hud_GetChild( file.loadoutPanel, "LabelAppearance" )
 	file.descriptionBox = Hud_GetChild( file.loadoutPanel, "LabelDetails" )
@@ -138,7 +146,20 @@ void function OnOpenEditTitanLoadoutMenu()
 
 	TitanLoadoutDef loadout = GetCachedTitanLoadout( uiGlobal.editingLoadoutIndex )
 	
+	if(uiGlobal.editingLoadoutIndex >= FRAMEWORK_TITAN_OFFSET)
+	{
+		var loadoutTitle = Hud_GetChild( menu, "RenameEditBox" )
+		Hud_Show( loadoutTitle )
+		Hud_SetUTF8Text( loadoutTitle, Localize( GetCurrentModdedPersistentTitanLoadout().loadoutName ) )
+	}
+	else
+	{
+		var loadoutTitle = Hud_GetChild( menu, "RenameEditBox" )
+		Hud_Hide( loadoutTitle )
+	}
+
 	Hud_SetUTF8Text( file.menuTitle, GetTitanLoadoutName( loadout ) )
+	
 	file.menuClosing = false
 
 	RunMenuClientFunction( "UpdateTitanModel", uiGlobal.editingLoadoutIndex )
@@ -300,7 +321,7 @@ void function UpdateTitanCosmeticButtons()
 	{
 		bool hasPrimeTItanLoadout = TitanClassHasPrimeTitan( loadout.titanClass )
 
-		if ( !TitanClassHasPrimeTitan( loadout.titanClass ) )
+		if ( !TitanClassHasPrimeTitan( loadout.titanClass ) && !TitanClassHasAltTitans( loadout.titanClass ) )
 		{
 			Hud_Hide(  file.primeTitanButton )
 		}
@@ -508,6 +529,17 @@ void function OnArmBadgeButton_Activate( var button )
 void function OnPrimeTitanButton_Activate( var button )
 {
 	TitanLoadoutDef loadout = GetCachedTitanLoadout( uiGlobal.editingLoadoutIndex )
+	if(GetModdedTitanClasses().contains(loadout.titanClass))
+	{
+		int primeType = GetModdedTitanData(loadout.titanClass).altChassisType
+		if(primeType == frameworkAltChassisMethod.NONE)
+			return
+		else if(primeType == frameworkAltChassisMethod.ALT_TITAN)
+		{
+			AdvanceMenu(GetMenu( "ChassisSelectMenu" ))
+			return
+		}
+	}
 	if ( !TitanClassHasPrimeTitan( loadout.titanClass ) )
 		return
 
@@ -615,7 +647,7 @@ void function OnEditTitanSlotButton_Activate( var button )
 	if(loadoutProperty == "internalButton")
 		loadoutProperty = Hud_GetScriptID( Hud_GetParent(button) )
 	uiGlobal.editingLoadoutProperty = loadoutProperty
-
+	TitanLoadoutDef loadout = GetCachedTitanLoadout( uiGlobal.editingLoadoutIndex )
 	switch ( loadoutProperty )
 	{
 		case "passive1":
@@ -624,7 +656,10 @@ void function OnEditTitanSlotButton_Activate( var button )
 		case "passive4":
 		case "passive5":
 		case "passive6":
-			AdvanceMenu( GetMenu( "PassiveSelectMenu" ) )
+			if(ModdedTitanPassiveHasCustomAssets(loadout.name, loadoutProperty))
+				AdvanceMenu( GetMenu( "PassiveSelectMenuAlt" ) )
+			else
+				AdvanceMenu( GetMenu( "PassiveSelectMenu" ) )
 			break
 
 		case "decal":
@@ -641,6 +676,14 @@ void function OnEditTitanSlotButton_Activate( var button )
 		case "titanClass":
 			AdvanceMenu( GetMenu( "EditTitanClassMenu" ) )
 			break
+		case "coreAbility":
+		case "special":
+		case "primary":
+		case "ordnance":
+		case "antirodeo":
+			AdvanceMenu( GetMenu( "PassiveSelectMenuAlt" ) )
+			break
+
 		default:
 			break
 	}
@@ -792,4 +835,49 @@ void function SetFDNav()
 	Hud_SetNavDown( Hud_GetChild( file.loadoutPanel, "ButtonPassive4" ), Hud_GetChild( file.fdProperties, "BtnSub4" ) )
 	Hud_SetNavDown( Hud_GetChild( file.loadoutPanel, "ButtonPassive5" ), Hud_GetChild( file.fdProperties, "BtnSub5" ) )
 	Hud_SetNavDown( Hud_GetChild( file.loadoutPanel, "ButtonPassive6" ), Hud_GetChild( file.fdProperties, "BtnSub6" ) )
+}
+void function OnRenameEditBox_LostFocus( var elem )
+{
+	if ( file.menuClosing )
+		return
+
+
+	string oldName = GetCurrentModdedPersistentTitanLoadout().loadoutName
+
+	string newName = Hud_GetUTF8Text( elem )
+
+	if ( newName == "" || newName == " " ) // If all whitespace entered reset to previous name
+		newName = oldName
+
+
+	SetFrameworkTitanloadoutName( GetCurrentModdedPersistentTitanLoadoutIndex(), newName )
+
+	if ( newName != oldName )
+		EmitUISound( "Menu.Accept" )
+}
+void function OnDeleteTitanButton_Activate( var button )
+{
+	DialogData dialogData
+	dialogData.header = Localize("#CONFIRM_DELETE_LOADOUT")
+	AddDialogButton( dialogData, Localize("#YES_DELETE_TITAN"), DeleteTitanActivate )
+	AddDialogButton( dialogData, Localize("#NO_DELETE_TITAN") )
+	AddDialogFooter( dialogData, "#A_BUTTON_SELECT" )
+	AddDialogFooter( dialogData, "#B_BUTTON_BACK" )
+
+	OpenDialog( dialogData )
+}
+bool function IsDeleteTitanButtonEnabled(  )
+{
+	return ( GetCurrentModdedPersistentTitanLoadoutIndex() != "" && uiGlobal.editingLoadoutIndex >= FRAMEWORK_TITAN_OFFSET)
+}
+void function DeleteTitanActivate(  )
+{
+	string fileName = GetCurrentModdedPersistentTitanLoadoutIndex()
+	setModdedTitanLoadoutIndex("")//Race conditions go brrrrr
+	SetEditLoadout( "titan", 0 )
+    RunMenuClientFunction( "SetEditingTitanLoadoutIndex", 0 )
+	RunMenuClientFunction( "UpdateTitanModel", 0 )
+	DeleteFrameworkTitanLoadout( fileName )
+	CloseActiveMenu()
+	AdvanceMenu( GetMenu( "EditCustomTitanLoadoutsMenu" ) )
 }

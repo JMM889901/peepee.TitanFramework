@@ -1,7 +1,6 @@
 untyped
 global function InitEditCustomTitanLoadoutMenu
 global function UpdateFrameworkTitanLoadout
-
 struct {
 	var menu
 	var menuTitle
@@ -138,7 +137,7 @@ void function OnOpenEditCustomTitanLoadoutMenu()
 
 	AddDefaultTitanElementsToTitanLoadoutMenu( menu )
 
-    frameworkPersistentTitanLoadout titan = GetModdedPersistentTitanLoadout()
+    frameworkPersistentTitanLoadout titan = GetCurrentModdedPersistentTitanLoadout()
 	TitanLoadoutDef loadout = titan.loadout
 	
 	Hud_SetUTF8Text( file.menuTitle, GetTitanLoadoutName( loadout ) )
@@ -146,7 +145,7 @@ void function OnOpenEditCustomTitanLoadoutMenu()
 
 
 	UI_SetPresentationType( ePresentationType.TITAN_LOADOUT_EDIT )
-	RunMenuClientFunction( "UpdateTitanModelFrameworkLoadout", titan.fileName ) // TODO: Titan model for custom loadouts
+	RunMenuClientFunction( "UpdateTitanModel", GetModdedTitanLoadoutNameIndex( titan.fileName ) ) // TODO: Titan model for custom loadouts
 
 	UpdateTitanLoadoutPanel( file.loadoutPanel, loadout )
 	UpdateFrameworkTitanXP( file.xpPanel, titan )
@@ -223,7 +222,7 @@ void function OnOpenEditCustomTitanLoadoutMenu()
 
 void function UpdateTitanCosmeticButtons()
 {
-	frameworkPersistentTitanLoadout titan = GetModdedPersistentTitanLoadout()
+	frameworkPersistentTitanLoadout titan = GetCurrentModdedPersistentTitanLoadout()
 	TitanLoadoutDef loadout = titan.loadout
 
 	bool isLoadoutPrime = IsTitanLoadoutPrime( loadout )
@@ -348,8 +347,8 @@ void function ResetSkinAndCamoIndex( bool isLoadoutPrime)
 	else
 		editingCamoProperty = "camoIndex"
 	//printt( "editingLoadoutType: "  + uiGlobal.editingLoadoutType + ", editingLoadoutIndex: " + uiGlobal.editingLoadoutIndex + ", editingLoadoutProperty: " + uiGlobal.editingLoadoutProperty )
-	setFrameworkTitanLoadoutValue( GetModdedPersistentTitanLoadoutIndex(), editingCamoProperty, "0" )
-	setFrameworkTitanLoadoutValue( GetModdedPersistentTitanLoadoutIndex(), GetSkinPropertyName( editingCamoProperty ), "0" )
+	setFrameworkTitanLoadoutValue( GetCurrentModdedPersistentTitanLoadoutIndex(), editingCamoProperty, "0" )
+	setFrameworkTitanLoadoutValue( GetCurrentModdedPersistentTitanLoadoutIndex(), GetSkinPropertyName( editingCamoProperty ), "0" )
 }
 
 void function OnEditTitanCamoSkinButton_LoseFocus( var button )
@@ -494,19 +493,19 @@ void function OnArmBadgeButton_Activate( var button )
 
 	if ( loadout.showArmBadge )
 	{
-		setFrameworkTitanLoadoutValue( GetModdedPersistentTitanLoadoutIndex(), "showArmBadge", "0")
+		setFrameworkTitanLoadoutValue( GetCurrentModdedPersistentTitanLoadoutIndex(), "showArmBadge", "0")
 		Hud_SetSelected( button, false )
 		RuiSetString( rui, "buttonText", "#SHOW_ARM_BADGE" )
 
 	}
 	else
 	{
-		setFrameworkTitanLoadoutValue( GetModdedPersistentTitanLoadoutIndex(), "showArmBadge", "1")
+		setFrameworkTitanLoadoutValue( GetCurrentModdedPersistentTitanLoadoutIndex(), "showArmBadge", "1")
 		Hud_SetSelected( button, true )
 		RuiSetString( rui, "buttonText", "#HIDE_ARM_BADGE" )
 	}
 
-	RunMenuClientFunction( "UpdateTitanModelFramework", GetModdedPersistentTitanLoadoutIndex() )
+	RunMenuClientFunction( "UpdateTitanModelFramework", GetCurrentModdedPersistentTitanLoadoutIndex() )
 }
 
 void function OnPrimeTitanButton_Activate( var button )
@@ -542,13 +541,13 @@ void function OnPrimeTitanButton_Activate( var button )
 
 
 
-	setFrameworkTitanLoadoutValue( GetModdedPersistentTitanLoadoutIndex(), "isPrime", isPrime )
+	setFrameworkTitanLoadoutValue( GetCurrentModdedPersistentTitanLoadoutIndex(), "isPrime", isPrime )
 	/*string appropriateSetFile = GetSetFileForTitanClassAndPrimeStatus( loadout.titanClass, IsTitanLoadoutPrime( loadout ) )
 	SetCachedLoadoutValue( player, uiGlobal.editingLoadoutType, uiGlobal.editingLoadoutIndex, "setFile", appropriateSetFile )*/
 
 	OnPrimeTitanButton_Focus( button )
 
-	RunMenuClientFunction( "UpdateTitanModelFrameworkLoadout", GetModdedPersistentTitanLoadoutIndex() )
+	RunMenuClientFunction( "UpdateTitanModel",  GetModdedTitanLoadoutNameIndex( GetCurrentModdedPersistentTitanLoadoutIndex() ) )
 
 	UpdateTitanCosmeticButtons()
 
@@ -802,6 +801,8 @@ void function SetFDNav()
 
 void function UpdateFrameworkTitanLoadout( var button )
 {
+	if( button.s.loadoutID == "" || button.s.loadoutID == "CreateNewTitanLoadout" )
+		return
 	frameworkPersistentTitanLoadout titan = clientframeworkPersistentTitanLoadouts.loadouts[ expect string(button.s.loadoutID) ]
 	TitanLoadoutDef loadout = titan.loadout
 
@@ -810,6 +811,7 @@ void function UpdateFrameworkTitanLoadout( var button )
 	foreach ( button in loadoutPanelButtons )
 		Hud_SetEnabled( button, false )
 	print(titan.fileName)
-	RunMenuClientFunction( "UpdateTitanModelFrameworkLoadout", titan.fileName )// TODO: Add titan models for custom loadouts
+	int index = GetModdedTitanLoadoutNameIndex( titan.fileName )
+	RunMenuClientFunction( "UpdateTitanModel",(index + FRAMEWORK_TITAN_OFFSET ) )// TODO: Add titan models for custom loadouts
 }
 

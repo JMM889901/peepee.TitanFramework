@@ -12,10 +12,10 @@ global function OverwriteGlobalTitanLoadoutByIndex
 global function GetModdedTitanClassForMods
 global function GetModdedTitanSetFileForAnims
 global function GetModdedTitansSetFileForAnims
-global function GetModdedTitanPassive1TypeByRef
 global function GetModdedTitanExecutionTypeByClass
 global function GetModdedTitanLoadoutPassiveType
 global function GetModdedTitanLoadoutPassiveTypeByClass
+global function GetModdedTitanLoadoutPassiveTypes
 global function OverwriteModdedTitanLoadoutDefaultEquipment
 global function OverwriteDefaultTitanLoadoutByIndex
 global function RegisterModdedTitan
@@ -33,14 +33,17 @@ global function shouldPrintDevStuff
 global function DevForceNoValidation
 global function GetmoddedPassiveTypeDisplayName
 global function GetModdedTitanReadyMessage
+global function GetTitanEditLoadoutMenu
 global function ModdedTitanPassiveHasCustomAssets
+global function TitanHasForcedItemsForType
+global function GetTitanForcedItemsForType
+global function TitanClassHasAltTitans
 //global function GetModdedTitanFDPassiveArray
 global function GetModdedTitanPassiveHasAsset
 global function GetHintForModdedTitanLoadout
+
+
 global function DevPrintTitanLoadoutPersistentDebug
-
-
-
 #if SERVER
 global function debugNullTitanLoadout
 global function SetTitanLoadout
@@ -51,7 +54,8 @@ table<string, TitanLoadoutDef> BaseTitanLoadoutByClass
 table<string, TitanLoadoutDef> ModdedTitanLoadoutByClass
 table<int, TitanLoadoutDef> TitanLoadoutByIndex
 table<string, string> TitanClassModsToUse //Used for alot, but not actually used for passives
-table<string, string> TitanSetFilesForAnims // Used for other things
+table<string, string> TitanSetFilesForAnims
+// Used for other things
 table<string, int> TitanPassiveTypesByRef
 table<int, int> TitanExecutionsByIndex
 table<string, table<string, int> > TitanPassiveTypesBySetFile
@@ -64,6 +68,9 @@ table<int, string> ModdedPassiveTypeDisplayNames
 table<string, table<string, bool> > ModdedTitanPassiveHasAsset
 table<string, string> ModdedTitanReadyMessage
 table<string, array<string> > ModdedTitanHints
+table<string, string> TitanEditLoadoutMenu
+table<string, table<int, array<ItemData> > > ForcedItemsForItemTypeAndClass 
+array<string> TitansNeedingSetFileFixup
 //table<string, array<ItemDisplayData> ModdedTitanFDUpgrades
 
 bool function shouldPrintDevStuff()
@@ -129,6 +136,37 @@ void function debugNullTitanLoadout(entity player, int index)
 }
 #endif
 //Getters
+bool function TitanClassHasAltTitans(string titanClass)
+{
+	if(IsBaseTitan(titanClass))
+		return false
+	if(!ModdedTitanClasses.contains(titanClass))
+		return false
+	return GetModdedTitanData(titanClass).altChassisType == frameworkAltChassisMethod.ALT_TITAN
+}
+bool function TitanHasForcedItemsForType(string titan, int itemType)
+{
+	if(titan in ForcedItemsForItemTypeAndClass)
+		return itemType in ForcedItemsForItemTypeAndClass[titan]
+	return false
+}
+array<ItemData> function GetTitanForcedItemsForType(string titan, int itemType)
+{
+	if(titan in ForcedItemsForItemTypeAndClass)
+	{
+		if(itemType in ForcedItemsForItemTypeAndClass[titan])
+		{
+			return ForcedItemsForItemTypeAndClass[titan][itemType]
+		}
+	}
+	unreachable
+}
+string function GetTitanEditLoadoutMenu( string titanClass )
+{
+	if( titanClass in TitanEditLoadoutMenu )
+		return TitanEditLoadoutMenu[titanClass]
+	return "EditTitanLoadoutMenu"
+}
 string function GetHintForModdedTitanLoadout(string name)
 {
 	if(name in ModdedTitanHints)
@@ -164,22 +202,23 @@ string function GetmoddedPassiveTypeDisplayName(int id)
 }
 bool function ModdedTitanHasPassiveSlot(string titanClass, string slot)
 {
-	if(!(GetModdedTitanClasses().contains(titanClass)))
+	if(!(titanClass in TitanPassiveTypesByClass))
 		return false
-	int extras = ModdedTitanExtraPassiveTypes[titanClass]
-	switch(slot)
-	{
-		case"passive6":
-			return(extras >= 3)
-		case "passive5":
-			return(extras >= 2)
-		case "passive4":
-			return(extras >= 1)
-		default:
-			return false
-	}
-	return false
+	//int extras = ModdedTitanExtraPassiveTypes[titanClass]
+	//switch(slot)
+	//{
+	//	case"passive6":
+	//		return(extras >= 3)
+	//	case "passive5":
+	//		return(extras >= 2)
+	//	case "passive4":
+	//		return(extras >= 1)
+	//	default:
+	//		return false
+	//}
+	//return false //bro what the fuck was i thinking
 
+	return slot in TitanPassiveTypesByClass[titanClass]
 }
 int function GetModdedTitanPassivePersistentType(int passiveType)
 {
@@ -199,11 +238,17 @@ int function GetModdedTitanLoadoutPassiveType(string ref, string property)
 }
 int function GetModdedTitanLoadoutPassiveTypeByClass(string ref, string property)
 {
-	if(ref in TitanPassiveTypesByClass)
+	if(ref in TitanPassiveTypesByClass && property in TitanPassiveTypesByClass[ref])
 	{
 		return TitanPassiveTypesByClass[ref][property]
 	}
 	return -1
+}
+table<string, int> function GetModdedTitanLoadoutPassiveTypes(string titanClass)
+{
+	if(!(titanClass in TitanPassiveTypesByClass))
+		return {}
+	return TitanPassiveTypesByClass[titanClass]
 }
 int function GetModdedTitanExecutionTypeByClass(string titanClass)
 {
@@ -253,9 +298,6 @@ string function GetModdedTitanSetFileForAnims(string key)
 		return TitanSetFilesForAnims[key]
 	//print("did NOT change setfile========")
 	return key
-}
-int function GetModdedTitanPassive1TypeByRef(string ref){
-	return TitanPassiveTypesByRef[ref]
 }
 #if SERVER
 bool function SetPlayerTitanRemote(entity player, array<string> args)
@@ -454,49 +496,11 @@ void function FrameworkInit()
 	//#if SERVER
 	//AddCallback_OnClientConnected(ValidatePlayerModdedData)
 	//#endif
-	#if MP
-	PopulateDefaultTitanLoadouts( shGlobal.defaultTitanLoadouts )
-	#endif
-	#if SERVER
-		AddClientCommandCallback( "SetTitanClass", SetPlayerTitanRemote )
-	#endif
+	//#if MP
+	//PopulateDefaultTitanLoadouts( shGlobal.defaultTitanLoadouts )
+	//#endif
 
-	for(int i = 7; i < 10; i++)
-	{//most of this is redundant but im afraid to remove it at this point
-		if(shouldPrintDevStuff())
-		{
-			print("Default titan loadout "+(i-7) + "======")
-			PrintTitanLoadout(GetDefaultTitanLoadout(i - 7))
-			print("Custom titan loadout "+i +"========")
-			PrintTitanLoadout(GetDefaultTitanLoadout(i))
-		}
-
-		//if(GetCachedTitanLoadout( i ).titanClass == "")
-		//{
-		//	OverwriteGlobalTitanLoadoutByIndex(i, GetDefaultTitanLoadout(i - 7))
-		//}
-
-		#if CLIENT
-		if(shouldPrintDevStuff())
-			PrintTitanLoadout(GetCachedTitanLoadout(i))
-		#endif
-		//if(GetValidatedPersistentLoadoutValue( GetLocalClientPlayer(), "titan", i, "titanClass" ) == "")
-		//{
-		//	OverwriteGlobalTitanLoadoutByIndex(i, GetDefaultTitanLoadout( i-7))
-		//}
-		//else
-		//{
-		thread checkLoadoutValues()
-		//}
-
-
-		//#if CLIENT
-		//if(GetTitanLoadoutFromPersistentData(GetLocalClientPlayer(), i).name == "")
-			//GetLocalClientPlayer().SetPersistentVar( "titanLoadouts[" + i + "].name", GetDefaultTitanLoadout(i-7).name)
-			//GetLocalClientPlayer().SetPersistentVar( "titanLoadouts[" + i + "].titanClass", GetDefaultTitanLoadout(i-7).titanClass)
-		//#endif
-	}
-
+	thread checkLoadoutValues()
 }
 void function RegisterFrameworkNetworkVar()
 {
@@ -507,19 +511,6 @@ void function checkLoadoutValues()
 	
 	#if CLIENT
 	WaitSignal( level, "CachedLoadoutsReady" )
-	for(int i = 7; i < 10; i++)
-	{
-		if(GetValidatedPersistentLoadoutValue( GetLocalClientPlayer(), "titan", i, "name" ) == ""
-		|| GetValidatedPersistentLoadoutValue( GetLocalClientPlayer(), "titan", i, "name" ) == "fuck")
-		{
-			print("Attempting to autofill titan index "+i)
-			OverwriteGlobalTitanLoadoutByIndex(i, GetDefaultTitanLoadout(i - 7), true)
-
-	
-			GetLocalClientPlayer().ClientCommand( "SetTitanClass "+i+" default " + (GetDefaultTitanLoadout(i - 7).titanClass) )
-		}
-		OverwriteGlobalTitanLoadoutByIndex(i, GetTitanLoadoutFromPersistentData(GetLocalClientPlayer(), i))
-	}
 	#endif
 	#if UI
 	while(!uiGlobal.loadoutsInitialized)
@@ -542,6 +533,7 @@ void function checkLoadoutValues()
 		#endif
 		
 	}
+
 }
 
 #if SERVER
@@ -579,9 +571,6 @@ void function RegisterTitanPassiveTypes(string SetFile, int passive2,int executi
 	TitanPassiveTypesByClass[titanClass]["passive3"] <- eItemTypes.TITAN_TITANFALL_PASSIVE
 	TitanPassiveTypesByClass[titanClass]["passive1"] <- eItemTypes.TITAN_GENERAL_PASSIVE
 	TitanPassiveTypesByClass[titanClass]["passive2"] <- passive2
-	TitanPassiveTypesByClass[titanClass]["passive4"] <- eItemTypes.TITAN_UPGRADE1_PASSIVE
-	TitanPassiveTypesByClass[titanClass]["passive5"] <- eItemTypes.TITAN_UPGRADE2_PASSIVE
-	TitanPassiveTypesByClass[titanClass]["passive6"] <-	eItemTypes.TITAN_UPGRADE3_PASSIVE
 	TitanPassiveTypesByClass[titanClass]["titanExecution"] <- execution
 	if(passive4 != -1)
 	{
@@ -788,31 +777,25 @@ void function RegisterModdedTitanItems(
 		}
 	}
 }
-void function RegisterModdedTitanCustomPassiveType(string name, array<ItemData> passives, string slot, int masktype = -1)
+void function RegisterModdedTitanCustomPassiveType(string name, array<ItemData> passives, string slot, int forceType = -1)
 {
 	if(!(name in ModdedTitanExtraPassiveTypes))
 	{
 		print("Modded titan does not exist")
 		return
 	}
-	if(ModdedTitanExtraPassiveTypes[name] == 3 && slot != "passive2")
-	{
-		print("Modded titan already has 3 extra passive types")
-		return
-	}
+	//if(ModdedTitanExtraPassiveTypes[name] == 3 && slot != "passive2")
+	//{
+	//	print("Modded titan already has 3 extra passive types")
+	//	return
+	//}
 	//ModdedTitanExtraPassiveTypes[name] <- ModdedTitanExtraPassiveTypes[name]+1
 	
-		if(slot ==  "passive2" )
-		{
-			int num = eItemTypes[name+"passive2"]
-			ModdedTitanPassivePersistentType[num] <- TitanPassiveTypesByClass[name]["passive2"]
-			TitanPassiveTypesByClass[name]["passive2"] <- num
-			TitanPassiveTypesBySetFile[GetModdedTitanByClassNoPersist(name).setFile]["passive2"] <- num
-		}
+	//Switch cases? the hell are those?
 		else if(slot == "passive6" )
 		{
 			if(ModdedTitanExtraPassiveTypes[name] < 3)
-				ModdedTitanExtraPassiveTypes[name] =3
+				ModdedTitanExtraPassiveTypes[name] =3 //This does technically mean we cant use button 3 without the others but i mean, why would you
 		}
 		else if(slot == "passive5" )
 		{
@@ -823,6 +806,12 @@ void function RegisterModdedTitanCustomPassiveType(string name, array<ItemData> 
 		{
 			if(ModdedTitanExtraPassiveTypes[name] < 1)
 				ModdedTitanExtraPassiveTypes[name] =1
+		}
+		else
+		{
+			int num = eItemTypes[name+slot]
+			TitanPassiveTypesByClass[name][slot] <- num
+			TitanPassiveTypesBySetFile[GetModdedTitanByClassNoPersist(name).setFile][slot] <- num
 		}
 
 
@@ -836,7 +825,6 @@ void function RegisterModdedTitanCustomPassiveType(string name, array<ItemData> 
 		if(item.ref in ePassives)
 			continue
 		
-		
 		ePassives[item.ref] <- ePassives.len()
 		passivesFromEnum[item.ref] <- ePassives[item.ref]
 	}
@@ -847,6 +835,27 @@ array<string> function GetModdedTitanClasses()
 }
 void function CreateModdedTitanSimple( ModdedTitanData Titan )
 {
+	foreach(string name,  bool functionref(string name, string property, TitanLoadoutDef validatedLoadout) func in getBaseLoadoutValidationTable())
+	{
+		Titan.derivedData.PersistentValuesValidation[name] <- func
+	}
+	if(Titan.altChassisType == frameworkAltChassisMethod.ALT_TITAN)
+	{
+		Titan.derivedData.PersistentValuesValidation["setFile"] <- IsValidSetFile
+	}
+	foreach(string name, CustomPersistentVar passives in Titan.ValidationOverrides)
+	{
+		Titan.derivedData.PersistentValuesValidation[name] <- passives.validationFunc
+	}
+	if(Titan.passive2Array.len() == 0)
+		delete Titan.derivedData.PersistentValuesValidation["passive2"]
+	if(Titan.passive4Array.len() == 0)
+		delete Titan.derivedData.PersistentValuesValidation["passive4"]
+	if(Titan.passive5Array.len() == 0)
+		delete Titan.derivedData.PersistentValuesValidation["passive5"]
+	if(Titan.passive6Array.len() == 0)	
+		delete Titan.derivedData.PersistentValuesValidation["passive6"]
+	//No point searching for values that dont exist
 	RegisterModdedTitanData(Titan)
 
 	print("/////////////////CREATING CUSOTM TITAN////////////////////")
@@ -881,24 +890,18 @@ void function CreateModdedTitanSimple( ModdedTitanData Titan )
 	ModdedTitanReadyMessage[Titan.Name] <- Titan.titanReadyMessageOverride
 	ModdedTitanPassiveHasAsset[Titan.Name] <- {}
 	//ModdedTitan[Titan.Name]
-	table<string,  bool functionref(string name, string property, TitanLoadoutDef validatedLoadout)> validation = Titan.derivedData.PersistentValuesValidation
-	foreach(string name,  bool functionref(string name, string property, TitanLoadoutDef validatedLoadout) func in getBaseLoadoutValidationTable())
-	{
-		validation[name] <- func
-	}
-	foreach(string name, array<ModdedPassiveData> passives in Titan.additionalPassivesTable)
-	{
-		validation[name] <- ValidPersistentPassiveForLoadout
-	}
-	//Custom passives come first, then overwritten by custom functions if needed
-	foreach(string name, bool functionref(string name, string property, TitanLoadoutDef validatedLoadout) func in Titan.ValidationOverrides)
-	{
-		validation[name] <- func
-	}
 
+	#if CLIENT && MP
+	if(!IsValidSetFile(Titan.BaseSetFile, "setFile", loadout))
+	{
+		TitansNeedingSetFileFixup.append(Titan.Name)
+	}
+	#endif
+
+
+	TitanEditLoadoutMenu[Titan.Name] <- Titan.customLoadoutMenu
 	if(Titan.titanHints.len() > 0)
 		ModdedTitanHints[Titan.Name] <- Titan.titanHints
-	//TitanSetFilesForAnims[SetFile] <- BaseSetFile
 	#if UI
 	if(!IsTitanCollection( Titan.groupSettings.Name, Titan.groupSettings.path, Titan.groupSettings.createPathOnNoneFound ) )
 		AddTitanGroupToSelectionList( Titan.groupSettings )
@@ -928,16 +931,14 @@ void function RegisterModdedTitanItemsSimple( ModdedTitanData titan )
 	TitanPassiveTypesBySetFile[titan.BaseSetFile] <- {}
 	TitanPassiveTypesBySetFile[titan.BaseSetFile]["passive3"] <- eItemTypes.TITAN_TITANFALL_PASSIVE
 	TitanPassiveTypesBySetFile[titan.BaseSetFile]["passive1"] <- eItemTypes.TITAN_GENERAL_PASSIVE
-	TitanPassiveTypesBySetFile[titan.BaseSetFile]["passive2"] <- GetModdedTitanLoadoutPassiveTypeByClass(titan.BaseName, "passive2")
 
 	TitanPassiveTypesBySetFile[titan.BaseSetFile]["titanExecution"] <- GetModdedTitanLoadoutPassiveTypeByClass(titan.BaseName, "titanExecution")
 
 	TitanPassiveTypesByClass[titan.Name] <- {}
 	TitanPassiveTypesByClass[titan.Name]["passive3"] <- eItemTypes.TITAN_TITANFALL_PASSIVE
 	TitanPassiveTypesByClass[titan.Name]["passive1"] <- eItemTypes.TITAN_GENERAL_PASSIVE
-	TitanPassiveTypesByClass[titan.Name]["passive2"] <- GetModdedTitanLoadoutPassiveTypeByClass(titan.BaseName, "passive2")
 
-	int passive2 = GetModdedTitanLoadoutPassiveTypeByClass(titan.BaseName, "passive2")
+	int passive2
 	if(titan.passive2Array.len() > 0)
 	{
 		passive2 = CreateModdedItemType(titan.Name + "passive2")
@@ -955,22 +956,9 @@ void function RegisterModdedTitanItemsSimple( ModdedTitanData titan )
 		TitanPassiveTypesBySetFile[titan.BaseSetFile]["passive4"] <- passive4
 		TitanPassiveTypesByClass[titan.Name]["passive4"] <- passive4
 	}
-	else
-	{
-		passive4 = eItemTypes.TITAN_UPGRADE1_PASSIVE
-		TitanPassiveTypesBySetFile[titan.BaseSetFile]["passive4"] <- passive4
-		TitanPassiveTypesByClass[titan.Name]["passive4"] <- passive4
-	}
 	if(titan.passive5Array.len() > 0)
 	{
 		passive5 = CreateModdedItemType(titan.Name+"passive5")
-		TitanPassiveTypesBySetFile[titan.BaseSetFile]["passive5"] <- passive5
-		TitanPassiveTypesByClass[titan.Name]["passive5"] <- passive5
-	}
-	else
-	{
-
-		passive5 = eItemTypes.TITAN_UPGRADE2_PASSIVE
 		TitanPassiveTypesBySetFile[titan.BaseSetFile]["passive5"] <- passive5
 		TitanPassiveTypesByClass[titan.Name]["passive5"] <- passive5
 	}
@@ -980,15 +968,9 @@ void function RegisterModdedTitanItemsSimple( ModdedTitanData titan )
 		TitanPassiveTypesBySetFile[titan.BaseSetFile]["passive6"] <- passive6
 		TitanPassiveTypesByClass[titan.Name]["passive6"] <- passive6
 	}
-	else
-	{
-		passive6 = eItemTypes.TITAN_UPGRADE3_PASSIVE
-		TitanPassiveTypesBySetFile[titan.BaseSetFile]["passive6"] <- passive6
-		TitanPassiveTypesByClass[titan.Name]["passive6"] <- passive6
-	}
 
 	TitanPassiveTypesByClass[titan.Name]["titanExecution"] <- GetModdedTitanLoadoutPassiveTypeByClass(titan.BaseName, "titanExecution")
-
+	
 	/*
 	_______ _ _                _ _                 
 	|__   __(_) |              (_) |                
@@ -1051,6 +1033,8 @@ void function RegisterModdedTitanItemsSimple( ModdedTitanData titan )
 
 	CreateGenericSubItemData( eItemTypes.TITAN_TITANFALL_PASSIVE, titan.Name, "pas_warpfall" )
 	CreateGenericSubItemData( eItemTypes.TITAN_TITANFALL_PASSIVE, titan.Name, "pas_bubbleshield" )
+	InitUnlock("pas_warpfall", titan.Name, eUnlockType.TITAN_LEVEL, 1)
+	InitUnlock("pas_bubbleshield", titan.Name, eUnlockType.TITAN_LEVEL, 2)
 	
 	if(titan.passive4Array.len() > 0)
 	{
@@ -1093,9 +1077,10 @@ void function RegisterModdedTitanItemsSimple( ModdedTitanData titan )
 		RegisterModdedTitanCustomPassiveType(titan.Name, passives6, "passive6")
 	}
 
-	foreach(ItemData item in GetAllItemsOfType(eItemTypes.TITAN_GENERAL_PASSIVE))
+	foreach(int index, ItemData item in GetAllItemsOfType(eItemTypes.TITAN_GENERAL_PASSIVE))
 	{
 		CreateGenericSubItemData( eItemTypes.TITAN_GENERAL_PASSIVE, titan.Name, item.ref )
+		InitUnlock( item.ref, titan.Name, eUnlockType.TITAN_LEVEL, index+1 )
 	}
 	//foreach(array<var> passive in Passives)
 	// {
@@ -1131,25 +1116,51 @@ void function RegisterModdedTitanItemsSimple( ModdedTitanData titan )
 			print("Creating passiveFD data for "+passive.Name)
 		//ItemData item = CreateGenericItem(999, eItemTypes.TITAN_FD_UPGRADE, passive.Name, passive.Name, passive.description, passive.description, passive.image, 0, false)
 		CreateFDTitanUpgradeData( 1001+index, passive.Type, false, passive.Name, titan.Name, passive.Name, passive.description, passive.image, passive.image, 1, 0  )
-		InitUnlock( passive.Name, titan.Name, eUnlockType.FD_UNLOCK_POINTS, index )
+		InitUnlock( passive.Name, titan.Name, eUnlockType.FD_UNLOCK_POINTS, index+1 )
 		//print(index + passive.Name + titan.Name)
 		//upgradesInOrder.append(GetItemDisplayData(GetItemData(pasive.Name)))
 		//if(passive.customIcon)
 		//	ModdedTitanPassiveHasAsset[titan.Name]["passive2"] <- true
 	}
-	array<ItemData> passivesExtra
-	foreach(string name, array<ModdedPassiveData> passives in titan.additionalPassivesTable)
+	array<ModdedPassiveData> passivesExtraData
+	foreach(string name, CustomPersistentVar passives in titan.ValidationOverrides)
 	{
-		passivesExtra.clear()
-		foreach(int index, ModdedPassiveData passive in passives)
+		if(passives.passiveItemsMethod == eItemsMethod.NONE)
+			continue
+		if(passives.passiveItemsMethod == eItemsMethod.CREATE)
 		{
-			if(shouldPrintDevStuff())
-				print("Creating additional passive data for "+passive.Name)
-			passivesExtra.append(CreateGenericItem(1000+index, passive2, passive.Name, passive.Name, passive.description, passive.description, passive.image, 0, false))
-			if(passive.customIcon)
-				ModdedTitanPassiveHasAsset[titan.Name][name] <- true
+			CreateModdedItemType(titan.Name + passives.property)
+			array<ItemData> passivesExtra
+			foreach(int index, ModdedPassiveData passive in passives.acceptedItems)
+			{
+				if(shouldPrintDevStuff())
+					print("Creating additional passive data for "+passive.Name)
+				passivesExtra.append(CreateGenericItem(1000+index, passive2, passive.Name, passive.Name, passive.description, passive.description, passive.image, 0, false))
+				if(passive.customIcon)
+					ModdedTitanPassiveHasAsset[titan.Name][name] <- true
+			}
+			RegisterModdedTitanCustomPassiveType(titan.Name, passivesExtra, name)
 		}
-		RegisterModdedTitanCustomPassiveType(titan.Name, passivesExtra, name)
+		if(passives.passiveItemsMethod == eItemsMethod.FIND || passives.passiveItemsMethod == eItemsMethod.FIND_FORCE)
+		{
+			array<ItemData> passivesExtra
+			foreach(int index, ModdedPassiveData passive in passives.acceptedItems)
+			{
+				if(shouldPrintDevStuff())
+					print("Creating additional passive data for "+passive.Name)
+				passivesExtra.append( GetItemData(passive.Name) )
+				if(passive.customIcon)
+					ModdedTitanPassiveHasAsset[titan.Name][name] <- true
+				CreateGenericSubItemData(  passives.itemTypeOverride, titan.Name, passive.Name )
+			}
+			TitanPassiveTypesByClass[titan.Name][name] <- passives.itemTypeOverride
+			if(passives.passiveItemsMethod == eItemsMethod.FIND_FORCE)
+			{
+				if(!(titan.Name in ForcedItemsForItemTypeAndClass))
+					ForcedItemsForItemTypeAndClass[titan.Name] <- {}
+				ForcedItemsForItemTypeAndClass[titan.Name][passives.itemTypeOverride] <- passivesExtra
+			}
+		}
 	}
 
 
@@ -1168,4 +1179,5 @@ void function RegisterModdedTitanItemsSimple( ModdedTitanData titan )
 															
 															
 	*/
+
 }

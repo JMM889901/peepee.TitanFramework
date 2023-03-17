@@ -565,7 +565,10 @@ void function OnAbilitySelectMenu_Open()
 	{
 		TitanLoadoutDef loadout = GetCachedTitanLoadout( uiGlobal.editingLoadoutIndex )
 		string nonPrimeSetFile = GetSetFileForTitanClassAndPrimeStatus( loadout.titanClass, false )
-		uiGlobal.editingItemType = GetItemTypeFromTitanLoadoutProperty( uiGlobal.editingLoadoutProperty, nonPrimeSetFile )
+		if( nonPrimeSetFile != "" )
+			uiGlobal.editingItemType = GetItemTypeFromTitanLoadoutProperty( uiGlobal.editingLoadoutProperty, nonPrimeSetFile )
+		else
+			uiGlobal.editingItemType = -1
 		uiGlobal.editingItemRef = GetTitanLoadoutValue( GetTitanEditLoadout(), uiGlobal.editingLoadoutProperty )
 
 		RunMenuClientFunction( "UpdateTitanModel", uiGlobal.editingLoadoutIndex )

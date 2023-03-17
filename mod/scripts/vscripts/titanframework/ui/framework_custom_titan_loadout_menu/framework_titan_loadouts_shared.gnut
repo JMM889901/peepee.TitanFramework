@@ -119,3 +119,27 @@ var function setupPassiveButtonIconForPassive(var button, ItemDisplayData passiv
     RuiSetImage(passiveRui, "buttonImage", passive.image)
     return passiveButton
 }
+var function setupPassiveButtonIconForImageAndIsModded(var button, asset image, bool modded)
+{
+	var passiveImage 
+	var passiveButton
+	if(modded)
+	{
+		passiveImage = Hud_GetChild(button, "PassiveImage")
+		passiveButton = Hud_GetChild(button, "PassiveButton")
+		Hud_Hide(Hud_GetChild(button, "FullButton"))
+		Hud_Show(passiveImage)
+	}
+	else
+	{
+		passiveImage = Hud_GetChild(button, "FullButton")
+		passiveButton = Hud_GetChild(button, "FullButton")
+		Hud_Hide(Hud_GetChild(button, "PassiveImage"))
+		Hud_Hide(Hud_GetChild(button, "PassiveButton"))
+	}
+
+	Hud_Show(passiveButton)
+	var passiveRui = Hud_GetRui(passiveImage)
+	RuiSetImage(passiveRui, "buttonImage", image)
+	return passiveButton
+}

@@ -129,6 +129,7 @@
 #endif //CLIENT
 
 #if CLIENT && MP
+	global function MapCustomTitanToDefaultTitan
 	global function MapCustomTitansToDefaultTitan
 
 	global function SetPresentationType
@@ -628,10 +629,12 @@
 			loadoutIndex = clGlobal.editingTitanLoadoutIndex
 		else
 			loadoutIndex = GetPersistentSpawnLoadoutIndex( player, "titan" )
-		if(frameworkHelperValues.usingCustomTitanLoadoutsMenu)
-			UpdateTitanModelFrameworkLoadout( player, GetModdedPersistentTitanLoadoutIndex())
-		else
-			UpdateTitanModel( player, loadoutIndex )
+		//if(frameworkHelperValues.usingCustomTitanLoadoutsMenu)
+		//	UpdateTitanModelFrameworkLoadout( player, GetCurrentModdedPersistentTitanLoadoutIndex())
+		//else
+		if(PlayerHasModdedTitanLoadout())
+			loadoutIndex = GetModdedTitanLoadoutNameIndex( GetCurrentModdedPersistentTitanLoadoutIndex() ) + 10
+		UpdateTitanModel( player, loadoutIndex )
 	}
 
 	void function OnClientScriptInit( entity player )
@@ -998,9 +1001,15 @@
 		{
 			foreach(string key, table<string, string> anim in file.titanAnims)
 			{
-				print("====Key for animation==== "+key)
 				file.titanAnims[key][setFile] <- file.titanAnims[key][defaultSetFile]
 			}
+		}
+	}
+	void function MapCustomTitanToDefaultTitan(string setFile, string defaultSetFile)
+	{
+		foreach(string key, table<string, string> anim in file.titanAnims)
+		{
+			file.titanAnims[key][setFile] <- file.titanAnims[key][defaultSetFile]
 		}
 	}
 	string function GetPilotAnimType()
@@ -1085,7 +1094,7 @@
 		//thread DrawOrg( file.menuWeaponModel.mover )
 
 		WaitSignal( level, "CachedLoadoutsReady" )
-
+		// /WaitSignal( level, "FrameworkLoadoutsReady ")
 		CreatePilotModel( player, file.menuPilot.mover )
 		CreateTitanModel( player, file.menuTitan.mover )
 		CreateFactionModel( player, file.menuFaction.mover )
@@ -1310,7 +1319,7 @@
 		int loadoutIndex = GetPersistentSpawnLoadoutIndex( player, "titan" )
 
 		string setFile = GetTitanLoadoutSetFile( loadoutIndex )
-		if(playerHasModdedLoadout())
+		if(PlayerHasModdedTitanLoadout())
 			setFile = GetCurrentModdedTitanLoadoutDef().setFile
 		asset chassisModel = GetSetFileModel( setFile )
 
@@ -1483,10 +1492,10 @@
 			return
 
 		entity player = GetLocalClientPlayer()
-		if( frameworkLoadout == "")
-			UpdateTitanModel( player, loadoutIndex, flags )
-		else
-			UpdateTitanModelFrameworkLoadout( player, frameworkLoadout, flags)
+		//if( frameworkLoadout == "")
+		UpdateTitanModel( player, loadoutIndex, flags )
+		//else
+		//	UpdateTitanModelFrameworkLoadout( player, frameworkLoadout, flags)
 	}
 
 	void function UpdateTitanModel( entity player, int loadoutIndex, int flags = 0 )
@@ -1513,8 +1522,13 @@
 			setFile = GetSetFileForTitanClassAndPrimeStatus( cachedLoadout.titanClass, true )
 		else
 			setFile = GetTitanLoadoutSetFile( loadoutIndex )
-
-		string weapon = GetTitanLoadoutPrimary( loadoutIndex )
+		
+		string weapon
+		bool titanDoesExist = IsBaseTitan(cachedLoadout.titanClass) || GetModdedTitanClasses().contains(cachedLoadout.titanClass)
+		if(titanDoesExist)
+			weapon = GetTitanLoadoutPrimary( loadoutIndex )
+		else
+			weapon = "mp_titanweapon_xo16_shorty"
 		asset chassisModel = GetSetFileModel( setFile )
 		asset weaponModel = GetWeaponModel( weapon )
 		string idleAnim = GetMenuTitanAnim( GetTitanAnimType(), setFile )
@@ -2256,8 +2270,8 @@
 	// TODO: Do we need to account for model strings sometimes having a skin specified by appending ":0", ":1", etc?
 	asset function GetSetFileModel( string setFile )
 	{
-		if(setFile in GetModdedTitansSetFileForAnims())
-			setFile = GetModdedTitanSetFileForAnims(setFile)
+		//if(setFile in GetModdedTitansSetFileForAnims())
+		//	setFile = GetModdedTitanSetFileForAnims(setFile)
 		return GetPlayerSettingsAssetForClassName( setFile, "bodymodel" )
 	}
 

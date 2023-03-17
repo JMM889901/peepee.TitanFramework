@@ -233,8 +233,10 @@ int function TitanGetPreviousLevel( entity player, string titanClass )
 int function TitanGetXP( entity player, string titanClass )
 {
 	if(GetModdedTitanClasses().contains(titanClass))
-		titanClass = GetModdedTitanClassForMods(titanClass)
-	return player.GetPersistentVarAsInt( "titanXP[" + titanClass + "]" )
+		return 0 //Todo: Recreate titan xp for modded titans
+	if(IsBaseTitan(titanClass))
+		return player.GetPersistentVarAsInt( "titanXP[" + titanClass + "]" )
+	return 0
 }
 
 int function TitanGetPreviousXP( entity player, string titanClass )

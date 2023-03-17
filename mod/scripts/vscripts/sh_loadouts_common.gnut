@@ -392,7 +392,8 @@ void function GiveTitanLoadout( entity titan, TitanLoadoutDef loadout )
 	Assert( IsAlive( titan ) )
 	Assert( titan.IsTitan() )
 
-	//PrintTitanLoadout( loadout )
+	if(shouldPrintDevStuff())	
+		PrintTitanLoadout( loadout )
 
 	entity soul = titan.GetTitanSoul()
 	bool scriptHandledPrimary = false
