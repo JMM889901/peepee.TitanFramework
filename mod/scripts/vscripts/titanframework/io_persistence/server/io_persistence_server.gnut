@@ -105,7 +105,7 @@ bool function setFrameworkTitanLoadoutValue(entity player, array<string> args)
         loadout.additionalVars[property] <- value
         return true
     }
-    loadout.loadout.setFileMods = GetSetFileModsForSettingType("titan", [ loadout.loadout.passive1, loadout.loadout.passive2, loadout.loadout.passive3, loadout.loadout.passive4, loadout.loadout.passive5, loadout.loadout.passive6 ] )
+    UpdateDerivedFrameworkLoadoutValues(loadout)
     return true
 }
 bool function registerNewTitanLoadoutFromClient(entity player, array<string> args)
@@ -214,9 +214,9 @@ bool function registerNewTitanLoadoutFromClient(entity player, array<string> arg
     {
         frameworkPlayerLoadouts.playerSelectedModdedLoadout[player] <- PersistLoadout.fileName
     }
-    PersistLoadout.loadout.setFileMods = GetSetFileModsForSettingType("titan", [ PersistLoadout.loadout.passive1, PersistLoadout.loadout.passive2, PersistLoadout.loadout.passive3, PersistLoadout.loadout.passive4, PersistLoadout.loadout.passive5, PersistLoadout.loadout.passive6 ] )
     if( !(player in frameworkPlayerLoadouts.playerLoadouts ) )
         frameworkPlayerLoadouts.playerLoadouts[player] <- {}
+    UpdateDerivedFrameworkLoadoutValues(PersistLoadout)
     frameworkPlayerLoadouts.playerLoadouts[player][PersistLoadout.fileName] <- PersistLoadout
     ServerToClientStringCommand(player, "FrameworkInformLoadoutResponse " + args[3] + " #ACCEPTED" )
     if( player in frameworkPlayerLoadouts.playerMulticommandLoadouts && args[3] in frameworkPlayerLoadouts.playerMulticommandLoadouts[player])

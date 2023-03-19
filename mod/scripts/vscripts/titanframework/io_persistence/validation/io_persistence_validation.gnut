@@ -13,7 +13,7 @@ bool function ValidPersistentPassiveForLoadout(string name, string property, Tit
 	int itemType = GetItemType(name)
 	if(validatedLoadout.titanClass != "vanguard" && IsBaseTitan(validatedLoadout.titanClass) )
 		return true
-    return itemType == GetModdedTitanLoadoutPassiveTypeByClass(titanClass, property)
+    return itemType == GetModdedTitanLoadoutContextualPassiveTypeByContext(validatedLoadout, property) // More advaced version that can account for passives which are influenced by other values
 }
 
 #if !SERVER

@@ -15,6 +15,7 @@ global function GetModdedTitansSetFileForAnims
 global function GetModdedTitanExecutionTypeByClass
 global function GetModdedTitanLoadoutPassiveType
 global function GetModdedTitanLoadoutPassiveTypeByClass
+global function GetModdedTitanLoadoutContextualPassiveTypeByContext
 global function GetModdedTitanLoadoutPassiveTypes
 global function OverwriteModdedTitanLoadoutDefaultEquipment
 global function OverwriteDefaultTitanLoadoutByIndex
@@ -249,6 +250,21 @@ table<string, int> function GetModdedTitanLoadoutPassiveTypes(string titanClass)
 	if(!(titanClass in TitanPassiveTypesByClass))
 		return {}
 	return TitanPassiveTypesByClass[titanClass]
+}
+int function GetModdedTitanLoadoutContextualPassiveTypeByContext(TitanLoadoutDef loadout, string property) //TODO: Rework this system to use frameworkPersistentTitanLoadout
+{
+	ModdedTitanData data = GetModdedTitanData(loadout.titanClass)
+	if(data.altChassisType == frameworkAltChassisMethod.ALT_TITAN && property == "titanExecution")
+	{
+		foreach( FrameworkChassisStruct chassisInstance in data.altChassisArray )
+		{
+			if(chassisInstance.setFile == loadout.setFile)
+			{
+				return chassisInstance.executionAnimationType
+			}
+		}
+	}
+	return GetModdedTitanLoadoutPassiveTypeByClass(loadout.titanClass, property)
 }
 int function GetModdedTitanExecutionTypeByClass(string titanClass)
 {

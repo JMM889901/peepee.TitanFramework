@@ -14,9 +14,15 @@ global struct clientframeworkPersistentTitanLoadoutstruct
     table<string, frameworkPersistentTitanLoadout> loadouts//Indexed by filename
     array<frameworkPersistentTitanLoadout> loadoutsToSave //Should always be empty when not saving, used for race conditions (unless mutex already fixes that)
 }
-
+global struct clientframeworkPersistentPilotLoadoutstruct
+{
+    array<string> filesToLoad
+    frameworkPersistentTitanLoadout[NUM_PERSISTENT_PILOT_LOADOUTS] loadouts//Indexed by filename
+    array<frameworkPilotLoadoutOverrides> loadoutsToSave //Should always be empty when not saving, used for race conditions (unless mutex already fixes that)
+}
 
 global clientframeworkPersistentTitanLoadoutstruct clientframeworkPersistentTitanLoadouts 
+global clientframeworkPersistentPilotLoadoutstruct clientframeworkPersistentPilotLoadouts
 global frameworkHelperValuesStruct frameworkHelperValues
 void function cl_titanFrameworkPersistenceInit()
 {
@@ -127,8 +133,17 @@ void function loadPersistentData(table data)
         {
             continue
         }
-        clientframeworkPersistentTitanLoadouts.filesToLoad.append(loadout)
-        NSLoadJSONFile( loadout, LoadPersistentTitanLoadout )
+        loadoutType = split(loadout, "_")[0]
+        if(loadoutType == "T")
+        {
+            clientframeworkPersistentTitanLoadouts.filesToLoad.append(loadout)
+            NSLoadJSONFile( loadout, LoadPersistentTitanLoadout )
+        }
+        else if(loadoutType == "P")
+        {
+            clientframeworkPersistentPilotLoadouts.filesToLoad.append(loadout)
+            //NSLoadJSONFile( loadout, LoadPersistentPilotLoadout )
+        }
     }
 
     thread InitialClientsideValidation()
@@ -179,7 +194,7 @@ void function saveNewTitanLoadout(frameworkPersistentTitanLoadout loadout, callb
     loadouts.sort(SortFrameworkTitanLoadoutsByName)
     foreach(string existingLoadout in loadouts){
         print(existingLoadout)
-        if(existingLoadout == "LOADOUT_" + i + ".json")
+        if(existingLoadout == "T_LOADOUT_" + i + ".json")
             i++
         else
             break
@@ -191,13 +206,13 @@ void function saveNewTitanLoadout(frameworkPersistentTitanLoadout loadout, callb
     loadoutTable.sourceModVersion <- loadout.sourceModVersion
     loadoutTable.loadout <- TitanLoadoutDefToTable(loadout.loadout)
     loadoutTable.additionalVars <- loadout.additionalVars
-    loadoutTable.fileName <- ("LOADOUT_" + i + ".json")
+    loadoutTable.fileName <- ("T_LOADOUT_" + i + ".json")
     if(!callback)
     {
         NSSaveJSONFile(loadoutTable.fileName, loadoutTable) // callback implies we have already run this, dont save twice
     }
-    loadout.fileName = ("LOADOUT_" + i + ".json")
-    clientframeworkPersistentTitanLoadouts.loadouts["LOADOUT_" + i + ".json"] <- loadout
+    loadout.fileName = ("T_LOADOUT_" + i + ".json")
+    clientframeworkPersistentTitanLoadouts.loadouts["T_LOADOUT_" + i + ".json"] <- loadout
     clientframeworkPersistentTitanLoadouts.loadoutsToSave.remove(0)
     frameworkHelperValues.savingNewLoadout = false
     //setModdedTitanLoadoutIndex("LOADOUT_" + i + ".json", true)
@@ -322,28 +337,7 @@ void function LoadPersistentTitanLoadout(table Table)
     UpdateDerivedFrameworkLoadoutValues(loadout)
     clientframeworkPersistentTitanLoadouts.filesToLoad.removebyvalue(expect string(Table["fileName"]))
 }
-void function UpdateDerivedFrameworkLoadoutValues( frameworkPersistentTitanLoadout loadout )
-{
-    bool canHavePrime 
-    if(IsBaseTitan(loadout.titanName) && loadout.titanName != "vanguard")
-        canHavePrime = true
-    else if(GetModdedTitanClasses().contains(loadout.titanName))
-        canHavePrime = GetModdedTitanData(loadout.titanName).altChassisType == frameworkAltChassisMethod.PRIME_TITAN
-    if(canHavePrime)
-    {
-        if(loadout.loadout.isPrime == "titan_is_prime" && loadout.loadout.setFile.find("prime") == null)//This is really scuffed, oh well!
-        {
-            print("titan is prime, updating set file")
-            loadout.loadout.setFile = GetPrimeTitanSetFileFromNonPrimeSetFile(loadout.loadout.setFile)
-        }
-        else if (loadout.loadout.isPrime == "titan_is_not_prime" && loadout.loadout.setFile.find("prime") != null)//This is really scuffed, oh well!
-            loadout.loadout.setFile = GetBaseTitanSetFileFromPrimeSetFile(loadout.loadout.setFile)
-    }
-    loadout.loadout.setFileMods = GetSetFileModsForSettingType("titan", [ loadout.loadout.passive1, loadout.loadout.passive2, loadout.loadout.passive3, loadout.loadout.passive4, loadout.loadout.passive5, loadout.loadout.passive6 ] )
 
-
-    //TODO: Add callbacks for custom derived values
-}
 void function SetTitanLoadoutFromClass( string titanClass, string fileName, callback = false )
 {
     if(fileName == "")
@@ -522,8 +516,17 @@ void function describeNewLoadoutToServer(frameworkPersistentTitanLoadout loadout
         PersistentVars = getBaseLoadoutValidationTable()
     } 
     table loadoutTable = TitanLoadoutDefToTable(loadout.loadout)
+    //TODO: Dynamic contextual var support
+    if( "setFile" in PersistentVars)
+    {
+        resultString += "setFile" + " " + loadout.loadout.setFile + " "
+    }
     foreach(string varName, bool functionref(string value, string property, TitanLoadoutDef acceptedLoadout) valid in PersistentVars)
     {
+        if(varName == "setFile")
+        {
+            continue //Aldreany handled, effcts animations so should come first if it exists
+        }
         if(varName in loadout.additionalVars)
             resultString += varName + " " + loadout.additionalVars[varName] + " "
         else if (varName in loadoutTable)
@@ -533,6 +536,7 @@ void function describeNewLoadoutToServer(frameworkPersistentTitanLoadout loadout
             resultString += "multicommand yes"
             multicommand = true
             GetLocalClientPlayer().ClientCommand("titanFrameworkNewLoadout " + resultString)
+            print("sending multicommand " + resultString)
             resultString = "titanName " + loadout.titanName + " fileName " + loadout.fileName + " select " + ( clientframeworkPersistentTitanLoadouts.moddedLoadoutIndex == loadout.fileName ? "yes " : "no " )
         }
     }

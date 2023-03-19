@@ -393,7 +393,7 @@ void function UpdateTitanItemButton( var button, TitanLoadoutDef loadout )
 		propertyName = Hud_GetScriptID( Hud_GetParent(button) )
 
 
-	print(GetModdedTitanLoadoutPassiveTypeByClass( loadout.titanClass , propertyName ) + " " + propertyName + " " + loadout.titanClass + " " + loadout.name)
+	//print(GetModdedTitanLoadoutPassiveTypeByClass( loadout.titanClass , propertyName ) + " " + propertyName + " " + loadout.titanClass + " " + loadout.name)
 	bool useAltView = ModdedTitanPassiveHasCustomAssets(loadout.name, propertyName)
 	if ( useAltView == (Hud_GetHudName(button) != "PassiveButton") || !ShouldDisplayIfVanguardPassive( loadout.titanClass, propertyName ))
 	{

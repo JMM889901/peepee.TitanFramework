@@ -454,7 +454,7 @@ global enum eItemsMethod
 	CREATE, //Create items like standard titan kit
 	FIND, //Find existing items, such as using weapons in kits, requires item type to be specified
 	FIND_FORCE, //Find existing items, regardless of item types and other limits, not ideal so try to avoid
-	SPECIFY, //Specify item refs directly
+	SPECIFY, //Specify item refs directly, unimplemented
 	NONE //Do not create or find, useful you want to use a custom validation function
 }
 global struct CustomPersistentVar
