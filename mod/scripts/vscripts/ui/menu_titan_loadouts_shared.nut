@@ -106,7 +106,7 @@ void function UpdateTitanLoadoutButtons( int selectedIndex, var[NUM_PERSISTENT_T
 		}
 	}
 
-	if ( focusSelected && !PlayerHasModdedTitanLoadout() )
+	if ( focusSelected && !PlayerHasModdedTitanLoadout() && selectedIndex <= 6)
 		Hud_SetFocused( buttons[ selectedIndex ] )
 }
 
@@ -144,7 +144,7 @@ void function UpdateTitanLoadoutPanel( var loadoutPanel, TitanLoadoutDef loadout
 	array<var> weaponButtonsUsed
 	foreach ( elem in weaponButtons )
 	{
-		if(IsBaseTitan(titanRef))
+		if( !GetModdedTitanClasses().contains(titanRef) )
 		{
 			Hud_SetVisible(elem, false)
 			continue

@@ -30,8 +30,6 @@ global function DevGetPassivePersistentConversionTable
 global function GetModdedTitanPassivePersistentType
 global function RegisterModdedTitanItemsSimple
 global function CreateModdedTitanSimple
-global function shouldPrintDevStuff
-global function DevForceNoValidation
 global function GetmoddedPassiveTypeDisplayName
 global function GetModdedTitanReadyMessage
 global function GetTitanEditLoadoutMenu
@@ -42,13 +40,16 @@ global function TitanClassHasAltTitans
 //global function GetModdedTitanFDPassiveArray
 global function GetModdedTitanPassiveHasAsset
 global function GetHintForModdedTitanLoadout
+global function GetModdedTitanPreviewController
 
-
-global function DevPrintTitanLoadoutPersistentDebug
+global function shouldPrintDevStuff //This is actually not deprecated :)
+global function DevForceNoValidation//You wouldnt believe it, but this is also deprecated
+global function DevPrintTitanLoadoutPersistentDebug//Guess what, also deprecated
 #if SERVER
-global function debugNullTitanLoadout
-global function SetTitanLoadout
+global function debugNullTitanLoadout//Deprecated
+global function SetTitanLoadout//Deprecated
 #endif
+
 
 table<string, TitanLoadoutDef> TitanLoadoutByClass
 table<string, TitanLoadoutDef> BaseTitanLoadoutByClass
@@ -71,7 +72,8 @@ table<string, string> ModdedTitanReadyMessage
 table<string, array<string> > ModdedTitanHints
 table<string, string> TitanEditLoadoutMenu
 table<string, table<int, array<ItemData> > > ForcedItemsForItemTypeAndClass 
-array<string> TitansNeedingSetFileFixup
+array<string> TitansNeedingSetFileFixup//Deprecated
+table<string, void functionref(array<var> icons, string ref) > TitanPreviewControllersByClass
 //table<string, array<ItemDisplayData> ModdedTitanFDUpgrades
 
 bool function shouldPrintDevStuff()
@@ -137,6 +139,12 @@ void function debugNullTitanLoadout(entity player, int index)
 }
 #endif
 //Getters
+void functionref(array<var> icons, string ref) function GetModdedTitanPreviewController(string titanClass)
+{
+	if(!(titanClass in TitanPreviewControllersByClass))
+		return null
+	return TitanPreviewControllersByClass[titanClass]
+}
 bool function TitanClassHasAltTitans(string titanClass)
 {
 	if(IsBaseTitan(titanClass))
@@ -515,12 +523,16 @@ void function FrameworkInit()
 	//#if MP
 	//PopulateDefaultTitanLoadouts( shGlobal.defaultTitanLoadouts )
 	//#endif
+	#if SERVER
+	AddCallback_OnTitanGetsNewTitanLoadout( updateTitanLoadoutModel )
+	#endif
 
 	thread checkLoadoutValues()
 }
 void function RegisterFrameworkNetworkVar()
 {
-	Remote_RegisterFunction("UpdateHealthSegmentCount")
+	Remote_RegisterFunction("UpdateHealthSegmentCount")//TODO
+
 }
 void function checkLoadoutValues()
 {
@@ -861,7 +873,10 @@ void function CreateModdedTitanSimple( ModdedTitanData Titan )
 	}
 	foreach(string name, CustomPersistentVar passives in Titan.ValidationOverrides)
 	{
-		Titan.derivedData.PersistentValuesValidation[name] <- passives.validationFunc
+		if(passives.validationFunc == null)
+			Titan.derivedData.PersistentValuesValidation[name] <- ValidPersistentPassiveForLoadout
+		else
+			Titan.derivedData.PersistentValuesValidation[name] <- passives.validationFunc
 	}
 	if(Titan.passive2Array.len() == 0)
 		delete Titan.derivedData.PersistentValuesValidation["passive2"]
@@ -906,13 +921,9 @@ void function CreateModdedTitanSimple( ModdedTitanData Titan )
 	ModdedTitanReadyMessage[Titan.Name] <- Titan.titanReadyMessageOverride
 	ModdedTitanPassiveHasAsset[Titan.Name] <- {}
 	//ModdedTitan[Titan.Name]
+	if(Titan.loadoutsMenuControllerFunc != null)
+		TitanPreviewControllersByClass[Titan.Name] <- Titan.loadoutsMenuControllerFunc
 
-	#if CLIENT && MP
-	if(!IsValidSetFile(Titan.BaseSetFile, "setFile", loadout))
-	{
-		TitansNeedingSetFileFixup.append(Titan.Name)
-	}
-	#endif
 
 
 	TitanEditLoadoutMenu[Titan.Name] <- Titan.customLoadoutMenu
@@ -1001,7 +1012,9 @@ void function RegisterModdedTitanItemsSimple( ModdedTitanData titan )
 	asset Image = expect asset(GetItemData(titan.BaseName).i.coreIcon)
 	if(titan.icon != $"ui/temp")
 		Image = titan.icon
-	asset TitanIcon
+	asset TitanIcon //WHY THE FUCK DID I DO THIS
+	//TITAN ICON IS THE CORE ICON
+	//IMAGE IS THE TITAN ICON
 	if(titan.Core.scriptHandled && titan.coreIconOverride != $"ui/temp")
 			TitanIcon = titan.coreIconOverride
 	else if (titan.Core.scriptHandled)
@@ -1177,6 +1190,14 @@ void function RegisterModdedTitanItemsSimple( ModdedTitanData titan )
 				ForcedItemsForItemTypeAndClass[titan.Name][passives.itemTypeOverride] <- passivesExtra
 			}
 		}
+		if(passives.passiveItemsMethod == eItemsMethod.FIND_ALL_TYPE)
+		{
+			foreach(int index, ItemData item in GetAllItemsOfType( passives.itemTypeOverride ))
+			{
+				CreateGenericSubItemData(  passives.itemTypeOverride, titan.Name, item.ref )
+			}
+			TitanPassiveTypesByClass[titan.Name][name] <- passives.itemTypeOverride
+		}
 	}
 
 
@@ -1197,3 +1218,4 @@ void function RegisterModdedTitanItemsSimple( ModdedTitanData titan )
 	*/
 
 }
+

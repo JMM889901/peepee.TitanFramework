@@ -145,7 +145,7 @@ void function OnOpenEditCustomTitanLoadoutMenu()
 
 
 	UI_SetPresentationType( ePresentationType.TITAN_LOADOUT_EDIT )
-	RunMenuClientFunction( "UpdateTitanModel", GetModdedTitanLoadoutNameIndex( titan.fileName ) ) // TODO: Titan model for custom loadouts
+	RunMenuClientFunction( "UpdateTitanModel", GetModdedLoadoutNameIndex( titan.fileName ) ) // TODO: Titan model for custom loadouts
 
 	UpdateTitanLoadoutPanel( file.loadoutPanel, loadout )
 	UpdateFrameworkTitanXP( file.xpPanel, titan )
@@ -547,7 +547,7 @@ void function OnPrimeTitanButton_Activate( var button )
 
 	OnPrimeTitanButton_Focus( button )
 
-	RunMenuClientFunction( "UpdateTitanModel",  GetModdedTitanLoadoutNameIndex( GetCurrentModdedPersistentTitanLoadoutIndex() ) )
+	RunMenuClientFunction( "UpdateTitanModel",  GetModdedLoadoutNameIndex( GetCurrentModdedPersistentTitanLoadoutIndex() ) )
 
 	UpdateTitanCosmeticButtons()
 
@@ -811,7 +811,7 @@ void function UpdateFrameworkTitanLoadout( var button )
 	foreach ( button in loadoutPanelButtons )
 		Hud_SetEnabled( button, false )
 	print(titan.fileName)
-	int index = GetModdedTitanLoadoutNameIndex( titan.fileName )
+	int index = GetModdedLoadoutNameIndex( titan.fileName )
 	RunMenuClientFunction( "UpdateTitanModel",(index + FRAMEWORK_TITAN_OFFSET ) )// TODO: Add titan models for custom loadouts
 }
 

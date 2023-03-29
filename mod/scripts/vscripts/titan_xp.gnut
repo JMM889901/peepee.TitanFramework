@@ -5,7 +5,11 @@ void function AddTitanXP( entity player, int amount )
 	string titan = GetActiveTitanLoadout( player ).titanClass
 	int oldLevel = TitanGetLevel( player, titan )
 	if(GetModdedTitanClasses().contains(titan))
-		titan = GetModdedTitanClassForMods(titan)
+	{
+		print("Modded titan detected, using clientside xp")
+		ServerToClientStringCommand(player, "AddModdedTitanXP " + titan + " " + amount)
+		return
+	}
 	// increment xp
 	player.SetPersistentVar( "titanXP[" + titan + "]", min( TitanGetXP( player, titan ) + amount, TitanGetMaxXP( titan ) ) )
 	

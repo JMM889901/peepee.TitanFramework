@@ -206,7 +206,9 @@ void function PopulatePilotLoadoutFromPersistentData( entity player, PilotLoadou
 	loadout.secondarySkinIndex	= GetValidatedPersistentLoadoutValueInt( player, "pilot", loadoutIndex, "secondarySkinIndex" ) //Important: Skin index needs to be gotten after camoIndex for loadout validation purposes
 	loadout.weapon3CamoIndex	= GetValidatedPersistentLoadoutValueInt( player, "pilot", loadoutIndex, "weapon3CamoIndex" )
 	loadout.weapon3SkinIndex	= GetValidatedPersistentLoadoutValueInt( player, "pilot", loadoutIndex, "weapon3SkinIndex" ) //Important: Skin index needs to be gotten after camoIndex for loadout validation purposes
-
+	#if CLIENT || UI
+	ApplyPilotLoadoutOverrides( player, loadoutIndex, loadout)
+	#endif
 	UpdateDerivedPilotLoadoutData( loadout )
 }
 
@@ -214,7 +216,7 @@ void function PopulateTitanLoadoutFromPersistentData( entity player, TitanLoadou
 {
 	//bool changed = false
 	//int InitialLoadoutIndex = loadoutIndex
-	loadout.name 				= GetValidatedPersistentLoadoutValue( player, "titan", loadoutIndex, "name" )
+
 	//if( loadout.name == "" && loadoutIndex > 6 || loadout.name == "fuck")
 	//{
 	//	loadoutIndex = loadoutIndex - 7
@@ -222,31 +224,37 @@ void function PopulateTitanLoadoutFromPersistentData( entity player, TitanLoadou
 	//	changed = true
 	//}
 	
-	if(loadout.name in GetModdedTitansByClassNoPersist())
+	if( loadoutIndex >= FRAMEWORK_TITAN_OFFSET )
 	{
-		
-		//print(loadout.name)
-		loadout.titanClass			= GetModdedTitanByClassNoPersist(loadout.name).titanClass
-		//print(loadout.titanClass)
-		loadout.primaryMod			= GetModdedTitanByClassNoPersist(loadout.name).primaryMod
-		loadout.special 			= GetModdedTitanByClassNoPersist(loadout.name).special
-		loadout.antirodeo 			= GetModdedTitanByClassNoPersist(loadout.name).antirodeo
-		loadout.coreAbility			= GetModdedTitanByClassNoPersist(loadout.name).coreAbility
-		loadout.ordnance			= GetModdedTitanByClassNoPersist(loadout.name).ordnance
-		//loadout.setFile				= GetModdedTitanByClassNoPersist(loadout.name).setFile
-		loadout.primary				= GetModdedTitanByClassNoPersist(loadout.name).primary
-		loadout.difficulty			= GetModdedTitanByClassNoPersist(loadout.name).difficulty
+		string indexName = "T_LOADOUT_" + (loadoutIndex - FRAMEWORK_TITAN_OFFSET) + ".json"
+		#if SERVER
+
+		if( PlayerModdedLoadoutExists(player, indexName) )
+		{
+			overrideTitanLoadoutWithTitanLoadout(loadout, GetPlayerModdedLoadout(player, indexName).loadout)
+			return 
+		}
+		else
+			loadoutIndex = 0
+		#endif
+		#if CLIENT || UI
+		if(PlayerModdedLoadoutExists(indexName))
+		{
+			overrideTitanLoadoutWithTitanLoadout(loadout, GetModdedPersistentTitanLoadout(indexName).loadout)
+			return
+		}
+		else
+			loadoutIndex = 0
+		#endif
 	}
-	else
-	{
 		
-		//print(loadout.name)
-		loadout.titanClass			= GetValidatedPersistentLoadoutValue( player, "titan", loadoutIndex, "titanClass" )
-		//print(loadout.titanClass)
-		loadout.primaryMod			= GetValidatedPersistentLoadoutValue( player, "titan", loadoutIndex, "primaryMod" )
-		loadout.special 			= GetValidatedPersistentLoadoutValue( player, "titan", loadoutIndex, "special" )
-		loadout.antirodeo 			= GetValidatedPersistentLoadoutValue( player, "titan", loadoutIndex, "antirodeo" )
-	}
+	loadout.name 				= GetValidatedPersistentLoadoutValue( player, "titan", loadoutIndex, "name" )
+	//print(loadout.name)
+	loadout.titanClass			= GetValidatedPersistentLoadoutValue( player, "titan", loadoutIndex, "titanClass" )
+	//print(loadout.titanClass)
+	loadout.primaryMod			= GetValidatedPersistentLoadoutValue( player, "titan", loadoutIndex, "primaryMod" )
+	loadout.special 			= GetValidatedPersistentLoadoutValue( player, "titan", loadoutIndex, "special" )
+	loadout.antirodeo 			= GetValidatedPersistentLoadoutValue( player, "titan", loadoutIndex, "antirodeo" )
 
 	loadout.passive1 			= GetValidatedPersistentLoadoutValue( player, "titan", loadoutIndex, "passive1" )
 	loadout.passive2 			= GetValidatedPersistentLoadoutValue( player, "titan", loadoutIndex, "passive2" )
@@ -254,15 +262,12 @@ void function PopulateTitanLoadoutFromPersistentData( entity player, TitanLoadou
 	loadout.passive4 			= GetValidatedPersistentLoadoutValue( player, "titan", loadoutIndex, "passive4" )
 	loadout.passive5 			= GetValidatedPersistentLoadoutValue( player, "titan", loadoutIndex, "passive5" )
 	loadout.passive6 			= GetValidatedPersistentLoadoutValue( player, "titan", loadoutIndex, "passive6" )
-	if(loadout.name in GetModdedTitansByClassNoPersist())
-	{
 		loadout.passive1 = GetModdedTitanPassiveStringForPersistenceInverted(loadout.name, "passive1", loadout.passive1)
 		loadout.passive2 = GetModdedTitanPassiveStringForPersistenceInverted(loadout.name, "passive2", loadout.passive2)
 		loadout.passive3 = GetModdedTitanPassiveStringForPersistenceInverted(loadout.name, "passive3", loadout.passive3)
 		loadout.passive4 = GetModdedTitanPassiveStringForPersistenceInverted(loadout.name, "passive4", loadout.passive4)
 		loadout.passive5 = GetModdedTitanPassiveStringForPersistenceInverted(loadout.name, "passive5", loadout.passive5)
 		loadout.passive6 = GetModdedTitanPassiveStringForPersistenceInverted(loadout.name, "passive6", loadout.passive6)
-	}
 	loadout.camoIndex			= GetValidatedPersistentLoadoutValueInt( player, "titan", loadoutIndex, "camoIndex" )
 	loadout.skinIndex			= GetValidatedPersistentLoadoutValueInt( player, "titan", loadoutIndex, "skinIndex" ) //Important: Skin index needs to be gotten after camoIndex for loadout validation purposes
 	loadout.decalIndex			= GetValidatedPersistentLoadoutValueInt( player, "titan", loadoutIndex, "decalIndex" )
@@ -282,8 +287,7 @@ void function PopulateTitanLoadoutFromPersistentData( entity player, TitanLoadou
 	//print("=======================================================")
 
 	UpdateDerivedTitanLoadoutData( loadout )
-	if(!(loadout.name in GetModdedTitansByClassNoPersist()))
-		OverwriteLoadoutWithDefaultsForSetFile( loadout )
+	OverwriteLoadoutWithDefaultsForSetFile( loadout )
 
 	//#if SERVER
 	//if(changed)
@@ -350,7 +354,20 @@ string function GetPersistentLoadoutValue( entity player, string loadoutType, in
 	// printt( "loadoutType:", loadoutType, "loadoutIndex:", loadoutIndex, "loadoutProperty:" , loadoutProperty )
 	// printl( "script GetPlayerArray()[0].SetPersistentVar( \"" + loadoutType + "Loadouts[" + loadoutIndex + "]." + loadoutProperty + "\", \"" + value + "\" )" )
 	// printt( "=======================================================================================" )
-
+	if( loadoutIndex >= FRAMEWORK_TITAN_OFFSET )//TODO, Edit this if i add pilot loadouts
+	{
+		string index = GetModdedLoadoutNameFromIndex(loadoutIndex, loadoutType)
+		#if SERVER
+		if( PlayerModdedLoadoutExists(player, index ) )
+			return GetFrameworkLoadoutValue( GetPlayerModdedLoadout(player, index), loadoutProperty )
+		#endif
+		#if CLIENT || UI
+		if( PlayerModdedLoadoutExists( index ) )
+			return GetFrameworkLoadoutValue( GetModdedPersistentTitanLoadout( index ), loadoutProperty )
+		#endif
+		else
+			loadoutIndex = 0
+	}
 	string getString = BuildPersistentVarAccessorString( loadoutType, loadoutIndex, loadoutProperty )
 	var value = player.GetPersistentVar( getString )
 
@@ -1766,10 +1783,12 @@ void function ResolveInvalidLoadoutChildValues( entity player, string loadoutTyp
 				//	printt( "====== loadoutProperty:", loadoutProperty, "childProperty:", childProperty, "will RESET childValue: \"" + childValue + "\"" )
 				//}
 			}
-
-			childValue = GetLoadoutChildPropertyDefault( loadoutType, childProperty, parentValue )
-
+			if(!IsItemModded(parentValue) && !IsItemModded(childValue))
+				childValue = GetLoadoutChildPropertyDefault( loadoutType, childProperty, parentValue )
+			else
+				childValue = "none"
 			#if SERVER
+			if(!IsItemModded(parentValue) && !IsItemModded(childValue))
 				SetPlayerPersistentVarWithoutValidation( player, loadoutType, loadoutIndex, childProperty, childValue )
 			#else
 				if ( loadoutType == "pilot" )
@@ -1809,11 +1828,45 @@ void function SetCachedPilotLoadoutValue( entity player, int loadoutIndex, strin
 	SetPilotLoadoutValue( shGlobal.cachedPilotLoadouts[ loadoutIndex ], loadoutProperty, value )
 	UpdateDerivedPilotLoadoutData( shGlobal.cachedPilotLoadouts[ loadoutIndex ] )
 
+	bool parentModded
+	switch(loadoutProperty)
+	{
+		case "primaryMod1":
+		case "primaryMod2":
+		case "primaryMod3":
+		case "primarySkinIndex":
+		case "primaryCamoIndex":
+		case "primaryAttachment":
+			parentModded = IsItemModded(GetCachedPilotLoadout( loadoutIndex ).primary)
+			break
+		case "secondaryMod1":
+		case "secondaryMod2":
+		case "secondaryMod3":
+		case "secondarySkinIndex":
+		case "secondaryCamoIndex":
+		    parentModded = IsItemModded(GetCachedPilotLoadout( loadoutIndex ).secondary)
+			break
+		case "weapon3Mod1":
+		case "weapon3Mod2":
+		case "weapon3Mod3":
+		case "weapon3SkinIndex":
+		case "weapon3CamoIndex":
+		    parentModded = IsItemModded(GetCachedPilotLoadout( loadoutIndex ).weapon3)
+			break
+	}
+	if(IsItemModded(value) || parentModded)
+	{
+		setFrameworkPilotOverride( loadoutIndex, loadoutProperty, value)
+	}
+	else
+	{
+		removeFrameworkPilotOverride( loadoutIndex, loadoutProperty)
 	#if UI
 		if ( value == "" )
 			value = "null"
 		ClientCommand( "SetPersistentLoadoutValue pilot " + loadoutIndex + " " + loadoutProperty + " " + value )
 	#endif // UI
+	}
 }
 
 
@@ -1821,7 +1874,7 @@ void function SetCachedTitanLoadoutValue( entity player, int loadoutIndex, strin
 {
 	if(loadoutIndex >= FRAMEWORK_TITAN_OFFSET)
 	{
-		setFrameworkTitanLoadoutValue( "LOADOUT_" + (loadoutIndex-FRAMEWORK_TITAN_OFFSET) + ".json", loadoutProperty, value, true ) //Callback is true as this is already on both client and ui
+		setFrameworkTitanLoadoutValue( "T_LOADOUT_" + (loadoutIndex-FRAMEWORK_TITAN_OFFSET) + ".json", loadoutProperty, value, true ) //Callback is true as this is already on both client and ui
 		#if CLIENT
 		UpdateTitanModel( GetLocalClientPlayer(),  loadoutIndex)
 		#endif
@@ -2992,7 +3045,23 @@ int function GetPersistentSpawnLoadoutIndex( entity player, string loadoutType )
 	int loadoutIndex = player.GetPersistentVarAsInt( loadoutType + "SpawnLoadout.index" )
 	if ( loadoutType == "titan" && loadoutIndex >= NUM_PERSISTENT_TITAN_LOADOUTS )
 		loadoutIndex = 0
-
+	if ( loadoutType == "pilot" && loadoutIndex >= NUM_PERSISTENT_PILOT_LOADOUTS )
+		loadoutIndex = 0
+	if( loadoutType == "titan")
+	{
+		#if CLIENT || UI
+		if(PlayerHasModdedTitanLoadout())
+		{
+			loadoutIndex = GetModdedLoadoutNameIndex(GetCurrentModdedPersistentTitanLoadoutIndex()) + FRAMEWORK_TITAN_OFFSET
+		}
+		#endif
+		#if SERVER
+		if(PlayerHasModdedTitanLoadout(player))
+		{
+			loadoutIndex = GetModdedLoadoutNameIndex(GetPlayerActiveModdedLoadoutName(player)) + FRAMEWORK_TITAN_OFFSET
+		}
+		#endif
+	}
 	return loadoutIndex
 }
 
@@ -3058,7 +3127,7 @@ void function SetPersistentSpawnLoadoutIndex( entity player, string loadoutType,
 
 	void function SetTextFromItemName( var element, string ref )
 	{
-		string text = ""
+		string text = ref
 
 		if ( ref != "" && ItemDefined(ref) )
 			text = GetItemName( ref )
@@ -3068,7 +3137,7 @@ void function SetPersistentSpawnLoadoutIndex( entity player, string loadoutType,
 
 	void function SetTextFromItemDescription( var element, string ref )
 	{
-		string text = ""
+		string text = Localize("#ITEM_NOT_FOUND_DESCRIPTION")
 
 		if ( ref != "" && ItemDefined(ref) )
 			text = GetItemDescription( ref )
@@ -3078,7 +3147,7 @@ void function SetPersistentSpawnLoadoutIndex( entity player, string loadoutType,
 
 	void function SetTextFromItemLongDescription( var element, string ref )
 	{
-		string text = ""
+		string text = Localize("#ITEM_NOT_FOUND_DESCRIPTION")
 
 		if ( ref != "" && ItemDefined(ref) )
 			text = GetItemLongDescription( ref )
@@ -3246,7 +3315,7 @@ void function SetPersistentSpawnLoadoutIndex( entity player, string loadoutType,
 	{
 		Assert( loadoutIndex >= 0 )
 		if( loadoutIndex >= FRAMEWORK_TITAN_OFFSET )
-			return clientframeworkPersistentTitanLoadouts.loadouts["LOADOUT_" + (loadoutIndex-FRAMEWORK_TITAN_OFFSET) + ".json"].loadout //TODO change this is i change filenames
+			return clientframeworkPersistentTitanLoadouts.loadouts["T_LOADOUT_" + (loadoutIndex-FRAMEWORK_TITAN_OFFSET) + ".json"].loadout //TODO change this is i change filenames
 		return shGlobal.cachedTitanLoadouts[ loadoutIndex ]
 	}
 
@@ -3479,9 +3548,13 @@ string function Loadouts_GetSetFileForRequestedClass( entity player )
 		if ( player.IsBot() && !player.IsPlayback() && GetConVarString( "bot_pilot_settings" ) == "random" )
 			loadout = GetRandomPilotLoadout()
 		else
+		{
 		#endif
 			loadout = GetPilotLoadoutFromPersistentData( player, loadoutIndex )
-
+			ApplyPilotLoadoutOverrides( player, loadoutIndex, loadout)
+		#if DEV
+		}
+		#endif
 		UpdateDerivedPilotLoadoutData( loadout )
 
 		if ( player.IsBot() && !player.IsPlayback() )
@@ -3529,7 +3602,7 @@ string function Loadouts_GetSetFileForRequestedClass( entity player )
 
 		if(PlayerHasModdedTitanLoadout(player))
 		{
-			loadout = getPlayerModdedLoadout(player).loadout
+			loadout = GetPlayerActiveModdedLoadout(player).loadout
 		}
 		OverwriteLoadoutWithDefaultsForSetFile_ExceptSpecialAndAntiRodeo( loadout )
 
@@ -3655,7 +3728,7 @@ string function Loadouts_GetSetFileForRequestedClass( entity player )
 		int loadoutIndex = GetPersistentSpawnLoadoutIndex( player, "titan" )
 		TitanLoadoutDef loadout
 		if(PlayerHasModdedTitanLoadout(player))
-			loadout = getPlayerModdedLoadout(player).loadout
+			loadout = GetPlayerActiveModdedLoadout(player).loadout
 		else
 			loadout = GetTitanLoadoutFromPersistentData( player, loadoutIndex )
 		//print("==========GetTitanSpawnLoadout===============")
@@ -3859,6 +3932,7 @@ string function Loadouts_GetSetFileForRequestedClass( entity player )
 		loadout.weapon3SkinIndex	= player.GetPersistentVarAsInt( "activePilotLoadout.weapon3SkinIndex" )
 		loadout.weapon3CamoIndex	= player.GetPersistentVarAsInt( "activePilotLoadout.weapon3CamoIndex" )
 
+		ApplyPilotLoadoutOverrides( player, GetActivePilotLoadoutIndex( player ), loadout )
 		UpdateDerivedPilotLoadoutData( loadout )
 
 		return loadout
@@ -3872,7 +3946,7 @@ string function Loadouts_GetSetFileForRequestedClass( entity player )
 		#endif
 		#if SERVER
 		if(PlayerHasModdedTitanLoadout(player))
-			return getPlayerModdedLoadout(player).loadout
+			return GetPlayerActiveModdedLoadout(player).loadout
 		#endif
 		//TODO, REMOVE OLD FRAMEWORK STUFF
 		TitanLoadoutDef loadout

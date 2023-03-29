@@ -184,8 +184,6 @@ int function TitanGetRawLevelForXP( string titanRef, int titanXP )
 
 int function TitanGetLevelForXP( string titanRef, int titanXP )
 {
-	if(GetModdedTitanClasses().contains(titanRef))
-		titanRef = GetModdedTitanClassForMods(titanRef)
 	int maxXP = TitanGetMaxXP( titanRef )
 	if ( titanXP >= maxXP )
 		return 1
@@ -233,7 +231,11 @@ int function TitanGetPreviousLevel( entity player, string titanClass )
 int function TitanGetXP( entity player, string titanClass )
 {
 	if(GetModdedTitanClasses().contains(titanClass))
-		return 0 //Todo: Recreate titan xp for modded titans
+	#if CLIENT || UI
+		return GetModdedtitanXP(titanClass)
+	#else
+		return 0
+	#endif
 	if(IsBaseTitan(titanClass))
 		return player.GetPersistentVarAsInt( "titanXP[" + titanClass + "]" )
 	return 0
@@ -241,6 +243,9 @@ int function TitanGetXP( entity player, string titanClass )
 
 int function TitanGetPreviousXP( entity player, string titanClass )
 {
+	if(GetModdedTitanClasses().contains(titanClass))
+		return 0
+
 	string persistenceVar = "previousTitanXP[" + titanClass + "]"
 	return player.GetPersistentVarAsInt( persistenceVar )
 }
