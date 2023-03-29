@@ -405,6 +405,8 @@ global struct ItemData
 	table< var, var > i
 }
 
+//Framework modded titan structs
+global const string FRAMEWORK_VERSION = "1.2.1"
 global enum frameworkAltChassisMethod
 {
 	ALT_TITAN, 
@@ -419,7 +421,7 @@ global struct FrameworkChassisStruct
 	asset icon = $"ui/temp"
 	bool iconIsModded
 	int executionAnimationType
-	string modelOverride
+	asset modelOverride
 }
 global struct ModdedPassiveData{
 	string Name
@@ -428,6 +430,7 @@ global struct ModdedPassiveData{
 	string description
 	asset image = $"ui/temp"
 	bool customIcon = false
+	int itemType //Used exclusively for PILOT passives
 }
 global struct ModdedTitanWeaponAbilityData{
 	string displayName
@@ -454,14 +457,15 @@ global enum eItemsMethod
 	CREATE, //Create items like standard titan kit
 	FIND, //Find existing items, such as using weapons in kits, requires item type to be specified
 	FIND_FORCE, //Find existing items, regardless of item types and other limits, not ideal so try to avoid
-	SPECIFY, //Specify item refs directly
+	FIND_ALL_TYPE,
+	SPECIFY, //Specify item refs directly, unimplemented
 	NONE //Do not create or find, useful you want to use a custom validation function
 }
 global struct CustomPersistentVar
 {
 	string property // is this even like, needed?
 	string defaultValue
-	bool functionref(string value, string property, TitanLoadoutDef validatedLoadout) validationFunc
+	bool functionref(string value, string property, TitanLoadoutDef validatedLoadout) validationFunc // this defaults to ValidPersistentPassiveForLoadout, but due to load order reasons it's not set here
 	int itemTypeOverride = -1
 	int passiveItemsMethod = eItemsMethod.CREATE
 	array<ModdedPassiveData> acceptedItems
@@ -472,7 +476,7 @@ global struct ModdedTitanData{
 	string Name
 	string Tag //Only used for titan groups
 	string sourceMod = "titanFramework"
-	string sourceModVersion = "1.2.1"
+	string sourceModVersion = FRAMEWORK_VERSION
 	string passiveDisplayNameOverride = "#TITAN_KIT_DEFAULT"
 	string titanReadyMessageOverride = "#TITAN_READY_DEFAULT"
 
@@ -521,11 +525,41 @@ global struct ModdedTitanData{
 	string Voice = "titanos_bt"
 
 	string customLoadoutMenu = "EditTitanLoadoutMenu"
-
+	void functionref(array<var> icons, string ref) loadoutsMenuControllerFunc //Used to control the small loadout preview in the loadouts menu
+	//For anyone using the above value, you have 6 icons to work with, you can see how to manipulate them in framework_custom_loadouts_menu.gnut (171, UpdateTitanButtoninfo)
+	//Be aware each var in the array is actually the root for 2 icons, one a basegame one called PassiveImage 
+	//and a custom one called PassiveImageMod, the custom one exists due to image atlas limitations
+	//DO NOT, I REPEAT: DO NOT. MOVE THE ICONS ROOT pretty please :), i dont move them back and i dont want to have to do that
+	//You can move the icons themselves however, probably
+	//Wow this is one long comment huh
 	bool functionref(table) FullValidationOverride
 
 }
-
+//Framework modded pilot item structs
+global struct moddedWeaponAttachmentMod
+{
+	string itemName
+	bool baseGame = true
+	string displayName
+	int itemType = 5 //Mod Type, 5 for attachment
+}
+global struct moddedPilotWeaponData
+{
+	string displayName
+	int itemType = 0 //Pilot weapons are apparently type 0 huh
+	string weaponName //Most values are derrived from weapon txts
+	bool customIcon
+	array<moddedWeaponAttachmentMod> attachments
+}
+global struct moddedPilotSuitData
+{
+	string suit
+	string name
+	string displayName
+	string description
+	asset icon = $"ui/temp"
+	bool customIcon
+}
 
 
 struct
@@ -4583,14 +4617,14 @@ string function GetItemLongName( string ref )
 string function GetItemDescription( string ref )
 {
 	if( !ItemDefined( ref ) )
-		return ""
+		return "The item was not found, if this is a modded item ensure the mod is enabled"
 	return file.itemData[ref].desc
 }
 
 string function GetItemLongDescription( string ref )
 {
 	if( !ItemDefined( ref ) )
-		return ""
+		return "The item was not found, if this is a modded item ensure the mod is enabled"
 	return file.itemData[ref].longdesc
 }
 
@@ -5727,7 +5761,9 @@ array<ItemDisplayData> function GetDisplaySubItemsOfType( string parentRef, int 
 	foreach ( subItemRef, subItemData in file.itemData[ parentRef ].subitems )
 	{
 		if ( subItemData.itemType == itemType )
+		{
 			subitems.append( GetItemDisplayData( subItemRef, parentRef ) )
+		}
 	}
 
 	subitems.sort( SortByUnlockLevelUntyped ) // TODO
@@ -6792,6 +6828,9 @@ bool function IsItemNew( entity player, string ref, string parentRef = "" )
 	if(GetModdedTitanClasses().contains(parentRef)){
 		return false
 	}
+	if(IsItemModded(ref) || IsItemModded(parentRef)){
+		return false
+	}
 	if(ref == "")
 		return false
 	ItemData itemData = GetItemData( ref )
@@ -7085,7 +7124,8 @@ void function ClearNewStatus( var button, string ref, string parentRef = "" )
 {
 	if ( ref == "" || ref == "none" )
 		return
-
+	if(IsItemModded(ref) || IsItemModded(parentRef))
+		return
 	Assert( parentRef == "" || ( parentRef != "" && IsSubItemType( GetItemType( ref ) ) ) )
 
 	if ( button != null )
@@ -7457,6 +7497,8 @@ bool function RefHasAnyNewSubitem( entity player, string ref, int subitemType = 
 	if ( IsItemLocked( player, ref ) )
 		return false
 
+	if(IsItemModded(ref))
+		return false
 	int refType = GetItemType( ref )
 	bool isPrimeTitanRef = ( refType == eItemTypes.TITAN && IsTitanClassPrime( player, ref ) )
 
@@ -9533,6 +9575,9 @@ string function GetSuitAndGenderBasedSetFile( string suit, string gender )
 	Assert( gender == "race_human_male" ||
 					gender == "race_human_female" )
 
+	if(IsItemModded(suit))
+		suit = GetModdedTacticalSuit(suit)
+
 	bool isFemale = gender == RACE_HUMAN_FEMALE
 
 	string genderString
@@ -9560,6 +9605,8 @@ string function GetSuitAndGenderBasedSetFile( string suit, string gender )
 
 string function GetSuitBasedTactical( string suit )
 {
+	if(IsItemModded(suit))
+		return suit
 	return GetTableValueForSuit( suit, "tactical" )
 }
 

@@ -1,0 +1,61 @@
+global function IsItemModded //Only checks for PILOT items, implemented after titans 
+global function registerModdedPersistentWeapon 
+global function registerModdedPilotPassive
+global function registerModdedPilotSuit
+global function GetModdedTacticalSuit
+//global function registerModdedPersistentItem
+array<moddedPilotWeaponData> moddedPersistentWeaponData
+array<ItemData> moddedPersistentWeaponItems
+array<string> moddedPersistentWeaponRefs
+array<string> moddedPersistentPassiveRefs
+table<string, string> moddedTacticalSuitRefs
+table<string, string> moddedTatcialSuitSetFiles
+
+void function registerModdedPersistentWeapon(moddedPilotWeaponData data)
+{
+    if(!moddedPersistentWeaponData.contains(data)) 
+        moddedPersistentWeaponData.append(data)
+    if(!moddedPersistentWeaponRefs.contains(data.weaponName))
+        moddedPersistentWeaponRefs.append(data.weaponName)
+    AddCallback_OnRegisterCustomItems( void function() : ( data ){
+        CreateWeaponData(999, data.itemType, false, data.weaponName, false )
+        foreach(int index, moddedWeaponAttachmentMod mod in data.attachments)
+        {
+            
+            if(mod.baseGame)
+            {
+                ItemData existingData = GetItemData(mod.itemName)
+                CreateGenericSubItemData(mod.itemType, data.weaponName, mod.itemName, 0)
+                InitUnlock(mod.itemName, data.weaponName, eUnlockType.WEAPON_LEVEL, index + 1 )
+            }
+            
+        }
+    } )
+}
+void function registerModdedPilotPassive(ModdedPassiveData passive)
+{
+
+    AddCallback_OnRegisterCustomItems( void function() : ( passive ){
+        CreateGenericItem(1000, passive.itemType, passive.Name, passive.Name, passive.description, passive.description, passive.image, 0, false)
+    } )
+    moddedPersistentPassiveRefs.append(passive.Name)
+}
+void function registerModdedPilotSuit(moddedPilotSuitData data)
+{
+    AddCallback_OnRegisterCustomItems( void function() : ( data ){
+        CreateGenericItem(1000, eItemTypes.PILOT_SUIT, data.name, data.displayName, data.description, data.description, data.icon, 0, false)
+    } )
+    moddedPersistentPassiveRefs.append(data.name)
+    moddedTacticalSuitRefs[data.name] <- data.suit
+    #if CLIENT && MP
+    InheritPilotMenuAnims(data.suit, data.name)
+    #endif
+}
+string function GetModdedTacticalSuit(string item)
+{
+    return moddedTacticalSuitRefs[item]
+}
+bool function IsItemModded(string item)
+{
+    return moddedPersistentWeaponRefs.contains(item) || moddedPersistentPassiveRefs.contains(item)
+}

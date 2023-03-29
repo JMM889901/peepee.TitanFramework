@@ -29,11 +29,20 @@
 			}
 		},
 		{
+			"Path": "titanframework/io_persistence/client/io_xp.gnut",
+			"RunOn": "UI || CLIENT"
+		},
+		{
 			"Path": "titanframework/io_persistence/server/io_persistence_server.gnut",
 			"RunOn": "SERVER",
 			"ServerCallback": {
 				"Before": "frameworkIOPersistInit"
 			}
+		},
+		{
+			"Path": "itemframework/itemframework_util.gnut",
+			"RunOn": "UI || SERVER || CLIENT"
+			
 		},
 		{
 			"Path": "titanframework/titanframework_util.gnut",

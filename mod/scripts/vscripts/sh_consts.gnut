@@ -218,6 +218,7 @@ global struct TitanLoadoutDef
 
 	//Kinda hacky but much easier than rewriting the entire thing
 	string frameworkLoadoutRef = ""
+	entity ownerPlayer //this is a hack for servers to be able to properly index a loadouts frameworkloadout
 
 }
 

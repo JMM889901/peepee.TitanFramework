@@ -565,11 +565,24 @@ void function OnAbilitySelectMenu_Open()
 	{
 		TitanLoadoutDef loadout = GetCachedTitanLoadout( uiGlobal.editingLoadoutIndex )
 		string nonPrimeSetFile = GetSetFileForTitanClassAndPrimeStatus( loadout.titanClass, false )
-		if( nonPrimeSetFile != "" )
+		uiGlobal.editingItemRef = GetTitanLoadoutValue( loadout, uiGlobal.editingLoadoutProperty )
+		if( uiGlobal.editingLoadoutProperty == "titanExecution" && GetModdedTitanClasses().contains(loadout.titanClass) && GetModdedTitanData( loadout.titanClass ).altChassisType == frameworkAltChassisMethod.ALT_TITAN)
+		{
+			ModdedTitanData data = GetModdedTitanData( loadout.titanClass )
+			foreach( FrameworkChassisStruct chassisInstance in data.altChassisArray )
+			{
+				if( chassisInstance.setFile == loadout.setFile )
+				{
+					uiGlobal.editingItemType = chassisInstance.executionAnimationType
+					break
+				}
+
+			}
+		}
+		else if( nonPrimeSetFile != "" )
 			uiGlobal.editingItemType = GetItemTypeFromTitanLoadoutProperty( uiGlobal.editingLoadoutProperty, nonPrimeSetFile )
 		else
 			uiGlobal.editingItemType = -1
-		uiGlobal.editingItemRef = GetTitanLoadoutValue( GetTitanEditLoadout(), uiGlobal.editingLoadoutProperty )
 
 		RunMenuClientFunction( "UpdateTitanModel", uiGlobal.editingLoadoutIndex )
 		UI_SetPresentationType( ePresentationType.TITAN )

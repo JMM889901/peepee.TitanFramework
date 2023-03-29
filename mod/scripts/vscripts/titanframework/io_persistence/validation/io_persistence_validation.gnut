@@ -11,9 +11,26 @@ bool function ValidPersistentPassiveForLoadout(string name, string property, Tit
 		return false
 	}
 	int itemType = GetItemType(name)
-	if(validatedLoadout.titanClass != "vanguard" && IsBaseTitan(validatedLoadout.titanClass) )
-		return true
-    return itemType == GetModdedTitanLoadoutPassiveTypeByClass(titanClass, property)
+	if( IsBaseTitan(validatedLoadout.titanClass) )
+	{
+		int WantedType
+		switch(property)
+		{
+			case "passive4":
+				WantedType = eItemTypes.TITAN_UPGRADE1_PASSIVE
+				break
+			case "passive5":
+				WantedType = eItemTypes.TITAN_UPGRADE2_PASSIVE
+				break
+			case "passive6":
+				WantedType = eItemTypes.TITAN_UPGRADE3_PASSIVE
+		        break
+			default:
+				WantedType = GetModdedTitanLoadoutPassiveTypeByClass(validatedLoadout.titanClass, property)
+		}
+		return itemType == WantedType
+	}
+    return itemType == GetModdedTitanLoadoutContextualPassiveTypeByContext(validatedLoadout, property) // More advaced version that can account for passives which are influenced by other values
 }
 
 #if !SERVER
@@ -151,6 +168,13 @@ bool function IsValidSetFile(string name, string property, TitanLoadoutDef valid
 		    return false
 	}	
 	return false
+}
+bool function ValidPilotLoadoutValue(string name, string property)
+{
+	if(!IsValidPilotLoadoutProperty(property))
+		return false
+	int itemType = GetItemType(name)
+	return itemType == GetItemTypeFromPilotLoadoutProperty(property)
 }
 bool function propertyDoesNotRequireValidation(string name, string property, TitanLoadoutDef validatedLoadout)
 {

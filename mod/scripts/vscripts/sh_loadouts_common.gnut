@@ -396,7 +396,7 @@ void function GiveTitanLoadout( entity titan, TitanLoadoutDef loadout )
 		PrintTitanLoadout( loadout )
 
 	entity soul = titan.GetTitanSoul()
-	bool scriptHandledPrimary = false
+	bool scriptHandledPrimary = false //Script handled primaries are now deprecated.
 	bool scriptHandledOrdnance = false
 	bool scriptHandledAntirodeo = false
 	bool scriptHandledSpecial = false
@@ -667,7 +667,10 @@ void function GivePilotLoadout( entity player, PilotLoadoutDef loadout )
 	primaryMods.extend( loadout.primaryMods )
 	primaryMods.removebyvalue( "" )
 	primaryMods.removebyvalue( "null" )
-
+	foreach( string mod in primaryMods)
+	{
+		print( "primary mod: " + mod)
+	}
 	if ( loadout.primary != "" )
 	{
 		entity weapon = player.GiveWeapon( loadout.primary, primaryMods )

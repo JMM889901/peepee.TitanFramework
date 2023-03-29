@@ -9,9 +9,9 @@ global struct frameworkLoadoutRejectionReason
 {
     int status = eLoadoutStatus.NO_RESPONSE //TODO allow multiple rejection reasons
 	string reason //Represents the reason for the rejection
-    string cause //Represents the item that caused the rejection
+    string cause //Represents the item/property that caused the rejection
 	string badValue //Represents the value that caused the rejection, when applicable
-
+    //TODO: Make most of these Enums
 }
 global struct frameworkPersistentTitanLoadout
 {
@@ -23,9 +23,17 @@ global struct frameworkPersistentTitanLoadout
     TitanLoadoutDef loadout
     table additionalVars
     frameworkLoadoutRejectionReason response//Only used if rejected is true
-
+}
+global struct frameworkPilotLoadoutOverrides//This is used to override so should only store differences
+{
+    string fileName
+    //PilotLoadoutDef Loadout//Maybe this should be a table?
+    table<string, string> loadout //Fuck it this is a table now so i can index with a for loop
+    table additionalVars//Shouldnt be any for pilot loadouts
+    frameworkLoadoutRejectionReason response
 }
 global const FRAMEWORK_TITAN_OFFSET = 10
+global const FRAMEWORK_PILOT_OFFSET = 0 //Use overrides not custom loadouts so dont actually need this, incase i decide to do custom loadouts as well
 string function GetFrameworkLoadoutValue(frameworkPersistentTitanLoadout loadout, string propertyName)
 {
 	string value = GetTitanLoadoutValue(loadout.loadout, propertyName)
@@ -38,6 +46,54 @@ string function GetFrameworkLoadoutValue(frameworkPersistentTitanLoadout loadout
 	}
 
 	return value
+}
+
+
+void function UpdateDerivedFrameworkLoadoutValues( frameworkPersistentTitanLoadout loadout )
+{
+    table<string, bool functionref(string value, string property, TitanLoadoutDef acceptedLoadout)> validation 
+    if(GetModdedTitanClasses().contains(loadout.titanName))
+    {
+        validation = GetModdedTitanData(loadout.titanName).derivedData.PersistentValuesValidation
+    }
+    else if(IsBaseTitan(loadout.titanName))
+    {
+        validation = getBaseLoadoutValidationTable()
+    }
+    bool canHavePrime 
+    if(IsBaseTitan(loadout.titanName) && loadout.titanName != "vanguard")
+        canHavePrime = true
+    else if(GetModdedTitanClasses().contains(loadout.titanName))
+        canHavePrime = GetModdedTitanData(loadout.titanName).altChassisType == frameworkAltChassisMethod.PRIME_TITAN
+    if(canHavePrime)
+    {
+        if(loadout.loadout.isPrime == "titan_is_prime" && loadout.loadout.setFile.find("prime") == null)//This is really scuffed, oh well!
+        {
+            print("titan is prime, updating set file")
+            loadout.loadout.setFile = GetPrimeTitanSetFileFromNonPrimeSetFile(loadout.loadout.setFile)
+        }
+        else if (loadout.loadout.isPrime == "titan_is_not_prime" && loadout.loadout.setFile.find("prime") != null)//This is really scuffed, oh well!
+            loadout.loadout.setFile = GetBaseTitanSetFileFromPrimeSetFile(loadout.loadout.setFile)
+    }
+    else if (loadout.titanName != "vanguard" && GetModdedTitanData(loadout.titanName).altChassisType == frameworkAltChassisMethod.ALT_TITAN)
+    {
+        if (!validation["titanExecution"](loadout.loadout.titanExecution, "titanExecution", loadout.loadout))
+        {
+            foreach( FrameworkChassisStruct chassisStruct in GetModdedTitanData(loadout.titanName).altChassisArray )
+            {
+                if(chassisStruct.setFile == loadout.loadout.setFile)
+                {
+                    loadout.loadout.titanExecution = GetAllItemsOfType(chassisStruct.executionAnimationType)[0].ref
+                    break
+                }
+            }
+        }
+            
+    }
+    loadout.loadout.setFileMods = GetSetFileModsForSettingType("titan", [ loadout.loadout.passive1, loadout.loadout.passive2, loadout.loadout.passive3, loadout.loadout.passive4, loadout.loadout.passive5, loadout.loadout.passive6 ] )
+
+
+    //TODO: Add callbacks for custom derived values
 }
 
 table function TitanLoadoutDefToTable(TitanLoadoutDef loadout)
@@ -171,7 +227,7 @@ frameworkPersistentTitanLoadout function createClientFrameworkLoadoutFromLoadout
     frameworkLoadout.loadoutName = loadout.name
     frameworkLoadout.titanName = loadout.titanClass
     frameworkLoadout.sourceMod = "titanFramework"
-    frameworkLoadout.sourceModVersion = "1.2.1"
+    frameworkLoadout.sourceModVersion = FRAMEWORK_VERSION
     frameworkLoadout.loadout.name = loadout.name
 
     frameworkLoadout.loadout.name             = loadout.name
@@ -321,18 +377,34 @@ bool function TrySetTitanLoadoutValue( TitanLoadoutDef loadout, string property,
 	}
     return true
 }
-int function GetModdedTitanLoadoutNameIndex(string name)
+int function GetModdedLoadoutNameIndex(string name)
 {
     array<string> words = split(name, "_" )
-    return words[1].tointeger()
+    return words[2].tointeger()
+}
+string function GetModdedLoadoutNameFromIndex(int index, string loadoutType, bool adjustIndex = true)
+{
+    if(loadoutType == "titan")
+    {
+        loadoutType = "T"
+    }
+    else if(loadoutType == "pilot")
+    {
+        loadoutType = "P"
+    }
+    if(adjustIndex)
+    {
+        index -= loadoutType == "T" ? FRAMEWORK_TITAN_OFFSET : FRAMEWORK_PILOT_OFFSET
+    }
+    return loadoutType + "_LOADOUT_" + index + ".json"
 }
 int function SortFrameworkTitanLoadouts(frameworkPersistentTitanLoadout a, frameworkPersistentTitanLoadout b)
 {
-    if(GetModdedTitanLoadoutNameIndex(a.fileName) < GetModdedTitanLoadoutNameIndex(b.fileName) )
+    if(GetModdedLoadoutNameIndex(a.fileName) < GetModdedLoadoutNameIndex(b.fileName) )
     {
         return -1
     }
-    if(GetModdedTitanLoadoutNameIndex( a.fileName ) > GetModdedTitanLoadoutNameIndex( b.fileName ))
+    if(GetModdedLoadoutNameIndex( a.fileName ) > GetModdedLoadoutNameIndex( b.fileName ))
     {
         return 1
     }
@@ -340,11 +412,11 @@ int function SortFrameworkTitanLoadouts(frameworkPersistentTitanLoadout a, frame
 }
 int function SortFrameworkTitanLoadoutsByName(string a, string b)
 {
-	if(GetModdedTitanLoadoutNameIndex(a) < GetModdedTitanLoadoutNameIndex(b) )
+	if(GetModdedLoadoutNameIndex(a) < GetModdedLoadoutNameIndex(b) )
 	{
 		return -1
 	}
-	if(GetModdedTitanLoadoutNameIndex( a ) > GetModdedTitanLoadoutNameIndex( b ))
+	if(GetModdedLoadoutNameIndex( a ) > GetModdedLoadoutNameIndex( b ))
 	{
 		return 1
 	}

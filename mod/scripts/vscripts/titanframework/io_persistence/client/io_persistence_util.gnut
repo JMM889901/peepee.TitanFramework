@@ -14,16 +14,22 @@ global struct clientframeworkPersistentTitanLoadoutstruct
     table<string, frameworkPersistentTitanLoadout> loadouts//Indexed by filename
     array<frameworkPersistentTitanLoadout> loadoutsToSave //Should always be empty when not saving, used for race conditions (unless mutex already fixes that)
 }
-
+global struct clientframeworkPersistentPilotLoadoutstruct
+{
+    array<string> filesToLoad
+    frameworkPilotLoadoutOverrides[NUM_PERSISTENT_PILOT_LOADOUTS] loadouts//Indexed by filename
+    array<frameworkPilotLoadoutOverrides> loadoutsToSave //Should always be empty when not saving, used for race conditions (unless mutex already fixes that)
+}
 
 global clientframeworkPersistentTitanLoadoutstruct clientframeworkPersistentTitanLoadouts 
+global clientframeworkPersistentPilotLoadoutstruct clientframeworkPersistentPilotLoadouts
 global frameworkHelperValuesStruct frameworkHelperValues
 void function cl_titanFrameworkPersistenceInit()
 {
     //RegisterSignal("FrameworkloadoutsReady")
     #if CLIENT
     AddServerToClientStringCommandCallback("FrameworkInformLoadoutResponse", FrameworkInformLoadoutResponse)
-    
+    SetupXPCallbacks()
     #endif
     thread cl_titanFrameworkPersistenceInitThread()
 }
@@ -39,6 +45,7 @@ void function FrameworkInformLoadoutResponse(array<string> args)
     if(args[0] == "#REJECED")
     {
         print("FrameworkInformLoadoutResponse: Loadout rejected by server due to bad format")
+        return
     }
     string fileName = args[0]
     frameworkPersistentTitanLoadout loadout = clientframeworkPersistentTitanLoadouts.loadouts[fileName]
@@ -56,7 +63,7 @@ void function FrameworkInformLoadoutResponse(array<string> args)
             loadout.response.cause = args[4]
             loadout.response.badValue = args[5]
         }    
-    
+        print("reason " + loadout.response.reason + " cause " + loadout.response.cause + " bad value " + loadout.response.badValue)
     }
     else
     {
@@ -68,6 +75,10 @@ void function FrameworkInformLoadoutResponse(array<string> args)
 bool function PlayerHasModdedTitanLoadout()
 {
     return clientframeworkPersistentTitanLoadouts.moddedLoadoutIndex != ""
+}
+bool function PlayerModdedLoadoutExists(string index)
+{
+    return index in clientframeworkPersistentTitanLoadouts.loadouts
 }
 string function GetCurrentModdedPersistentTitanLoadoutIndex()
 {
@@ -97,22 +108,30 @@ void function setModdedTitanLoadoutIndex(string index, callback = false)
     if(!callback)
         RunUIScript( "setModdedTitanLoadoutIndex", index, true ) 
     if(index != "")
-        describeNewLoadoutToServer(GetCurrentModdedPersistentTitanLoadout())
-    NSSaveJSONFile("frameworkCFG.json", {version = "1.2.1", moddedSelected = index})
+        DescribeNewTitanLoadoutToServer(GetCurrentModdedPersistentTitanLoadout())
+    NSSaveJSONFile("frameworkCFG.json", {version = FRAMEWORK_VERSION, moddedSelected = index})
     #endif
 }
 void function cl_titanFrameworkPersistenceInitThread()
 {
     if(!NSDoesFileExist("frameworkCFG.json"))
     {
-        NSSaveJSONFile("frameworkCFG.json", {version = "1.2.1"});
+        print("Creating new frameworkCFG.json")
+        NSSaveJSONFile("frameworkCFG.json", {version = FRAMEWORK_VERSION});
     }
+    if(!NSDoesFileExist("frameworkXP.json"))
+    {
+        print("Creating new frameworkXP.json")
+        NSSaveJSONFile("frameworkXP.json", {version = FRAMEWORK_VERSION});
+    }
+    NSLoadJSONFile( "frameworkXP.json", loadPersistentXP)
     NSLoadJSONFile( "frameworkCFG.json", loadPersistentData)
 }
 
 
 void function loadPersistentData(table data)
 {
+    print("Loading framework persistentData")
     if(data.moddedSelected != null)
     {
         clientframeworkPersistentTitanLoadouts.moddedLoadoutIndex = expect string(data.moddedSelected)
@@ -123,15 +142,28 @@ void function loadPersistentData(table data)
     }
     foreach(string loadout in NSGetAllFiles() )
     {
-        if(loadout == "frameworkCFG.json")
+        if(loadout == "frameworkCFG.json" || loadout == "frameworkXP.json")
         {
             continue
         }
-        clientframeworkPersistentTitanLoadouts.filesToLoad.append(loadout)
-        NSLoadJSONFile( loadout, LoadPersistentTitanLoadout )
+        string loadoutType = split(loadout, "_")[0]
+        print("Found loadout: " + loadout + " of type: " + loadoutType)
+        if(loadoutType == "T")
+        {
+            print("Loading titan loadout: " + loadout)
+            clientframeworkPersistentTitanLoadouts.filesToLoad.append(loadout)
+            NSLoadJSONFile( loadout, LoadPersistentTitanLoadout )
+        }
+        else if(loadoutType == "P")
+        {
+            print("Loading pilot loadout: " + loadout)
+            clientframeworkPersistentPilotLoadouts.filesToLoad.append(loadout)
+            NSLoadJSONFile( loadout, LoadPersistentPilotLoadout )
+        }
     }
 
-    thread InitialClientsideValidation()
+    thread InitialClientsideTitanValidation()
+    thread ClientSideLoadoutSetup()
     #if CLIENT
         thread InformFrameworkLoadouts()
     #endif
@@ -166,7 +198,11 @@ void function saveNewTitanLoadout(frameworkPersistentTitanLoadout loadout, callb
     }
     array<string> loadouts
     if(!callback)
+    {
         loadouts = NSGetAllFiles()
+        loadouts.removebyvalue("frameworkCFG.json")
+        loadouts.removebyvalue("frameworkXP.json")
+    }
     else
     {
         foreach(string existingClientLoadoutName, frameworkPersistentTitanLoadout existingClientLoadout in clientframeworkPersistentTitanLoadouts.loadouts)
@@ -175,11 +211,13 @@ void function saveNewTitanLoadout(frameworkPersistentTitanLoadout loadout, callb
         }
         
     }
-    loadouts.removebyvalue("frameworkCFG.json")
     loadouts.sort(SortFrameworkTitanLoadoutsByName)
     foreach(string existingLoadout in loadouts){
         print(existingLoadout)
-        if(existingLoadout == "LOADOUT_" + i + ".json")
+        string loadoutType = split(existingLoadout, "_")[0]
+        if(loadoutType != "T")
+            continue
+        if(existingLoadout == "T_LOADOUT_" + i + ".json")
             i++
         else
             break
@@ -191,13 +229,13 @@ void function saveNewTitanLoadout(frameworkPersistentTitanLoadout loadout, callb
     loadoutTable.sourceModVersion <- loadout.sourceModVersion
     loadoutTable.loadout <- TitanLoadoutDefToTable(loadout.loadout)
     loadoutTable.additionalVars <- loadout.additionalVars
-    loadoutTable.fileName <- ("LOADOUT_" + i + ".json")
+    loadoutTable.fileName <- ("T_LOADOUT_" + i + ".json")
     if(!callback)
     {
         NSSaveJSONFile(loadoutTable.fileName, loadoutTable) // callback implies we have already run this, dont save twice
     }
-    loadout.fileName = ("LOADOUT_" + i + ".json")
-    clientframeworkPersistentTitanLoadouts.loadouts["LOADOUT_" + i + ".json"] <- loadout
+    loadout.fileName = ("T_LOADOUT_" + i + ".json")
+    clientframeworkPersistentTitanLoadouts.loadouts["T_LOADOUT_" + i + ".json"] <- loadout
     clientframeworkPersistentTitanLoadouts.loadoutsToSave.remove(0)
     frameworkHelperValues.savingNewLoadout = false
     //setModdedTitanLoadoutIndex("LOADOUT_" + i + ".json", true)
@@ -232,6 +270,88 @@ void function DeleteFrameworkTitanLoadout(string fileName, bool callback = false
 
     
 }
+void function setFrameworkPilotOverride(int index, string property, string value, bool callback = false)
+{
+    //TODO: Validation
+    array<string> modTypes = ["Mod1", "Mod2", "Mod3", "SkinIndex", "CamoIndex"]
+    if(index > NUM_PERSISTENT_PILOT_LOADOUTS)
+        return
+    clientframeworkPersistentPilotLoadouts.loadouts[index].loadout[property] <- value
+    switch(property)
+    {
+        case "primary":
+        case "secondary":
+        case "weapon3":
+            foreach(string modType in modTypes)
+            {
+                clientframeworkPersistentPilotLoadouts.loadouts[index].loadout[property + modType] <- "none"
+            }
+        case "primary":
+            {
+                clientframeworkPersistentPilotLoadouts.loadouts[index].loadout["primaryAttachment"] <- "none"
+            }
+    }
+    if(!callback)
+    {
+        #if UI
+            RunClientScript("setFrameworkPilotOverride", index, property, value, true)
+        #endif
+        #if CLIENT
+            RunUIScript("setFrameworkPilotOverride", index, property, value, true)//Realistically this will only ever be called by ui, but just in case
+        #endif
+        table saveTable
+        saveTable.fileName <- "P_LOADOUT_" + index + ".json"
+        saveTable.loadout <- {}
+        foreach(string key, string value in clientframeworkPersistentPilotLoadouts.loadouts[index].loadout )
+        {
+            saveTable.loadout[key] <- value
+        }
+        NSSaveJSONFile("P_LOADOUT_" + index + ".json", saveTable)
+    }
+    #if CLIENT
+    DescribeNewPilotLoadoutToServer(clientframeworkPersistentPilotLoadouts.loadouts[index], index)//TODO: Should make a different function to change specific properties
+    #endif
+}
+void function removeFrameworkPilotOverride(int index, string property, bool callback = false)
+{
+    if(index > NUM_PERSISTENT_PILOT_LOADOUTS || !(property in clientframeworkPersistentPilotLoadouts.loadouts[index].loadout))
+        return
+    array<string> modTypes = ["Mod1", "Mod2", "Mod3", "SkinIndex", "CamoIndex"]
+    delete clientframeworkPersistentPilotLoadouts.loadouts[index].loadout[property]
+    switch(property)
+    {
+        case "primary":
+        case "secondary":
+        case "weapon3":
+            foreach(string modType in modTypes)
+            {
+                if(property + modType in clientframeworkPersistentPilotLoadouts.loadouts[index].loadout)
+                    delete clientframeworkPersistentPilotLoadouts.loadouts[index].loadout[property + modType]
+            }
+        case "primary":
+            {
+                if("primaryAttachment" in clientframeworkPersistentPilotLoadouts.loadouts[index].loadout)
+                    delete clientframeworkPersistentPilotLoadouts.loadouts[index].loadout["primaryAttachment"]
+            }
+    }
+    if(!callback)
+    {
+        #if UI
+            RunClientScript("removeFrameworkPilotOverride", index, property, true)
+        #endif 
+        #if CLIENT
+            RunUIScript("removeFrameworkPilotOverride", index, property, true)//Realistically this will only ever be called by ui, but just in case
+        #endif
+        table saveTable
+        saveTable.fileName <- "P_LOADOUT_" + index + ".json"
+        saveTable.loadout <- {}
+        foreach(string key, string value in clientframeworkPersistentPilotLoadouts.loadouts[index].loadout )
+        {
+            saveTable.loadout[key] <- value
+        }
+        NSSaveJSONFile("P_LOADOUT_" + index + ".json", saveTable)
+    }
+}
 void function setFrameworkTitanLoadoutValue( string fileName, string property, string value, bool callback = false)
 {
     frameworkPersistentTitanLoadout loadout = clientframeworkPersistentTitanLoadouts.loadouts[fileName]
@@ -254,7 +374,7 @@ void function setFrameworkTitanLoadoutValue( string fileName, string property, s
                 loadout.additionalVars[property] <- value
             }
             UpdateDerivedFrameworkLoadoutValues(loadout)
-            if(!callback)
+            if(!callback)//Sync with UI
             {
                 #if UI
                 RunClientScript( "setFrameworkTitanLoadoutValue", fileName, property, value, true)
@@ -263,15 +383,42 @@ void function setFrameworkTitanLoadoutValue( string fileName, string property, s
                 RunUIScript( "setFrameworkTitanLoadoutValue", fileName, property, value, true)
                 #endif
             }
-            else
+            else//This is weird since it means we call server on the callback instead of the original call, but I would like to call server at the same time as I save to IO
             {
                 saveTitanLoadout(loadout)
-                #if UI
+                #if UI//Sync with server
+
                 ClientCommand("SetFrameworkTitanLoadoutValue" + " " + fileName + " " + property + " " + value)
                 #endif
                 #if CLIENT
                 GetLocalClientPlayer().ClientCommand("SetFrameworkTitanLoadoutValue" + " " + fileName + " " + property + " " + value)
-                #endif
+                #endif 
+            }
+            if(loadout.response.status == eLoadoutStatus.REJECTED)
+            {
+                if(loadout.response.reason == "CLIENT_LOADOUT_REJECTED_VALUE_DOES_NOT_EXIST")//TODO: Use enums as string comparison is slow and cringe
+                {//TODO: Make server also repeat validation both to prevent cheating and allow loadouts that have corrected bad values
+                    if(loadout.response.cause == property)
+                    {
+                        loadout.response.status = eLoadoutStatus.ACCEPTED
+                        loadout.response.reason = ""
+                        loadout.response.cause = ""
+                        loadout.response.badValue = ""
+                    }
+                }
+                if(loadout.response.reason == "#FAILEDVALIDATION")
+                {
+                    if(loadout.response.cause == property)
+                    {
+                        loadout.response.status = eLoadoutStatus.NO_RESPONSE
+                        loadout.response.reason = ""
+                        loadout.response.cause = ""
+                        loadout.response.badValue = ""
+                        #if CLIENT
+                        DescribeNewTitanLoadoutToServer(loadout)//Reattempt validation from server
+                        #endif
+                    }
+                }
             }
         }
         else
@@ -322,27 +469,59 @@ void function LoadPersistentTitanLoadout(table Table)
     UpdateDerivedFrameworkLoadoutValues(loadout)
     clientframeworkPersistentTitanLoadouts.filesToLoad.removebyvalue(expect string(Table["fileName"]))
 }
-void function UpdateDerivedFrameworkLoadoutValues( frameworkPersistentTitanLoadout loadout )
+void function LoadPersistentPilotLoadout(table Table)
 {
-    bool canHavePrime 
-    if(IsBaseTitan(loadout.titanName) && loadout.titanName != "vanguard")
-        canHavePrime = true
-    else if(GetModdedTitanClasses().contains(loadout.titanName))
-        canHavePrime = GetModdedTitanData(loadout.titanName).altChassisType == frameworkAltChassisMethod.PRIME_TITAN
-    if(canHavePrime)
+    array<string> modTypes = ["Mod1", "Mod2", "Mod3", "SkinIndex", "CamoIndex"]
+    int index = GetModdedLoadoutNameIndex(expect string(Table["fileName"]))
+    if(index >= NUM_PERSISTENT_PILOT_LOADOUTS)
     {
-        if(loadout.loadout.isPrime == "titan_is_prime" && loadout.loadout.setFile.find("prime") == null)//This is really scuffed, oh well!
-        {
-            print("titan is prime, updating set file")
-            loadout.loadout.setFile = GetPrimeTitanSetFileFromNonPrimeSetFile(loadout.loadout.setFile)
-        }
-        else if (loadout.loadout.isPrime == "titan_is_not_prime" && loadout.loadout.setFile.find("prime") != null)//This is really scuffed, oh well!
-            loadout.loadout.setFile = GetBaseTitanSetFileFromPrimeSetFile(loadout.loadout.setFile)
+        printt("LoadPersistentPilotLoadout", "Loadout index out of range", index)
+        return
     }
-    loadout.loadout.setFileMods = GetSetFileModsForSettingType("titan", [ loadout.loadout.passive1, loadout.loadout.passive2, loadout.loadout.passive3, loadout.loadout.passive4, loadout.loadout.passive5, loadout.loadout.passive6 ] )
+    frameworkPilotLoadoutOverrides loadout = clientframeworkPersistentPilotLoadouts.loadouts[index]
+    loadout.fileName = expect string(Table["fileName"])
+    table loadoutTable = expect table(Table["loadout"])
+    foreach(key, value in loadoutTable )
+    {
+        if(!IsItemModded(expect string(value)))
+        {
+            printt("LoadPersistentPilotLoadout", "Invalid value", expect string(key))
+            continue
+        }
+        loadout.loadout[expect string(key)] <- expect string(value)
+        switch(expect string(key))
+        {
+            case "primary":
+            case "secondary":
+            case "weapon3":
+                foreach(string modType in modTypes)
+                {
+                    if((expect string(key) + modType) in loadout.loadout)
+                    {
+                        loadout.loadout[(expect string(key) + modType)] <- expect string(loadoutTable[(expect string(key) + modType)])
+                    }
+                    else
+                    {
+                        loadout.loadout[(expect string(key) + modType)] <- "none"
+                    }
+                }
+            case "primary":
+                if("primaryAttachment" in loadout.loadout)
+                {
+                    loadout.loadout["primaryAttachment"] <- expect string(loadoutTable["primaryAttachment"])
+                }
+                else
+                {
+                    loadout.loadout["primaryAttachment"] <- "none"
+                }
+        }
+    }
+    foreach(string property, string override in loadout.loadout)
+    {
+        print("Setting " + property + " to " + override)
+    }
+    clientframeworkPersistentPilotLoadouts.filesToLoad.removebyvalue(expect string(Table["fileName"]))
 
-
-    //TODO: Add callbacks for custom derived values
 }
 void function SetTitanLoadoutFromClass( string titanClass, string fileName, callback = false )
 {
@@ -383,7 +562,7 @@ void function SetTitanLoadoutFromClass( string titanClass, string fileName, call
     #if CLIENT
     if(shouldPrintDevStuff())
         print("Updating titan model")
-    UpdateTitanModel( GetLocalClientPlayer(),  GetModdedTitanLoadoutNameIndex( fileName ) + 10 )
+    UpdateTitanModel( GetLocalClientPlayer(),  GetModdedLoadoutNameIndex( fileName ) + 10 )
     #endif
     UpdateDerivedFrameworkLoadoutValues(loadout)
     if(!callback)
@@ -411,27 +590,28 @@ void function InformFrameworkLoadouts()
     {
         printt("Waiting for loadouts to load")
         wait 0.1
-        if(Time() - timeSearching > 2)
+        foreach(string fileName in clientframeworkPersistentTitanLoadouts.filesToLoad)
         {
-            foreach(string fileName in clientframeworkPersistentTitanLoadouts.filesToLoad)
+            if(fileName in clientframeworkPersistentTitanLoadouts.loadouts)
             {
-                if(fileName in clientframeworkPersistentTitanLoadouts.loadouts)
-                {
-                    print("Loadout " + fileName + " already loaded!")
-                    clientframeworkPersistentTitanLoadouts.filesToLoad.removebyvalue(fileName)
-                    continue
-                }
+                print("Loadout " + fileName + " already loaded!")
+                clientframeworkPersistentTitanLoadouts.filesToLoad.removebyvalue(fileName)
+                continue
+            }
+            if(Time() - timeSearching > 2)
+            {
                 printt("Loadout " + fileName + " failed to load!, Retrying")
                 NSLoadJSONFile( fileName, LoadPersistentTitanLoadout )
                 timeSearching = Time()
             }
+            
         }
     }
 
     if(clientframeworkPersistentTitanLoadouts.moddedLoadoutIndex != "")
     {
         print("Informing server of new loadout")
-        describeNewLoadoutToServer(clientframeworkPersistentTitanLoadouts.loadouts[clientframeworkPersistentTitanLoadouts.moddedLoadoutIndex])
+        DescribeNewTitanLoadoutToServer(clientframeworkPersistentTitanLoadouts.loadouts[clientframeworkPersistentTitanLoadouts.moddedLoadoutIndex])
     }
     int i = 0
     //foreach(frameworkPersistentTitanLoadout loadout in clientframeworkPersistentTitanLoadouts.loadouts)
@@ -446,12 +626,12 @@ void function InformFrameworkLoadouts()
     //        i = 0
     //        printt("Too many loadouts to inform server of")
     //    }
-    //    describeNewLoadoutToServer(loadout)
+    //    DescribeNewTitanLoadoutToServer(loadout)
     //    i++
     //} //Literally just do the used loadout, send the rest only if used or if the server requests it
     //Do ui validation client side
 }
-void function InitialClientsideValidation()
+void function InitialClientsideTitanValidation()
 {
     #if CLIENT
     WaitSignal( level, "CachedLoadoutsReady" )
@@ -462,20 +642,21 @@ void function InitialClientsideValidation()
     {
         printt("Client validation waiting for loadouts to load")
         wait 0.1
-        if(Time() - timeSearching > 2)
+        foreach(string fileName in clientframeworkPersistentTitanLoadouts.filesToLoad)
         {
-            foreach(string fileName in clientframeworkPersistentTitanLoadouts.filesToLoad)
+            if(fileName in clientframeworkPersistentTitanLoadouts.loadouts)
             {
-                if(fileName in clientframeworkPersistentTitanLoadouts.loadouts)
-                {
-                    print("Loadout " + fileName + " already loaded!")
-                    clientframeworkPersistentTitanLoadouts.filesToLoad.removebyvalue(fileName)
-                    continue
-                }
+                print("Loadout " + fileName + " already loaded!")
+                clientframeworkPersistentTitanLoadouts.filesToLoad.removebyvalue(fileName)
+                continue
+            }
+            if(Time() - timeSearching > 2)
+            {
                 printt("Loadout " + fileName + " failed to load!, Retrying")
                 NSLoadJSONFile( fileName, LoadPersistentTitanLoadout )
                 timeSearching = Time()
             }
+            
         }
     }
     while( !uiGlobal.loadoutsInitialized)
@@ -486,17 +667,107 @@ void function InitialClientsideValidation()
     foreach(frameworkPersistentTitanLoadout loadout in clientframeworkPersistentTitanLoadouts.loadouts)
     {
         bool titanDoesExist = GetModdedTitanClasses().contains(loadout.titanName) || IsBaseTitan(loadout.titanName)
+        //Validation is mostly serverside, but we can do some stuff here to reduce clientside crashes
         if(!titanDoesExist && (loadout.response.status == eLoadoutStatus.NO_RESPONSE))
         {       
             loadout.response.status = eLoadoutStatus.REJECTED
             loadout.response.reason = "#CLIENT_LOADOUT_REJECTED_TITAN_DOES_NOT_EXIST"
-            loadout.response.cause = loadout.loadoutName
+            loadout.response.cause = "#TITANNAME"
             loadout.response.badValue = loadout.titanName
+        }
+        if(!ItemDefined(loadout.loadout.primary))
+        {
+            loadout.response.status = eLoadoutStatus.REJECTED
+            loadout.response.reason = "#CLIENT_LOADOUT_REJECTED_VALUE_DOES_NOT_EXIST"
+            loadout.response.cause = "primary"
+            loadout.response.badValue = loadout.loadout.primary
+        }
+        if(loadout.response.status == eLoadoutStatus.REJECTED && loadout.fileName == clientframeworkPersistentTitanLoadouts.moddedLoadoutIndex)
+        {
+            clientframeworkPersistentTitanLoadouts.moddedLoadoutIndex = ""
+            #if UI && MP
+            uiGlobal.titanSpawnLoadoutIndex = GetPersistentSpawnLoadoutIndex( GetUIPlayer(), "titan" )
+            #endif
+            continue
         }
     }//Initial simple validation function
 
 }
-void function describeNewLoadoutToServer(frameworkPersistentTitanLoadout loadout)
+void function ClientSideLoadoutSetup()
+{
+    #if CLIENT
+    WaitSignal( level, "CachedLoadoutsReady" )
+    #endif
+    #if UI
+    float timeSearching = Time()
+    while(clientframeworkPersistentPilotLoadouts.filesToLoad.len() > 0 )
+    {
+        printt("Client validation waiting for loadouts to load")
+        wait 0.1
+        foreach(string fileName in clientframeworkPersistentPilotLoadouts.filesToLoad)
+        {
+            int index = GetModdedLoadoutNameIndex(fileName)
+            if(clientframeworkPersistentPilotLoadouts.loadouts[index].fileName == fileName)
+            {
+                print("Loadout " + fileName + " already loaded!")
+                clientframeworkPersistentPilotLoadouts.filesToLoad.removebyvalue(fileName)
+                continue
+            }
+            if(Time() - timeSearching > 2)
+            {
+                printt("Loadout " + fileName + " failed to load!, Retrying")
+                NSLoadJSONFile( fileName, LoadPersistentPilotLoadout )
+                timeSearching = Time()
+            }
+            
+        }
+    }
+    while( !uiGlobal.loadoutsInitialized)
+    {
+        WaitFrame()
+    }
+    #endif
+    print("Setting up loadout overrides")
+    foreach( int index, frameworkPilotLoadoutOverrides loadout in clientframeworkPersistentPilotLoadouts.loadouts)
+    {
+        //TODO: Validate clientside loadouts for missing mods
+        foreach( string key, string value in loadout.loadout)
+        {
+            print("Overriding loadout value " + key + " with value " + value)
+            entity player
+            #if CLIENT
+            player = GetLocalClientPlayer()
+            #endif
+            #if UI
+            player = GetUIPlayer()
+            #endif
+            //ResolveInvalidLoadoutChildValues( player, "pilot", index, key, value )
+            SetPilotLoadoutValue( shGlobal.cachedPilotLoadouts[ index ], key, value )
+        }
+        //UpdateDerivedPilotLoadoutData( shGlobal.cachedPilotLoadouts[ index ] )
+        #if CLIENT
+        DescribeNewPilotLoadoutToServer(loadout, index)//TODO: may hit clientcommand limit
+        #endif
+    }
+
+}
+void function ApplyPilotLoadoutOverrides(entity player, int index, PilotLoadoutDef loadout)//Clientside implementation, Serverside is at io_persistence_server.gnut:258
+{
+    if(index < NUM_PERSISTENT_PILOT_LOADOUTS)
+    {
+        foreach( string key, string value in clientframeworkPersistentPilotLoadouts.loadouts[index].loadout)
+        {
+            //print("Overriding loadout value " + key + " with value " + value)
+            //ResolveInvalidLoadoutChildValues( player, "pilot", index, key, value )
+            if(value == "none")
+            {
+                value = ""
+            }
+            SetPilotLoadoutValue( loadout, key, value )
+        }
+    }
+}
+void function DescribeNewTitanLoadoutToServer(frameworkPersistentTitanLoadout loadout)
 {
     bool multicommand
     string resultString = ""
@@ -522,8 +793,17 @@ void function describeNewLoadoutToServer(frameworkPersistentTitanLoadout loadout
         PersistentVars = getBaseLoadoutValidationTable()
     } 
     table loadoutTable = TitanLoadoutDefToTable(loadout.loadout)
+    //TODO: Dynamic contextual var support
+    if( "setFile" in PersistentVars)
+    {
+        resultString += "setFile" + " " + loadout.loadout.setFile + " "
+    }
     foreach(string varName, bool functionref(string value, string property, TitanLoadoutDef acceptedLoadout) valid in PersistentVars)
     {
+        if(varName == "setFile")
+        {
+            continue //Aldreany handled, effcts animations so should come first if it exists
+        }
         if(varName in loadout.additionalVars)
             resultString += varName + " " + loadout.additionalVars[varName] + " "
         else if (varName in loadoutTable)
@@ -533,7 +813,8 @@ void function describeNewLoadoutToServer(frameworkPersistentTitanLoadout loadout
             resultString += "multicommand yes"
             multicommand = true
             GetLocalClientPlayer().ClientCommand("titanFrameworkNewLoadout " + resultString)
-            resultString = "titanName " + loadout.titanName + " fileName " + loadout.fileName + " select " + ( clientframeworkPersistentTitanLoadouts.moddedLoadoutIndex == loadout.fileName ? "yes " : "no " )
+            print("sending multicommand " + resultString)
+            resultString = "titanName " + loadout.titanName + " fileName " + loadout.fileName + " select " + ( clientframeworkPersistentTitanLoadouts.moddedLoadoutIndex == loadout.fileName ? "yes " : "no ")  + "multicommand continue "
         }
     }
     printt("resultString", resultString)
@@ -543,5 +824,15 @@ void function describeNewLoadoutToServer(frameworkPersistentTitanLoadout loadout
         PrintTable(loadout.additionalVars)
     }
     print(resultString.len())
+    //TODO: Improve multicommand support incase its sent in the wrong order
     GetLocalClientPlayer().ClientCommand("titanFrameworkNewLoadout " + resultString) 
-}//script_client thread describeNewLoadoutToServer(clientframeworkPersistentTitanLoadouts.loadouts["LOADOUT_0.json"])
+}//script_client thread DescribeNewTitanLoadoutToServer(clientframeworkPersistentTitanLoadouts.loadouts["LOADOUT_0.json"])
+void function DescribeNewPilotLoadoutToServer(frameworkPilotLoadoutOverrides loadoutOverrides, int index)
+{
+    string resultstring = "pilot " + index + " "
+    foreach(string key, string value in loadoutOverrides.loadout)
+    {
+        resultstring += key + " " + value + " "
+    }
+    GetLocalClientPlayer().ClientCommand("FrameworkNewPilotLoadout " + resultstring)
+}

@@ -4,11 +4,13 @@ global struct globalPlayerCustomLoadouts
     table<entity, string> playerSelectedModdedLoadout //player, loadoutName
     table<entity, table<string, frameworkPersistentTitanLoadout> > playerLoadouts
     table<entity, table<string, frameworkPersistentTitanLoadout> > playerMulticommandLoadouts
+    table<entity, table<int, frameworkPilotLoadoutOverrides> > playerPilotLoadoutOverrides
 }
 global globalPlayerCustomLoadouts frameworkPlayerLoadouts
 void function frameworkIOPersistInit()
 {
     AddClientCommandCallback("titanFrameworkNewLoadout", registerNewTitanLoadoutFromClient)
+    AddClientCommandCallback("FrameworkNewPilotLoadout", registerNewPilotLoadoutFromClient)
     AddClientCommandCallback("titanFrameworkSelectLoadout", selectModdedTitanLoadoutFromClient)
     AddClientCommandCallback("setFrameworkTitanLoadoutFromClass", setFrameworkTitanLoadoutFromClass)
     AddClientCommandCallback("SetFrameworkTitanLoadoutValue", setFrameworkTitanLoadoutValue)
@@ -19,15 +21,25 @@ bool function PlayerHasModdedTitanLoadout(entity player)
         return false
     return frameworkPlayerLoadouts.playerSelectedModdedLoadout[player] != ""
 }
-string function getPlayerModdedLoadoutName(entity player)
+bool function PlayerModdedLoadoutExists(entity player, string indexName)
+{
+    if(!(player in frameworkPlayerLoadouts.playerLoadouts))
+        return false
+    return indexName in frameworkPlayerLoadouts.playerLoadouts[player]
+}
+string function GetPlayerActiveModdedLoadoutName(entity player)
 {
     if(!(player in frameworkPlayerLoadouts.playerSelectedModdedLoadout))
         return ""
     return frameworkPlayerLoadouts.playerSelectedModdedLoadout[player]
 }
-frameworkPersistentTitanLoadout function getPlayerModdedLoadout(entity player)
+frameworkPersistentTitanLoadout function GetPlayerActiveModdedLoadout(entity player)
 {
     return frameworkPlayerLoadouts.playerLoadouts[player][frameworkPlayerLoadouts.playerSelectedModdedLoadout[player]]
+}
+frameworkPersistentTitanLoadout function GetPlayerModdedLoadout(entity player, string indexName)
+{
+    return frameworkPlayerLoadouts.playerLoadouts[player][indexName]
 }
 bool function selectModdedTitanLoadoutFromClient(entity player, array<string> args)
 {
@@ -105,7 +117,7 @@ bool function setFrameworkTitanLoadoutValue(entity player, array<string> args)
         loadout.additionalVars[property] <- value
         return true
     }
-    loadout.loadout.setFileMods = GetSetFileModsForSettingType("titan", [ loadout.loadout.passive1, loadout.loadout.passive2, loadout.loadout.passive3, loadout.loadout.passive4, loadout.loadout.passive5, loadout.loadout.passive6 ] )
+    UpdateDerivedFrameworkLoadoutValues(loadout)
     return true
 }
 bool function registerNewTitanLoadoutFromClient(entity player, array<string> args)
@@ -143,10 +155,16 @@ bool function registerNewTitanLoadoutFromClient(entity player, array<string> arg
     }
     frameworkPersistentTitanLoadout PersistLoadout
     TitanLoadoutDef loadout
-    if(player in frameworkPlayerLoadouts.playerMulticommandLoadouts && args[3] in frameworkPlayerLoadouts.playerMulticommandLoadouts[player])
+    bool continuePast = (args[6] == "multicommand" && args[7] == "continue")
+    if(player in frameworkPlayerLoadouts.playerMulticommandLoadouts && args[3] in frameworkPlayerLoadouts.playerMulticommandLoadouts[player] && continuePast)
     {
         PersistLoadout = frameworkPlayerLoadouts.playerMulticommandLoadouts[player][args[3]]
         loadout = PersistLoadout.loadout
+    }
+    else if (continuePast)
+    {
+        //ServerToClientStringCommand(player, "FrameworkInformLoadoutResponse " + args[3] + " #REJECTED #INVALIDFORMAT #NOMULTICOMMAND" )//This would overwrite error messages, need to write some extra client stuff to fix that
+        return false
     }
     else
     {
@@ -164,7 +182,6 @@ bool function registerNewTitanLoadoutFromClient(entity player, array<string> arg
         ServerToClientStringCommand(player, "FrameworkInformLoadoutResponse " + args[3] + " #REJECTED #INVALIDFORMAT #NOSELECT" )
         return false
     }
-    
     for( int i = 6; i < args.len(); i+= 2 )
     {
         if ( args[i] in PersistentVars)
@@ -200,11 +217,14 @@ bool function registerNewTitanLoadoutFromClient(entity player, array<string> arg
                 ServerToClientStringCommand(player, "FrameworkInformLoadoutResponse " + args[3] + " #ACCEPTED #MULTICOMMAND" )
                 return true
             }
+            if( args[i+1] == "continue")
+                continue
             return false
         }
         
     }
     PersistLoadout.loadout.frameworkLoadoutRef = PersistLoadout.fileName
+    PersistLoadout.loadout.ownerPlayer = player
     if( !(player in frameworkPlayerLoadouts.playerLoadouts) )
     {
         table<string, frameworkPersistentTitanLoadout> new
@@ -214,12 +234,48 @@ bool function registerNewTitanLoadoutFromClient(entity player, array<string> arg
     {
         frameworkPlayerLoadouts.playerSelectedModdedLoadout[player] <- PersistLoadout.fileName
     }
-    PersistLoadout.loadout.setFileMods = GetSetFileModsForSettingType("titan", [ PersistLoadout.loadout.passive1, PersistLoadout.loadout.passive2, PersistLoadout.loadout.passive3, PersistLoadout.loadout.passive4, PersistLoadout.loadout.passive5, PersistLoadout.loadout.passive6 ] )
     if( !(player in frameworkPlayerLoadouts.playerLoadouts ) )
         frameworkPlayerLoadouts.playerLoadouts[player] <- {}
+    UpdateDerivedFrameworkLoadoutValues(PersistLoadout)
     frameworkPlayerLoadouts.playerLoadouts[player][PersistLoadout.fileName] <- PersistLoadout
     ServerToClientStringCommand(player, "FrameworkInformLoadoutResponse " + args[3] + " #ACCEPTED" )
     if( player in frameworkPlayerLoadouts.playerMulticommandLoadouts && args[3] in frameworkPlayerLoadouts.playerMulticommandLoadouts[player])
         delete frameworkPlayerLoadouts.playerMulticommandLoadouts[player][args[3]]
     return true
+}
+bool function registerNewPilotLoadoutFromClient(entity player, array<string> args)
+{
+    //TODO: Handle responding to client
+    if(args[0] != "pilot")
+    {
+        return false
+    }
+    int index = args[1].tointeger()
+    frameworkPilotLoadoutOverrides loadout
+    for( int i = 2; i < args.len(); i+= 2 )
+    {
+        loadout.loadout[args[i]] <- args[i+1]
+    }
+    if( !(player in frameworkPlayerLoadouts.playerPilotLoadoutOverrides) )
+    {
+        frameworkPlayerLoadouts.playerPilotLoadoutOverrides[player] <- {}
+    }
+    frameworkPlayerLoadouts.playerPilotLoadoutOverrides[player][index] <- loadout
+    return true
+}
+void function ApplyPilotLoadoutOverrides(entity player, int index, PilotLoadoutDef loadout)
+{
+    if(index < NUM_PERSISTENT_PILOT_LOADOUTS)
+    {
+        if( !(player in frameworkPlayerLoadouts.playerPilotLoadoutOverrides) || !(index in frameworkPlayerLoadouts.playerPilotLoadoutOverrides[player]))
+            return
+        foreach( string key, string value in frameworkPlayerLoadouts.playerPilotLoadoutOverrides[player][index].loadout)
+        {
+            //print("Overriding loadout value " + key + " with value " + value)
+            //ResolveInvalidLoadoutChildValues( player, "pilot", index, key, value )
+            if(value == "none")
+                value = ""
+            SetPilotLoadoutValue( loadout, key, value )
+        }
+    }
 }

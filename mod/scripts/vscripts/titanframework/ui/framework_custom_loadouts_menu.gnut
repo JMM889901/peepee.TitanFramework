@@ -171,6 +171,24 @@ void function updateFrameworkLoadoutsMenu(var menu)
 void function UpdateTitanButtonInfo(var menu, frameworkPersistentTitanLoadout loadout)
 {
     bool titanDoesExist = IsBaseTitan(loadout.titanName) || GetModdedTitanClasses().contains(loadout.titanName)
+    var TitanIcon = Hud_GetChild(menu, "TitanIcon")
+    var rui = Hud_GetRui( TitanIcon )
+    if(titanDoesExist)
+    {
+        RuiSetImage(rui, "basicImage", GetIconForTitanClass(loadout.titanName))
+    }
+    else
+    {
+        RuiSetImage(rui, "basicImage", $"ui/temp")
+    }
+
+    Hud_SetText(Hud_GetChild(menu, "titanName"), Localize(loadout.titanName))
+    Hud_SetText(Hud_GetChild(menu, "loadoutName"), Localize(loadout.loadoutName))//Loadout names shouldnt be localized but just incase
+    if(GetModdedTitanPreviewController(loadout.titanName) != null)
+    {
+        GetModdedTitanPreviewController(loadout.titanName)(file.loadoutPassiveIcons[menu], loadout.fileName)
+        return
+    }//Because of the funny circular dependency i cant pass the loadout to this, it must be passed by name, i sure do hope this wont cause problems in future
     foreach(var button in file.loadoutPassiveIcons[menu])
     {
 
@@ -196,6 +214,9 @@ void function UpdateTitanButtonInfo(var menu, frameworkPersistentTitanLoadout lo
             RuiSetImage( Hud_GetRui(imagePanel), "buttonImage",  $"ui/temp" )
             continue
         }
+        Hud_SetWidth(imagePanel, 85)
+        Hud_SetHeight(imagePanel, 85)//Incase modded previews alter the sizes of the buttons
+        Hud_SetPos(imagePanel, 0, 0)
         Hud_Show(imagePanel)
         string itemRef = GetTitanLoadoutValue( loadout.loadout, Hud_GetScriptID(button) )
         int itemType = GetModdedTitanLoadoutPassiveTypeByClass(loadout.titanName, Hud_GetScriptID(button))
@@ -203,19 +224,6 @@ void function UpdateTitanButtonInfo(var menu, frameworkPersistentTitanLoadout lo
         asset image = GetImage( itemType, itemRef )
         RuiSetImage( Hud_GetRui(imagePanel), "buttonImage", image )
     }
-    var TitanIcon = Hud_GetChild(menu, "TitanIcon")
-    var rui = Hud_GetRui( TitanIcon )
-    if(titanDoesExist)
-    {
-        RuiSetImage(rui, "basicImage", GetIconForTitanClass(loadout.titanName))
-    }
-    else
-    {
-        RuiSetImage(rui, "basicImage", $"ui/temp")
-    }
-
-    Hud_SetText(Hud_GetChild(menu, "titanName"), Localize(loadout.titanName))
-    Hud_SetText(Hud_GetChild(menu, "loadoutName"), Localize(loadout.loadoutName))//Loadout names shouldnt be localized but just incase
 }
 void function SetCreateTitanButton( var menu )
 {
@@ -250,7 +258,7 @@ void function OnFrameworkLoadoutButton_Press( var button )
     }
     setModdedTitanLoadoutIndex( expect string(button.s.loadoutID) )
     ClientCommand( "titanFrameworkSelectLoadout " + button.s.loadoutID )
-    int index = GetModdedTitanLoadoutNameIndex( expect string(button.s.loadoutID) )
+    int index = GetModdedLoadoutNameIndex( expect string(button.s.loadoutID) )
     SetEditLoadout( "titan", index + FRAMEWORK_TITAN_OFFSET )
     RunMenuClientFunction( "SetEditingTitanLoadoutIndex", index + FRAMEWORK_TITAN_OFFSET )
 

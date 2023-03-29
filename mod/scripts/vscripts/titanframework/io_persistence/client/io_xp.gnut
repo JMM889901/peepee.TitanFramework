@@ -1,0 +1,76 @@
+untyped
+globalize_all_functions
+global struct FrameworkXpStruct
+{
+    table<string, int> xpTable
+}
+global FrameworkXpStruct FrameworkModdedXP
+void function loadPersistentXP(table Table)
+{
+    foreach(key, value in Table)
+    {
+        if(key == "version")
+        {
+            continue
+        }
+        print("loadPersistentXP: " + key + " " + value)
+        FrameworkModdedXP.xpTable[expect string(key)] <- expect int(value)
+    }
+}
+int function GetModdedtitanXP( string name )
+{
+    if( !(name in FrameworkModdedXP.xpTable) )
+    {
+        return 0
+    }
+    return FrameworkModdedXP.xpTable[name]
+}
+void function AddModdedTitanXP(string name, int amount, bool Sync = true)
+{
+    print("AddModdedTitanXP: " + name + " " + amount)
+    if( !(name in FrameworkModdedXP.xpTable) )
+    {
+        FrameworkModdedXP.xpTable[name] <- 0
+    }
+    FrameworkModdedXP.xpTable[name] += amount
+    if(Sync)
+    {
+        #if CLIENT
+        RunUIScript("AddModdedTitanXP", name, amount, false)
+        #endif
+        #if UI
+        RunClientScript("AddModdedTitanXP", name, amount, false)
+        #endif
+        SavePersistentXP()
+    }
+}
+void function SavePersistentXP()
+{
+    table Table
+    foreach(string key, int value in FrameworkModdedXP.xpTable)
+    {
+        Table[key] <- value
+    }
+    Table["version"] <- FRAMEWORK_VERSION
+    NSSaveJSONFile("frameworkXP.json", Table)
+}
+void function AddModdedTitanXP_Remote(array<string> args)
+{
+    if(args.len() < 2)
+    {
+        print("AddModdedTitanXP_Remote: Invalid number of arguments")
+        return
+    }
+    print("AddModdedTitanXP_Remote: " + args[0] + " " + args[1])
+    AddModdedTitanXP(args[0], args[1].tointeger())
+}
+#if CLIENT
+void function SetupXPCallbacks()
+{
+    AddServerToClientStringCommandCallback("AddModdedTitanXP", AddModdedTitanXP_Remote)
+}
+#endif
+void function forceLoadXP()
+{
+    NSLoadJSONFile( "frameworkXP.json", loadPersistentXP)
+}

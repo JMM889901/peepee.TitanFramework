@@ -106,7 +106,7 @@ void function UpdateTitanLoadoutButtons( int selectedIndex, var[NUM_PERSISTENT_T
 		}
 	}
 
-	if ( focusSelected && !PlayerHasModdedTitanLoadout() )
+	if ( focusSelected && !PlayerHasModdedTitanLoadout() && selectedIndex <= 6)
 		Hud_SetFocused( buttons[ selectedIndex ] )
 }
 
@@ -144,7 +144,7 @@ void function UpdateTitanLoadoutPanel( var loadoutPanel, TitanLoadoutDef loadout
 	array<var> weaponButtonsUsed
 	foreach ( elem in weaponButtons )
 	{
-		if(IsBaseTitan(titanRef))
+		if( !GetModdedTitanClasses().contains(titanRef) )
 		{
 			Hud_SetVisible(elem, false)
 			continue
@@ -393,7 +393,7 @@ void function UpdateTitanItemButton( var button, TitanLoadoutDef loadout )
 		propertyName = Hud_GetScriptID( Hud_GetParent(button) )
 
 
-	print(GetModdedTitanLoadoutPassiveTypeByClass( loadout.titanClass , propertyName ) + " " + propertyName + " " + loadout.titanClass + " " + loadout.name)
+	//print(GetModdedTitanLoadoutPassiveTypeByClass( loadout.titanClass , propertyName ) + " " + propertyName + " " + loadout.titanClass + " " + loadout.name)
 	bool useAltView = ModdedTitanPassiveHasCustomAssets(loadout.name, propertyName)
 	if ( useAltView == (Hud_GetHudName(button) != "PassiveButton") || !ShouldDisplayIfVanguardPassive( loadout.titanClass, propertyName ))
 	{

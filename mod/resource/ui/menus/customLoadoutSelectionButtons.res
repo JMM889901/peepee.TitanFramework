@@ -317,7 +317,8 @@ resource/ui/menus/customLoadoutSelectionButtons.res
 			ControlName RuiButton
 			InheritProperties RuiSmallButton
 			labelText "#SHOW_REJECTED_LOADOUTS"
-            auto_wide_tocontents 	1
+            wide                    400
+            textAlignment           center
 			//image "vgui/hud/white"
 			//drawColor "255 255 255 128"
 	

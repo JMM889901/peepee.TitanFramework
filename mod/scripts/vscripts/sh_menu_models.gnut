@@ -120,6 +120,7 @@
 
 		table< string, table<string, table<int,string> > > pilotAnims
 		table< string, table<string, string> > titanAnims
+		table< string, string > waitingMaps
 
 		int menuColorCorrection = -1
 	} file
@@ -154,6 +155,7 @@
 	global function ClearEditingTitanLoadoutIndex
 
 	global function PreviewPilotCharacter
+	global function InheritPilotMenuAnims
 	global function SavePilotCharacterPreview
 	global function PreviewPilotWeapon
 	global function SavePilotWeaponPreview
@@ -633,7 +635,7 @@
 		//	UpdateTitanModelFrameworkLoadout( player, GetCurrentModdedPersistentTitanLoadoutIndex())
 		//else
 		if(PlayerHasModdedTitanLoadout())
-			loadoutIndex = GetModdedTitanLoadoutNameIndex( GetCurrentModdedPersistentTitanLoadoutIndex() ) + 10
+			loadoutIndex = GetModdedLoadoutNameIndex( GetCurrentModdedPersistentTitanLoadoutIndex() ) + 10
 		UpdateTitanModel( player, loadoutIndex )
 	}
 
@@ -994,6 +996,7 @@
 		file.titanAnims[ animType ][ "titan_stryder_arc" ]					<- "titan_light_menu_FD_idle_RONIN"
 		file.titanAnims[ animType ][ "titan_ogre_fighter" ]					<- "titan_heavy_menu_FD_idle_SCORCH"
 		MapCustomTitansToDefaultTitan()
+		MapCustomPilotsToDefaultPilot()
 	}
 	void function MapCustomTitansToDefaultTitan()
 	{
@@ -1003,6 +1006,13 @@
 			{
 				file.titanAnims[key][setFile] <- file.titanAnims[key][defaultSetFile]
 			}
+		}
+	}
+	void function MapCustomPilotsToDefaultPilot()
+	{
+		foreach(string inheritor, string inheritFrom in file.waitingMaps)
+		{
+			InheritPilotMenuAnims(inheritFrom, inheritor)	
 		}
 	}
 	void function MapCustomTitanToDefaultTitan(string setFile, string defaultSetFile)
@@ -1029,6 +1039,23 @@
 		Assert( menuAnimClass in file.pilotAnims[ animType ][ bodyType ] )
 
 		return file.pilotAnims[ animType ][ bodyType ][ menuAnimClass ]
+	}
+	void function InheritPilotMenuAnims(string inheritFrom, string inheritor)
+	{
+		//inheritFrom is the pilot body type that we are inheriting from
+		//inheritor is the pilot body type that we are inheriting to
+		if( file.pilotAnims.len() == 0 )
+		{
+			file.waitingMaps[ inheritor ] <- inheritFrom
+		}
+		foreach( table<string, table<int, string> > animType in file.pilotAnims )
+		{
+			animType[inheritor] <- {}
+			foreach( int key, string value in animType[ inheritFrom ] )
+			{
+				animType[inheritor][key] <- value
+			}
+		}
 	}
 
 	string function GetMenuTitanAnim( string anim, string setFile )
@@ -1343,6 +1370,8 @@
 		vector angles = chassisEnt.GetAttachmentAngles( attachIndex )
 
 		string weapon = GetTitanLoadoutPrimary( loadoutIndex )
+		if(!ItemDefined(weapon))
+			weapon = "mp_titanweapon_xo16_shorty"
 		asset weaponModel = GetWeaponModel( weapon )
 
 		entity weaponEnt = CreateClientSidePropDynamic( origin, angles, weaponModel )
@@ -1524,12 +1553,25 @@
 			setFile = GetTitanLoadoutSetFile( loadoutIndex )
 		
 		string weapon
-		bool titanDoesExist = IsBaseTitan(cachedLoadout.titanClass) || GetModdedTitanClasses().contains(cachedLoadout.titanClass)
+		bool isModded = GetModdedTitanClasses().contains(cachedLoadout.titanClass)
+		bool titanDoesExist = IsBaseTitan(cachedLoadout.titanClass) || isModded
 		if(titanDoesExist)
 			weapon = GetTitanLoadoutPrimary( loadoutIndex )
-		else
+		if(!titanDoesExist || weapon == "" || !ItemDefined(weapon))
 			weapon = "mp_titanweapon_xo16_shorty"
 		asset chassisModel = GetSetFileModel( setFile )
+		if(isModded && GetModdedTitanData(cachedLoadout.titanClass).altChassisType == frameworkAltChassisMethod.ALT_TITAN)
+		{
+			foreach(FrameworkChassisStruct altChassis in GetModdedTitanData(cachedLoadout.titanClass).altChassisArray)
+			{
+				if(altChassis.setFile == setFile)
+				{
+					if(altChassis.modelOverride != $"")
+						chassisModel = altChassis.modelOverride
+					break
+				}
+			}
+		}
 		asset weaponModel = GetWeaponModel( weapon )
 		string idleAnim = GetMenuTitanAnim( GetTitanAnimType(), setFile )
 		int camoIndex
@@ -1700,6 +1742,10 @@
 				mods = []
 			else
 				mods = clGlobal.currentMenuPilotModels.mods
+		}
+		foreach( string mod in mods)
+		{
+			print("mod: " + mod)
 		}
 		SetBodyGroupsForWeaponConfig( file.menuPilot.weapon, weapon, mods )
 
