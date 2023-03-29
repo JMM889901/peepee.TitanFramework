@@ -523,9 +523,7 @@ void function FrameworkInit()
 	//#if MP
 	//PopulateDefaultTitanLoadouts( shGlobal.defaultTitanLoadouts )
 	//#endif
-	#if SERVER
-	AddCallback_OnTitanGetsNewTitanLoadout( updateTitanLoadoutModel )
-	#endif
+
 
 	thread checkLoadoutValues()
 }

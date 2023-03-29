@@ -55,10 +55,15 @@ void function ShWeaponXP_Init()
 	shWeaponXP.weaponClassNames.extend( GetAllItemRefsOfType( eItemTypes.PILOT_PRIMARY ) )
 	shWeaponXP.weaponClassNames.extend( GetAllItemRefsOfType( eItemTypes.PILOT_SECONDARY ) )
 
+	array<string> moddedWeapons
 	foreach( string weaponClassName in shWeaponXP.weaponClassNames )
 	{
 		if( IsItemModded( weaponClassName ) )
-			shWeaponXP.weaponClassNames.removebyvalue( weaponClassName )
+			moddedWeapons.append( weaponClassName )
+	}
+	foreach( string weaponClassName in moddedWeapons )
+	{
+		shWeaponXP.weaponClassNames.removebyvalue( weaponClassName )
 	}
 
 	array<string> uniqueXPPerLevelTypes

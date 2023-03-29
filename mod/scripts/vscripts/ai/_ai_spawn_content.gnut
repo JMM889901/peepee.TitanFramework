@@ -495,9 +495,9 @@ function CommonNPCTitanOnSpawned( entity npc )
 				{
 					if(altChassis.modelOverride != $"")
 					{
-						titan.SetModel(altChassis.modelOverride)
+						npc.SetModel(altChassis.modelOverride)
 					}
-					return
+					break
 				}
 			}
 		}

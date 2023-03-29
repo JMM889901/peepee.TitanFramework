@@ -19,6 +19,7 @@ void function registerModdedPersistentWeapon(moddedPilotWeaponData data)
         moddedPersistentWeaponRefs.append(data.weaponName)
     AddCallback_OnRegisterCustomItems( void function() : ( data ){
         CreateWeaponData(999, data.itemType, false, data.weaponName, false )
+        InitUnlock(data.weaponName, "", eUnlockType.PLAYER_LEVEL, 0 )
         foreach(int index, moddedWeaponAttachmentMod mod in data.attachments)
         {
             
