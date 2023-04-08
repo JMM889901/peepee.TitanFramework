@@ -68,7 +68,7 @@ void function FrameworkInformLoadoutResponse(array<string> args)
     else
     {
         loadout.response.status = eLoadoutStatus.ACCEPTED
-    }
+    }//wait how come i never synced this with ui
 }
 
 #endif
@@ -812,7 +812,12 @@ void function DescribeNewTitanLoadoutToServer(frameworkPersistentTitanLoadout lo
         {
             resultString += "multicommand yes"
             multicommand = true
+            #if CLIENT
             GetLocalClientPlayer().ClientCommand("titanFrameworkNewLoadout " + resultString)
+            #endif
+            #if UI
+            ClientCommand("titanFrameworkNewLoadout " + resultString)
+            #endif
             print("sending multicommand " + resultString)
             resultString = "titanName " + loadout.titanName + " fileName " + loadout.fileName + " select " + ( clientframeworkPersistentTitanLoadouts.moddedLoadoutIndex == loadout.fileName ? "yes " : "no ")  + "multicommand continue "
         }
@@ -825,7 +830,12 @@ void function DescribeNewTitanLoadoutToServer(frameworkPersistentTitanLoadout lo
     }
     print(resultString.len())
     //TODO: Improve multicommand support incase its sent in the wrong order
+    #if CLIENT
     GetLocalClientPlayer().ClientCommand("titanFrameworkNewLoadout " + resultString) 
+    #endif
+    #if UI
+    ClientCommand("titanFrameworkNewLoadout " + resultString)
+    #endif
 }//script_client thread DescribeNewTitanLoadoutToServer(clientframeworkPersistentTitanLoadouts.loadouts["LOADOUT_0.json"])
 void function DescribeNewPilotLoadoutToServer(frameworkPilotLoadoutOverrides loadoutOverrides, int index)
 {

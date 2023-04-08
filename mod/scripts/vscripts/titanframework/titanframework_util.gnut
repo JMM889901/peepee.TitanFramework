@@ -707,7 +707,7 @@ void function RegisterModdedTitan(
 	string Voice = "titanos_bt"
 )
 {
-	print("/////////////////CREATING CUSOTM TITAN////////////////////")
+	print("/////////////////CREATING CUSTOM TITAN////////////////////")
 	print("/////////////////" + Name + "//////////////////////////////")
 	//RegisterNewItemInitCallback(SCUFFED_UI_INIT2)
 	//Create loadout
@@ -1037,17 +1037,69 @@ void function RegisterModdedTitanItemsSimple( ModdedTitanData titan )
 						| |                                          
 						|_|                                          
 	*/
-
-	if(titan.Mid.custom)
-		CreateGenericItem(999, eItemTypes.TITAN_ANTIRODEO, titan.Mid.weaponName, titan.Mid.displayName,titan.Mid.description, titan.Mid.description, titan.Mid.image, 0, false)
-	if(titan.Primary.custom)
-		CreateGenericItem(999, eItemTypes.TITAN_PRIMARY, titan.Primary.weaponName, titan.Primary.displayName, titan.Primary.description, titan.Primary.description, titan.Primary.image, 0, false)
-	if(titan.Core.custom)
-		CreateGenericItem(999, eItemTypes.TITAN_CORE_ABILITY, titan.Core.weaponName, titan.Core.displayName, titan.Core.description,titan.Core.description , titan.Core.image , 0, false)
-	if(titan.Right.custom)
-		CreateGenericItem(999, eItemTypes.TITAN_ORDNANCE, titan.Right.weaponName, titan.Right.displayName, titan.Right.description, titan.Right.description, titan.Right.image, 0, false)
-	if(titan.Left.custom)
-		CreateGenericItem(999, eItemTypes.TITAN_SPECIAL, titan.Left.weaponName, titan.Left.displayName, titan.Left.description, titan.Left.description, titan.Left.image, 0, false)
+	array<int> weaponTypes = [eItemTypes.TITAN_PRIMARY, eItemTypes.TITAN_ORDNANCE, eItemTypes.TITAN_SPECIAL, eItemTypes.TITAN_ANTIRODEO, eItemTypes.TITAN_CORE_ABILITY ]
+	array<ModdedTitanWeaponAbilityData&> weaponArray = [titan.Primary, titan.Right, titan.Left, titan.Mid, titan.Core]
+	foreach(int index, ModdedTitanWeaponAbilityData weapon in weaponArray)
+	{
+		if(weapon.custom)
+		{
+			string weaponName = weapon.weaponName
+			string displayName = weapon.displayName
+			if(displayName == "")
+				displayName = GetWeaponInfoFileKeyField_GlobalString(weaponName, "printname")
+			string description = weapon.description
+			string shortDesc = weapon.description
+			if(description == "")
+			{
+				shortDesc = GetWeaponInfoFileKeyField_GlobalString(weaponName, "description")
+				description = GetWeaponInfoFileKeyField_GlobalString(weaponName, "longdesc")
+			}
+			asset image = weapon.image
+			if(image == $"ui/temp")
+				image = GetWeaponInfoFileKeyFieldAsset_Global(weaponName, "menu_icon")
+			
+			CreateGenericItem(999, weaponTypes[index], weapon.weaponName, displayName, shortDesc, description, image, 0, false)
+		}
+	}
+	//if(titan.Mid.custom)
+	//{
+	//	string weaponName = titan.Mid.weaponName
+	//	string displayName = titan.Mid.displayName
+	//	if(displayName == "")
+	//		displayName = GetWeaponInfoFileKeyField_GlobalString(weaponName, "printname")
+	//	string description = titan.Mid.description
+	//	if(description == "")
+	//		description = GetWeaponInfoFileKeyField_GlobalString(weaponName, "description")
+	//	asset image = titan.Mid.image
+	//	if(image == $"ui/temp")
+	//		image = GetWeaponInfoFileKeyFieldAsset_Global(weaponName, "menu_icon")
+	//	
+	//	CreateGenericItem(999, eItemTypes.TITAN_ANTIRODEO, titan.Mid.weaponName, titan.Mid.displayName,titan.Mid.description, titan.Mid.description, titan.Mid.image, 0, false)
+	//}
+	//if(titan.Primary.custom)
+	//{
+	//	string weaponName = titan.Mid.weaponName
+	//	string displayName = titan.Mid.displayName
+	//	if(displayName == "")
+	//		displayName = GetWeaponInfoFileKeyField_GlobalString(weaponName, "printname")
+	//	string description = titan.Mid.description
+	//	string shortDesc = titan.Mid.description
+	//	if(description == "")
+	//	{
+	//		shortDesc = GetWeaponInfoFileKeyField_GlobalString(weaponName, "description")
+	//		description = GetWeaponInfoFileKeyField_GlobalString(weaponName, "longdesc")
+	//	}
+	//	asset image = titan.Mid.image
+	//	if(image == $"ui/temp")
+	//		image = GetWeaponInfoFileKeyFieldAsset_Global(weaponName, "menu_icon")
+	//	CreateGenericItem(999, eItemTypes.TITAN_PRIMARY, weaponName, displayName, shortDesc,description , image, 0, false)
+	//}
+	//if(titan.Core.custom)
+	//	CreateGenericItem(999, eItemTypes.TITAN_CORE_ABILITY, titan.Core.weaponName, titan.Core.displayName, titan.Core.description,titan.Core.description , titan.Core.image , 0, false)
+	//if(titan.Right.custom)
+	//	CreateGenericItem(999, eItemTypes.TITAN_ORDNANCE, titan.Right.weaponName, titan.Right.displayName, titan.Right.description, titan.Right.description, titan.Right.image, 0, false)
+	//if(titan.Left.custom)
+	//	CreateGenericItem(999, eItemTypes.TITAN_SPECIAL, titan.Left.weaponName, titan.Left.displayName, titan.Left.description, titan.Left.description, titan.Left.image, 0, false)
 
 	/*
 			  _       _ _                     
@@ -1146,8 +1198,8 @@ void function RegisterModdedTitanItemsSimple( ModdedTitanData titan )
 		InitUnlock( passive.Name, titan.Name, eUnlockType.FD_UNLOCK_POINTS, index+1 )
 		//print(index + passive.Name + titan.Name)
 		//upgradesInOrder.append(GetItemDisplayData(GetItemData(pasive.Name)))
-		//if(passive.customIcon)
-		//	ModdedTitanPassiveHasAsset[titan.Name]["passive2"] <- true
+		if(passive.customIcon)
+			ModdedTitanPassiveHasAsset[titan.Name]["FDUpgrade"] <- true
 	}
 	array<ModdedPassiveData> passivesExtraData
 	foreach(string name, CustomPersistentVar passives in titan.ValidationOverrides)

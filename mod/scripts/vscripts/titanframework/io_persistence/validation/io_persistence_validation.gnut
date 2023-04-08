@@ -173,6 +173,8 @@ bool function ValidPilotLoadoutValue(string name, string property)
 {
 	if(!IsValidPilotLoadoutProperty(property))
 		return false
+	if(!ItemDefined(name))
+		return false
 	int itemType = GetItemType(name)
 	return itemType == GetItemTypeFromPilotLoadoutProperty(property)
 }

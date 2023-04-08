@@ -96,7 +96,7 @@ var function setupPassiveButtonIconForPassive(var button, ItemDisplayData passiv
     bool modded = ModdedTitanPassiveHasCustomAssets(parentRef, itemSlot)
     int itemType = passive.itemType
     string itemRef = passive.ref
-    asset image = GetImage( itemType, itemRef )
+    //asset image = GetImage( itemType, itemRef )
     var passiveImage 
     var passiveButton
     if(modded)

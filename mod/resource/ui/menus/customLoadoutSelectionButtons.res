@@ -10,15 +10,17 @@ resource/ui/menus/customLoadoutSelectionButtons.res
         tall                    250
         xpos                    100
         ypos                    150
-        pin_to_sibling			ButtonRowAnchor
-        pin_corner_to_sibling	TOP_LEFT
-        pin_to_sibling_corner	BOTTOM_LEFT
         navUp					Button6
         navLeft                 ButtonLast
         navRight                Button1
         navDown					Button3
         classname               CustomTitanLoadoutButton
         visible					0
+
+        pin_to_sibling          LoadoutButtons
+        pin_corner_to_sibling   TOP_LEFT
+        pin_to_sibling_corner   TOP_LEFT
+
         //tabPosition             0
     }
     Button0Info

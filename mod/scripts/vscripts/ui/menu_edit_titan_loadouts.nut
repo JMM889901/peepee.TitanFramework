@@ -169,18 +169,25 @@ void function UpdateFDPanel( var panel, int index, bool compactMode = true )
 	}
 
 	array<ItemDisplayData> titanUpgrades = FD_GetUpgradesForTitanClass( loadout.titanClass )
+	array<var> upgradeButtons 
 	foreach ( index, item in titanUpgrades )//TODO FD ICONS ARE HERE DIPSHIT
 	{
 		var button = Hud_GetChild( panel, "BtnSub" + index )
-		var upgradeRui = Hud_GetRui( button )
-		RuiSetImage( upgradeRui, "buttonImage", item.image )
-		Hud_SetLocked( button, IsSubItemLocked( player, item.ref, item.parentRef ) )
+		//var upgradeRui = Hud_GetRui( button )
+		//RuiSetImage( upgradeRui, "buttonImage", item.image )
+		//Hud_SetLocked( button, IsSubItemLocked( player, item.ref, item.parentRef ) )
 		Hud_SetEnabled( button, !compactMode )
 
-		if ( IsSubItemLocked( player, item.ref, item.parentRef ) )
-			RuiSetImage( upgradeRui, "buttonImage", expect asset( item.i.lockedImage ) )
-		else
-			RuiSetImage( upgradeRui, "buttonImage", item.image )
+		//if ( IsSubItemLocked( player, item.ref, item.parentRef ) )
+		//	RuiSetImage( upgradeRui, "buttonImage", expect asset( item.i.lockedImage ) )
+		//else
+			upgradeButtons.append(setupPassiveButtonIconForPassive( button, item, loadout.titanClass, "FDUpgrade" ) )
+	}
+	SetNavLeftRight( upgradeButtons )
+	for(int i = index; i < 7; i++)
+	{
+		var button = Hud_GetChild( panel, "BtnSub" + i )
+		Hud_SetEnabled( button, false )
 	}
 
 	RuiSetBool( rui, "compactMode", compactMode )

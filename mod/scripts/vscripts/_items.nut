@@ -475,8 +475,8 @@ global struct ModdedTitanData{
 	string DisplayName
 	string Name
 	string Tag //Only used for titan groups
-	string sourceMod = "titanFramework"
-	string sourceModVersion = FRAMEWORK_VERSION
+	string sourceMod = "titanFramework"//Optional
+	string sourceModVersion = FRAMEWORK_VERSION//Optional
 	string passiveDisplayNameOverride = "#TITAN_KIT_DEFAULT"
 	string titanReadyMessageOverride = "#TITAN_READY_DEFAULT"
 
@@ -494,6 +494,7 @@ global struct ModdedTitanData{
 
 	bool startsAsPrime = false
 
+	string fdRole = ""//"" defaults to base titan role
 	string Description
 	int dashStat = 2
 	int healthStat = 2
@@ -532,8 +533,8 @@ global struct ModdedTitanData{
 	//DO NOT, I REPEAT: DO NOT. MOVE THE ICONS ROOT pretty please :), i dont move them back and i dont want to have to do that
 	//You can move the icons themselves however, probably
 	//Wow this is one long comment huh
-	bool functionref(table) FullValidationOverride
-
+	bool functionref(table) FullValidationOverride//Unimplemented, used to create a fully custom validation function if your titan is too complex for frameworks indiviudal item validation to handle
+	//Potentially useful for contextual passives, such as passives that are only allowed when other passives are equipped
 }
 //Framework modded pilot item structs
 global struct moddedWeaponAttachmentMod
@@ -5155,7 +5156,7 @@ string function GetStatUnlockReq( string ref, string parentRef = "" )
 asset function GetItemImage( string ref )
 {
 	if( IsRefValid( ref ) == false )
-		return $"ui/temp"
+		return $"ui/menu/common/dialog_error"
 	return file.itemData[ref].image
 }
 

@@ -4,6 +4,8 @@ global function ServerCallback_OpenTeamTitanMenu
 global function ServerCallback_CloseTeamTitanMenu
 global function ServerCallback_UpdateTeamTitanMenuTime
 global function ServerCallback_RegisterTeamTitanMenuButtons
+global function FrameworkLTSCallback_TitanButton_OnClick
+global function FrameworkLTSCallback_TitanButton_OnFocused
 global function TTSUpdateDoubleXP
 global function TTSUpdateDoubleXPStatus
 global function TTSMenuModeFD
@@ -78,11 +80,16 @@ void function InitTeamTitanSelectMenu()
 		Hud_Show(button)
 		Hud_AddEventHandler( button, UIE_CLICK, TitanButton_OnClick )
 		Hud_AddEventHandler( button, UIE_GET_FOCUS, TitanButton_OnFocused )
+		Hud_SetNavDown( button, Hud_GetChild(file.menu, "CustomTitanButton") )
 	}
-
-	for ( int i=0; i<7; i++ )
+	var custom = Hud_GetChild( file.menu, "CustomTitanButton" )
+	Hud_SetNavUp( custom, file.titanButtons[0] )
+	Hud_SetPos( custom, (bgWidth*-0.5) + (Hud_GetWidth( custom )/2), Hud_GetY( custom ) )
+	Hud_AddEventHandler( custom, UIE_CLICK, CustomTitanButton_OnClick )
+	//for ( int i=0; i<7; i++ )
+	foreach( var button in GetElementsByClassname(file.menu, "FDPanelButtonClass") )
 	{
-		var button = Hud_GetChild( file.menu, "BtnSub" + i )
+		//var button = Hud_GetChild( file.menu, "BtnSub" + i )
 
 		Hud_AddEventHandler( button, UIE_LOSE_FOCUS, TitanUpgradeButton_OnLoseFocus )
 		Hud_AddEventHandler( button, UIE_GET_FOCUS, TitanUpgradeButton_OnFocused )
@@ -105,6 +112,10 @@ void function InitTeamTitanSelectMenu()
 	AddMenuFooterOption( file.menu, BUTTON_B, "#B_BUTTON_BACK", "#BACK" )
 	AddMenuFooterOption( file.menu, BUTTON_X, "#MENU_X_BUTTON_EDIT_TITAN", "#MENU_EDIT_TITAN", EditTitanButton_OnClick, TeamTitanSelect_IsReady )
 	AddMenuFooterOption( file.menu, BUTTON_Y, "#MENU_Y_BUTTON_EDIT_PILOT", "#MENU_EDIT_PILOT", EditPilotButton_OnClick, CoverIsOff )
+}
+void function CustomTitanButton_OnClick(var button)
+{
+	OpenSubmenu( GetMenu( "SelectCustomLoadoutsSubMenu" ) )
 }
 
 void function TTSUpdateDoubleXP( int count, bool avialable, float status )
@@ -343,21 +354,18 @@ void function OnTeamTitanSelectMenu_Open()
 
 	TitanLoadoutDef loadout = GetCachedTitanLoadout( uiGlobal.titanSpawnLoadoutIndex )
 
+	file.titanUpgradeButtons = []
 	for ( int i=0; i<7; i++ )
 	{
 		var button = Hud_GetChild( file.menu, "BtnSub"+i )
 		file.titanUpgradeButtons.append( button )
 
-		if ( file.menuMode == eTTSMenuMode.FD )
-		{
-			Hud_Show( button )
-		}
-		else
+		if ( file.menuMode != eTTSMenuMode.FD )
 		{
 			Hud_Hide( button )
 		}
 	}
-	SetNavLeftRight( file.titanUpgradeButtons, true )
+
 
 	SetBlurEnabled( false )
 	var title = Hud_GetChild( file.menu, "MenuTitle" )
@@ -371,7 +379,11 @@ void function OnTeamTitanSelectMenu_Open()
 		UI_SetPresentationType( ePresentationType.TITAN_CENTER )
 
 
-	RunClientScript( "TTS_UpdateLocalPlayerTitan", loadout.setFile, loadout.primary, loadout.passive1, loadout.passive2 )
+	if(GetModdedTitanClasses().contains(loadout.name) )
+		RunClientScript( "TTS_UpdateLocalPlayerTitan", loadout.name, loadout.primary, loadout.passive1, loadout.passive2, true )
+	else
+		RunClientScript( "TTS_UpdateLocalPlayerTitan", loadout.setFile, loadout.primary, loadout.passive1, loadout.passive2 )
+
 }
 
 void function EnableDoubleXP( var button )
@@ -440,14 +452,35 @@ void function TitanButton_OnClick( var button )
 	ClientCommand( "RequestTitanLoadout " + uiGlobal.titanSpawnLoadoutIndex )
 	BeginEditMode( button )
 }
+void function FrameworkLTSCallback_TitanButton_OnClick(var button, int id)
+{
+	if ( file.isReady )
+	{
+		BeginSelectionMode()
+		return
+	}
 
+	uiGlobal.titanSpawnLoadoutIndex = id
+	Signal( uiGlobal.signalDummy, "Delayed_RequestTitanLoadout" )
+	if( uiGlobal.titanSpawnLoadoutIndex < FRAMEWORK_TITAN_OFFSET )
+		ClientCommand( "RequestTitanLoadout " + uiGlobal.titanSpawnLoadoutIndex )//Setting for framework loadouts is done earlier
+	BeginEditMode( button )
+}
+void function FrameworkLTSCallback_TitanButton_OnFocused(var button, int loadoutIndex, TitanLoadoutDef loadout)
+{
+	TitanButton_OnFocused_Internal(button, loadoutIndex, loadout)
+}
 void function TitanButton_OnFocused( var button )
 {
 	int scriptID = int( Hud_GetScriptID( button ) )
+	TitanLoadoutDef loadout = GetCachedTitanLoadout( scriptID )
+	TitanButton_OnFocused_Internal(button, scriptID, loadout)
 
+}
+void function TitanButton_OnFocused_Internal(var button, int scriptID, TitanLoadoutDef loadout)
+{
 	var rui = Hud_GetRui( Hud_GetChild( file.menu, "TitanName" ) )
 
-	TitanLoadoutDef loadout = GetCachedTitanLoadout( scriptID )
 
 	//print(GetTitanLoadoutName( loadout ))
 	RuiSetString( rui, "titanName", GetTitanLoadoutName( loadout ) )
@@ -458,14 +491,23 @@ void function TitanButton_OnFocused( var button )
 
 	var dataTable = GetDataTable( $"datatable/titan_properties.rpak" )
 	int row
+	string role
 	if(GetModdedTitanClasses().contains(loadout.titanClass))
-		row = GetDataTableRowMatchingStringValue( dataTable, GetDataTableColumnByName( dataTable, "titanRef" ), GetModdedTitanClassForMods(loadout.titanClass) )
+	{
+		role = GetModdedTitanData(loadout.titanClass).fdRole 
+		if(role == "")
+		{
+			row = GetDataTableRowMatchingStringValue( dataTable, GetDataTableColumnByName( dataTable, "titanRef" ), GetModdedTitanClassForMods(loadout.titanClass) )
+			role = GetDataTableString( dataTable, row, GetDataTableColumnByName( dataTable, "fdRole" ) )
+		}
+	}
 	else
+	{
 		row = GetDataTableRowMatchingStringValue( dataTable, GetDataTableColumnByName( dataTable, "titanRef" ), loadout.titanClass )
-	string role = GetDataTableString( dataTable, row, GetDataTableColumnByName( dataTable, "fdRole" ) )
+		role = GetDataTableString( dataTable, row, GetDataTableColumnByName( dataTable, "fdRole" ) )
+	}
 	int titanLevel = FD_TitanGetLevelForXP( loadout.titanClass, FD_TitanGetXP( GetUIPlayer(), loadout.titanClass ) )
 	array<ItemDisplayData> titanUpgrades = FD_GetUpgradesForTitanClass( loadout.titanClass )
-
 	if ( file.menuMode == eTTSMenuMode.FD )
 	{
 		RuiSetString( rui, "titanLevelString", Localize( "#FD_TITAN_LEVEL", titanLevel ) )
@@ -477,20 +519,27 @@ void function TitanButton_OnFocused( var button )
 		}
 		foreach ( index, item in titanUpgrades )
 		{
+			print(item.image + " " + index)
 			var button = file.titanUpgradeButtons[index]
-			var upgradeRui = Hud_GetRui( button )
-
+			//var upgradeRui = Hud_GetRui( button )
 			bool locked = IsSubItemLocked( GetUIPlayer(), item.ref, item.parentRef )
 			//print(item.image + " " + index)
+			//Hud_Show(button)
+			//if ( locked )
+			//	RuiSetImage( upgradeRui, "buttonImage", expect asset( item.i.lockedImage ) )
+			//else
+			//	RuiSetImage( upgradeRui, "buttonImage", item.image )
 			Hud_Show(button)
-			if ( locked )
-				RuiSetImage( upgradeRui, "buttonImage", expect asset( item.i.lockedImage ) )
-			else
-				RuiSetImage( upgradeRui, "buttonImage", item.image )
-
-			Hud_SetLocked( button, locked )
+			var newButton = setupPassiveButtonIconForPassive( button, item, loadout.name, "FDUpgrade" ) 
+			Hud_SetLocked( newButton, locked )
 			i++
-		}		
+		}
+		for(; i < file.titanUpgradeButtons.len(); i++)
+		{
+			print("Hiding " + i)
+			Hud_Hide(file.titanUpgradeButtons[i])
+		}
+
 	}
 
 	if ( !Hud_IsLocked( button ) )
@@ -568,7 +617,10 @@ void function Delayed_RequestTitanLoadout( int index )
 	Signal( uiGlobal.signalDummy, "Delayed_RequestTitanLoadout" )
 	EndSignal( uiGlobal.signalDummy, "Delayed_RequestTitanLoadout" )
 	wait 0.5
-	ClientCommand( "RequestTitanLoadout " + uiGlobal.titanSpawnLoadoutIndex )
+	if( uiGlobal.titanSpawnLoadoutIndex < FRAMEWORK_TITAN_OFFSET )
+		ClientCommand( "RequestTitanLoadout " + uiGlobal.titanSpawnLoadoutIndex )
+	else
+		ClientCommand( "titanFrameworkSelectLoadout " + GetModdedLoadoutNameFromIndex( index, "titan") )
 }
 
 void function TitanUpgradeButton_OnFocused( var button )
@@ -576,7 +628,7 @@ void function TitanUpgradeButton_OnFocused( var button )
 	if ( file.menuMode == eTTSMenuMode.DEFAULT )
 		return
 
-	int scriptID = int( Hud_GetScriptID( button ) )
+	int scriptID = int( Hud_GetScriptID( Hud_GetParent( button ) ) )
 	TitanLoadoutDef loadout = GetCachedTitanLoadout( uiGlobal.titanSpawnLoadoutIndex )
 	array<ItemDisplayData> titanUpgrades = FD_GetUpgradesForTitanClass( loadout.titanClass )
 
@@ -612,7 +664,7 @@ void function BeginEditMode( var button )
 	{
 		Hud_Hide( b )
 	}
-
+	Hud_Hide(Hud_GetChild( file.menu, "CustomTitanButton" ))
 	//Hud_Show( file.editButton )
 	//Hud_SetFocused( file.editButton )
 	Hud_SetFocused( file.titanUpgradeButtons[0] )
@@ -662,6 +714,7 @@ void function BeginSelectionMode()
 			Hud_SetFocused( b )
 		}
 	}
+	Hud_Show(Hud_GetChild( file.menu, "CustomTitanButton" ))
 
 	Hud_Hide( Hud_GetChild( file.menu, "UpgradeName" ) )
 

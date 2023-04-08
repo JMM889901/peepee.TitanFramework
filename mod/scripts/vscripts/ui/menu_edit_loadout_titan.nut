@@ -241,13 +241,15 @@ void function UpdateTitanCosmeticButtons()
 {
 	TitanLoadoutDef loadout = GetCachedTitanLoadout( uiGlobal.editingLoadoutIndex )
 
+	bool titanDoesExist = GetModdedTitanClasses().contains( loadout.titanClass ) || IsBaseTitan( loadout.titanClass )
+
 	bool isLoadoutPrime = IsTitanLoadoutPrime( loadout )
 
 	asset titanCamoImage
 	int camoIndex = GetCachedTitanLoadoutCamoIndex( uiGlobal.editingLoadoutIndex ) //Needs to account for prime/not prime status
 	int skinIndex = GetCachedTitanLoadoutSkinIndex( uiGlobal.editingLoadoutIndex ) //Needs to account for prime/not prime status
 	int decalIndex = GetCachedTitanLoadoutDecalIndex( uiGlobal.editingLoadoutIndex ) //Needs to account for prime/not prime status
-	if ( camoIndex == 0 && skinIndex == 0 )
+	if (( camoIndex == 0 && skinIndex == 0 ) || !titanDoesExist)
 	{
 		titanCamoImage = $"rui/menu/common/appearance_button_swatch"
 	}
@@ -284,7 +286,7 @@ void function UpdateTitanCosmeticButtons()
 
 	asset noseArtImage
 	asset buttonImage
-	if ( decalIndex == 0 )
+	if ( decalIndex == 0 || !titanDoesExist )
 	{
 		noseArtImage = $"rui/menu/common/appearance_button_swatch"
 		buttonImage = $"rui/menu/common/noseart_appearance_button"

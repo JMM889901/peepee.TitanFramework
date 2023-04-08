@@ -77,7 +77,7 @@ bool function setFrameworkTitanLoadoutFromClass( entity player, array<string> ar
             }
         }
         
-    }    //Major todo, make this actually use titandata instead of default style loadout def, so extra values are supported
+    }    //Major todo, make this actually use titandata instead of loadout def, so extra values are supported
 	else if (IsBaseTitan(titanClass))
 		loadout = createClientFrameworkLoadoutFromLoadoutDef( GetBaseTitanByClassNoPersist(titanClass))
 	else
@@ -254,6 +254,7 @@ bool function registerNewPilotLoadoutFromClient(entity player, array<string> arg
     frameworkPilotLoadoutOverrides loadout
     for( int i = 2; i < args.len(); i+= 2 )
     {
+        if( ValidPilotLoadoutValue(args[i+1], args[i]) )
         loadout.loadout[args[i]] <- args[i+1]
     }
     if( !(player in frameworkPlayerLoadouts.playerPilotLoadoutOverrides) )
