@@ -667,6 +667,7 @@ void function GivePilotLoadout( entity player, PilotLoadoutDef loadout )
 	primaryMods.extend( loadout.primaryMods )
 	primaryMods.removebyvalue( "" )
 	primaryMods.removebyvalue( "null" )
+
 	foreach( string mod in primaryMods)
 	{
 		print( "primary mod: " + mod)

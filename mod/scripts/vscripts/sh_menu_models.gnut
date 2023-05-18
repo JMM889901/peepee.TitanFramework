@@ -1732,9 +1732,10 @@
 		file.menuPilot.weapon.SetSkin( WEAPON_SKIN_INDEX_DEFAULT ) // Lame that we need this, but this avoids invalid skin errors when the model changes and the currently shown skin index doesn't exist for the new model
 		file.menuPilot.weapon.SetModel( weaponModel )
 
-		bool isPreviewingWeaponNotMatchingCurrent = clGlobal.previewMenuPilotModels.weaponModel != $"" && clGlobal.previewMenuPilotModels.weaponModel != clGlobal.currentMenuPilotModels.weaponModel
+		bool isPreviewingWeaponNotMatchingCurrent = clGlobal.previewMenuPilotModels.weaponModel != $"" && clGlobal.previewMenuPilotModels.weapon != clGlobal.currentMenuPilotModels.weapon
 
 		array<string> mods = clGlobal.previewMenuPilotModels.mods
+		print("mods.len(): " + mods.len())
 		if ( mods.len() == 0 )
 		{
 			// Don't show mods if previewing a weapon that isn't already equipped

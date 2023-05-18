@@ -86,6 +86,8 @@ void function InitTeamTitanSelectMenu()
 	Hud_SetNavUp( custom, file.titanButtons[0] )
 	Hud_SetPos( custom, (bgWidth*-0.5) + (Hud_GetWidth( custom )/2), Hud_GetY( custom ) )
 	Hud_AddEventHandler( custom, UIE_CLICK, CustomTitanButton_OnClick )
+	var ClassSelectRui = Hud_GetRui(custom)
+	RuiSetString( ClassSelectRui, "buttonText", "#MODDED_LOADOUTS_KEY" )
 	//for ( int i=0; i<7; i++ )
 	foreach( var button in GetElementsByClassname(file.menu, "FDPanelButtonClass") )
 	{

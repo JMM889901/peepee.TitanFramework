@@ -254,8 +254,9 @@ bool function registerNewPilotLoadoutFromClient(entity player, array<string> arg
     frameworkPilotLoadoutOverrides loadout
     for( int i = 2; i < args.len(); i+= 2 )
     {
+        print("Checking " + args[i] + " " + args[i+1])
         if( ValidPilotLoadoutValue(args[i+1], args[i]) )
-        loadout.loadout[args[i]] <- args[i+1]
+            loadout.loadout[args[i]] <- args[i+1]
     }
     if( !(player in frameworkPlayerLoadouts.playerPilotLoadoutOverrides) )
     {
@@ -274,6 +275,7 @@ void function ApplyPilotLoadoutOverrides(entity player, int index, PilotLoadoutD
         {
             //print("Overriding loadout value " + key + " with value " + value)
             //ResolveInvalidLoadoutChildValues( player, "pilot", index, key, value )
+            print("Overriding loadout value " + key + " with value " + value)
             if(value == "none")
                 value = ""
             SetPilotLoadoutValue( loadout, key, value )
