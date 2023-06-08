@@ -506,6 +506,8 @@ global struct ModdedTitanData{
 	int altChassisType = frameworkAltChassisMethod.PRIME_TITAN
 	array<FrameworkChassisStruct> altChassisArray //Only used with frameworkAltChassisMethod.ALT_TITAN
 	string BaseName
+	asset modelBaseOverride // Not used with frameworkAltChassisMethod.ALT_TITAN
+	asset modelPrimeOverride // Only used with frameworkAltChassisMethod.PRIME_TITAN
 	
 	asset icon = $"ui/temp"
 	asset ltsIcon = $"ui/temp"//TODO: make this a thing

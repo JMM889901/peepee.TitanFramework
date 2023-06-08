@@ -15,7 +15,7 @@ void function InitEditTitanClassMenu()
 	var menu = GetMenu( "EditTitanClassMenu" )
 	var dataTable = GetDataTable( $"datatable/default_titan_loadouts.rpak" )
 	AddMenuEventHandler( menu, eUIEvent.MENU_OPEN, OnClassSelectMenu_Open )
-	for ( int i = 0; i < 14; i++ )
+	for ( int i = 0; i < 21; i++ )
 	{
 		var activateButton = Hud_GetChild( menu, "Button" + i )
 		activateButton.s.rowIndex <- i
@@ -172,7 +172,7 @@ void function UpdateClassSelectButtons(var menu, TitanCollectionOrEntryStruct cu
 		Hud_SetEnabled( activateButton, true )
 		i++
 	}
-	for ( ; i < 14; i++)
+	for ( ; i < 21; i++)
 	{
 		var activateButton = Hud_GetChild( menu, "Button" + i )
 		activateButton.s.titanClass <- ""

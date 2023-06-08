@@ -501,6 +501,18 @@ function CommonNPCTitanOnSpawned( entity npc )
 				}
 			}
 		}
+		else
+		{
+			if(npc.ai.titanSpawnLoadout.isPrime == "titan_is_prime")//Because isprime is a string apparently
+			{
+				if(data.modelPrimeOverride != $"")
+					npc.SetModel(data.modelPrimeOverride)
+			}
+			else if(data.modelBaseOverride != $"")
+			{
+				npc.SetModel(data.modelBaseOverride)
+			}
+		}
 	}
 //	Assert( npc.GetModelName() == modelName )
 

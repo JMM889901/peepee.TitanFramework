@@ -1560,15 +1560,32 @@
 		if(!titanDoesExist || weapon == "" || !ItemDefined(weapon))
 			weapon = "mp_titanweapon_xo16_shorty"
 		asset chassisModel = GetSetFileModel( setFile )
-		if(isModded && GetModdedTitanData(cachedLoadout.titanClass).altChassisType == frameworkAltChassisMethod.ALT_TITAN)
+		
+		if(isModded)
 		{
-			foreach(FrameworkChassisStruct altChassis in GetModdedTitanData(cachedLoadout.titanClass).altChassisArray)
+			ModdedTitanData data = GetModdedTitanData(cachedLoadout.titanClass)
+			if(data.altChassisType == frameworkAltChassisMethod.ALT_TITAN)
 			{
-				if(altChassis.setFile == setFile)
+				foreach(FrameworkChassisStruct altChassis in data.altChassisArray)
 				{
-					if(altChassis.modelOverride != $"")
-						chassisModel = altChassis.modelOverride
-					break
+					if(altChassis.setFile == setFile)
+					{
+						if(altChassis.modelOverride != $"")
+							chassisModel = altChassis.modelOverride
+						break
+					}
+				}
+			}
+			else
+			{
+				if(cachedLoadout.isPrime == "titan_is_prime")
+				{
+					if(data.modelPrimeOverride != $"")
+						chassisModel = data.modelPrimeOverride
+				}
+				else if(data.modelBaseOverride != $"")
+				{
+					chassisModel = data.modelBaseOverride
 				}
 			}
 		}

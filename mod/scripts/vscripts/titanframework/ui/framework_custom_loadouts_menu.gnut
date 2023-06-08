@@ -177,7 +177,7 @@ void function updateFrameworkLoadoutsMenu(var menu)
             Hud_SetVisible(loadoutButton, true)
             Hud_SetVisible(loadoutInfo, true)
         }
-        else if(UILoadoutIndex == UILoadouts.len() && Hud_GetHudName(menu) == "EditCustomTitanLoadoutsMenu")
+        else if(UILoadoutIndex == UILoadouts.len() && Hud_GetHudName(menu) == "menu_EditCustomTitanLoadoutsMenu")
         {
             loadoutButton.s.loadoutID <- "CreateNewTitanLoadout"
             Hud_SetVisible(loadoutButton, true)
@@ -230,6 +230,8 @@ void function UpdateTitanButtonInfo(var menu, frameworkPersistentTitanLoadout lo
         RuiSetImage(rui, "basicImage", $"ui/menu/common/dialog_error")
     }
 
+    Hud_Show(Hud_GetChild(menu, "TitanIcon"))
+    Hud_Show(Hud_GetChild(menu, "titanName"))
     Hud_SetText(Hud_GetChild(menu, "titanName"), Localize(loadout.titanName))
     Hud_SetText(Hud_GetChild(menu, "loadoutName"), Localize(loadout.loadoutName))//Loadout names shouldnt be localized but just incase
     if(GetModdedTitanPreviewController(loadout.titanName) != null)

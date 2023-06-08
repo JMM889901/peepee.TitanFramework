@@ -1046,7 +1046,9 @@ void function RegisterModdedTitanItemsSimple( ModdedTitanData titan )
 			string weaponName = weapon.weaponName
 			string displayName = weapon.displayName
 			if(displayName == "")
-				displayName = GetWeaponInfoFileKeyField_GlobalString(weaponName, "printname")
+			{
+				displayName = GetWeaponInfoFileKeyField_GlobalString(weaponName, "printname") //This crashes if fake weapons are passed without a display name, just dont do that :)
+			}
 			string description = weapon.description
 			string shortDesc = weapon.description
 			if(description == "")
@@ -1056,7 +1058,14 @@ void function RegisterModdedTitanItemsSimple( ModdedTitanData titan )
 			}
 			asset image = weapon.image
 			if(image == $"ui/temp")
-				image = GetWeaponInfoFileKeyFieldAsset_Global(weaponName, "menu_icon")
+				try
+				{
+					image = GetWeaponInfoFileKeyFieldAsset_Global(weaponName, "menu_icon")
+				}
+				catch (ex)
+				{
+					print("Weapon not precached, if this is a fake weapon ignore this error")
+				}
 			
 			CreateGenericItem(999, weaponTypes[index], weapon.weaponName, displayName, shortDesc, description, image, 0, false)
 		}

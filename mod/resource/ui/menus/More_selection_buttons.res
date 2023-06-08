@@ -249,4 +249,79 @@ resource/ui/menus/more_selection_buttons.res
         visible					0
         //tabPosition             9
     }
+    button17
+    {
+        ControlName				RuiButton
+        InheritProperties		RuiLoadoutSelectionButton
+        ypos                    8
+        xpos                    0
+        scriptID				17
+        pin_to_sibling			Button0
+        pin_corner_to_sibling	TOP_LEFT
+        pin_to_sibling_corner	TOP_RIGHT
+        navUp					Button16
+        navDown					Button18
+        visible					0
+        //tabPosition             9
+    }
+    button18
+    {
+        ControlName				RuiButton
+        InheritProperties		RuiLoadoutSelectionButton
+        ypos                    8
+        xpos                    0
+        scriptID				18
+        pin_to_sibling			Button17
+        pin_corner_to_sibling	TOP_LEFT
+        pin_to_sibling_corner	BOTTOM_LEFT
+        navUp					Button17
+        navDown					Button19
+        visible					0
+        //tabPosition             9
+    }
+    button19
+    {
+        ControlName				RuiButton
+        InheritProperties		RuiLoadoutSelectionButton
+        ypos                    8
+        xpos                    0
+        scriptID				19
+        pin_to_sibling			Button18
+        pin_corner_to_sibling	TOP_LEFT
+        pin_to_sibling_corner	BOTTOM_LEFT
+        navUp					Button18
+        navDown					Button20
+        visible					0
+        //tabPosition             9
+    }
+    button20
+    {
+        ControlName				RuiButton
+        InheritProperties		RuiLoadoutSelectionButton
+        ypos                    8
+        xpos                    0
+        scriptID				20
+        pin_to_sibling			Button19
+        pin_corner_to_sibling	TOP_LEFT
+        pin_to_sibling_corner	BOTTOM_LEFT
+        navUp					Button19
+        navDown					Button21
+        visible					0
+        //tabPosition             9
+    }
+    button21
+    {
+        ControlName				RuiButton
+        InheritProperties		RuiLoadoutSelectionButton
+        ypos                    8
+        xpos                    0
+        scriptID				21
+        pin_to_sibling			Button20
+        pin_corner_to_sibling	TOP_LEFT
+        pin_to_sibling_corner	BOTTOM_LEFT
+        navUp					Button20
+        navDown					Button22
+        visible					0
+        //tabPosition             9
+    }
 }

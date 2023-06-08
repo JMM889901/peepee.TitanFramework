@@ -879,7 +879,12 @@ void function DeleteTitanActivate(  )
 	SetEditLoadout( "titan", 0 )
     RunMenuClientFunction( "SetEditingTitanLoadoutIndex", 0 )
 	RunMenuClientFunction( "UpdateTitanModel", 0 )
-	DeleteFrameworkTitanLoadout( fileName )
+	thread deleteTitanDelayed( fileName )
 	CloseActiveMenu()
 	AdvanceMenu( GetMenu( "EditCustomTitanLoadoutsMenu" ) )
+}
+void function deleteTitanDelayed( string fileName )
+{
+	Wait( 0.1 )
+	DeleteFrameworkTitanLoadout( fileName )
 }
