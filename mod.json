@@ -7,6 +7,10 @@
 	
 	"Scripts": [
 		{
+			"Path": "sh_northstar_safe_io.gnut",
+			"RunOn": "CLIENT || UI"
+		},
+		{
 			"Path": "titanframework/io_persistence/io_persistence_util_shared.gnut",
 			"RunOn": "SERVER || CLIENT || UI"
 		},
@@ -22,9 +26,6 @@
 			"Path": "titanframework/io_persistence/client/io_persistence_util.gnut",
 			"RunOn": "UI || CLIENT",
 			"ClientCallback": {
-				"Before": "cl_titanFrameworkPersistenceInit"
-			},
-			"UICallback": {
 				"Before": "cl_titanFrameworkPersistenceInit"
 			}
 		},

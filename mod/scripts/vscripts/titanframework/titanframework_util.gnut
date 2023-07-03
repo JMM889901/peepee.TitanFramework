@@ -48,7 +48,7 @@ global function DevPrintTitanLoadoutPersistentDebug//Guess what, also deprecated
 #if SERVER
 global function debugNullTitanLoadout//Deprecated
 global function SetTitanLoadout//Deprecated
-#endif
+#endif 
 
 
 table<string, TitanLoadoutDef> TitanLoadoutByClass
@@ -1210,10 +1210,13 @@ void function RegisterModdedTitanItemsSimple( ModdedTitanData titan )
 		if(passive.customIcon)
 			ModdedTitanPassiveHasAsset[titan.Name]["FDUpgrade"] <- true
 	}
+
+	//Custom Persistent Vars
+
 	array<ModdedPassiveData> passivesExtraData
 	foreach(string name, CustomPersistentVar passives in titan.ValidationOverrides)
 	{
-		if(passives.passiveItemsMethod == eItemsMethod.NONE)
+		if(passives.passiveItemsMethod == eItemsMethod.NONE)// Assume that this is handled entirely by custom code rather than the items system
 			continue
 		if(passives.passiveItemsMethod == eItemsMethod.CREATE)
 		{
@@ -1275,6 +1278,7 @@ void function RegisterModdedTitanItemsSimple( ModdedTitanData titan )
 															
 															
 	*/
+	//No 
 
 }
 

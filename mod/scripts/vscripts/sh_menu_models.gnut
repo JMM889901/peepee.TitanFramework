@@ -2704,6 +2704,9 @@
 		while ( IsValid( GetViewEntity() ) && GetViewEntity().GetClassName() == "class C_BaseEntity" )
 			WaitFrame()
 
+		while(clientframeworkPersistentTitanLoadouts.filesToLoad.len() || clientframeworkPersistentPilotLoadouts.filesToLoad.len() )
+			WaitFrame() //Hack, really i only need to wait for selected file to load, but this is easier
+
 		if ( file.presentationTypeInitialized && presentationType == file.presentationType )
 			return
 
