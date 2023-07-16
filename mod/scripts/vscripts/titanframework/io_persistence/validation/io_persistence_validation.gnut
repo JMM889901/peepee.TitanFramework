@@ -173,8 +173,14 @@ bool function ValidPilotLoadoutValue(string name, string property)
 {
 	if(!IsValidPilotLoadoutProperty(property))
 		return false
-	if( IsSubItemType(GetItemTypeFromPilotLoadoutProperty(property)) && ( name == "null" || name == "none" ) )
-		return true
+	if( IsSubItemType(GetItemTypeFromPilotLoadoutProperty(property)) )
+	{
+		if( name == "null" || name == "none" )
+			return true
+		if(!ItemDefined(name))
+			return false
+		return GetItemType(name) == GetItemTypeFromPilotLoadoutProperty(property) || GetItemType(name) == eItemTypes.SUB_PILOT_WEAPON_MOD
+	}
 	if(!ItemDefined(name))
 		return false
 	int itemType = GetItemType(name)

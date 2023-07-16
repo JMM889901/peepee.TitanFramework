@@ -3942,27 +3942,18 @@ string function Loadouts_GetSetFileForRequestedClass( entity player )
 	{
 		#if CLIENT
 		if(PlayerHasModdedTitanLoadout())
-			return clientframeworkPersistentTitanLoadouts.loadouts[GetCurrentModdedPersistentTitanLoadoutIndex()].loadout
+			return clone clientframeworkPersistentTitanLoadouts.loadouts[GetCurrentModdedPersistentTitanLoadoutIndex()].loadout
 		#endif
 		#if SERVER
 		if(PlayerHasModdedTitanLoadout(player))
-			return GetPlayerActiveModdedLoadout(player).loadout
+			return clone GetPlayerActiveModdedLoadout(player).loadout
 		#endif
+		if( shouldPrintDevStuff() )
+			print("GetActiveTitanLoadout: Not modded loadout")
 		//TODO, REMOVE OLD FRAMEWORK STUFF
 		TitanLoadoutDef loadout
 		loadout.name 				= string( player.GetPersistentVar( "activeTitanLoadout.name" ) )
-		if(GetModdedTitanClasses().contains(loadout.name))
-		{
-			loadout.titanClass = loadout.name
-			loadout.passive1 			= GetModdedTitanPassiveStringForPersistenceInverted(loadout.name, "passive1", string( player.GetPersistentVar( "activeTitanLoadout.passive1" ) ))
-			loadout.passive2 			= GetModdedTitanPassiveStringForPersistenceInverted(loadout.name, "passive2", string( player.GetPersistentVar( "activeTitanLoadout.passive2" ) ))
-			loadout.passive3 			= GetModdedTitanPassiveStringForPersistenceInverted(loadout.name, "passive3", string( player.GetPersistentVar( "activeTitanLoadout.passive3" ) ))
-			loadout.passive4 			= GetModdedTitanPassiveStringForPersistenceInverted(loadout.name, "passive4", string( player.GetPersistentVar( "activeTitanLoadout.passive4" ) ))
-			loadout.passive5 			= GetModdedTitanPassiveStringForPersistenceInverted(loadout.name, "passive5", string( player.GetPersistentVar( "activeTitanLoadout.passive5" ) ))
-			loadout.passive6 			= GetModdedTitanPassiveStringForPersistenceInverted(loadout.name, "passive6", string( player.GetPersistentVar( "activeTitanLoadout.passive6" ) ))
-		}
-		else
-		{
+
 			loadout.titanClass 			= string( player.GetPersistentVar( "activeTitanLoadout.titanClass" ) )
 			loadout.passive1 			= string( player.GetPersistentVar( "activeTitanLoadout.passive1" ) )
 			loadout.passive2 			= string( player.GetPersistentVar( "activeTitanLoadout.passive2" ) )
@@ -3970,7 +3961,6 @@ string function Loadouts_GetSetFileForRequestedClass( entity player )
 			loadout.passive4 			= string( player.GetPersistentVar( "activeTitanLoadout.passive4" ) )
 			loadout.passive5 			= string( player.GetPersistentVar( "activeTitanLoadout.passive5" ) )
 			loadout.passive6 			= string( player.GetPersistentVar( "activeTitanLoadout.passive6" ) )
-		}
 		loadout.primaryMod 			= string( player.GetPersistentVar( "activeTitanLoadout.primaryMod" ) )
 		loadout.special 			= string( player.GetPersistentVar( "activeTitanLoadout.special" ) )
 		loadout.antirodeo 			= string( player.GetPersistentVar( "activeTitanLoadout.antirodeo" ) )
@@ -3989,8 +3979,7 @@ string function Loadouts_GetSetFileForRequestedClass( entity player )
 		UpdateDerivedTitanLoadoutData( loadout )
 		if(!(GetModdedTitanClasses().contains(loadout.titanClass)))
 			OverwriteLoadoutWithDefaultsForSetFile_ExceptSpecialAndAntiRodeo( loadout, player )
-		else
-			OverwriteModdedTitanLoadoutDefaultEquipment(loadout)
+
 		//int loadoutIndex = GetActiveTitanLoadoutIndex( player )
 
 		//TitanLoadoutDef loadout = GetTitanLoadoutFromPersistentData( player, loadoutIndex )

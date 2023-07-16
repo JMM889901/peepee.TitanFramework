@@ -524,6 +524,8 @@ void function LoadPersistentTitanLoadout(table Table)
 }
 void function LoadPersistentPilotLoadout(table Table)
 {
+    if( shouldPrintDevStuff() )
+        PrintTable(Table)
     array<string> modTypes = ["Mod1", "Mod2", "Mod3", "SkinIndex", "CamoIndex"]
     int index = GetModdedLoadoutNameIndex(expect string(Table["fileName"]))
     if(index >= NUM_PERSISTENT_PILOT_LOADOUTS)
@@ -549,14 +551,11 @@ void function LoadPersistentPilotLoadout(table Table)
             case "weapon3":
                 foreach(string modType in modTypes)
                 {
-                    if((expect string(key) + modType) in loadout.loadout)
-                    {
-                        loadout.loadout[(expect string(key) + modType)] <- expect string(loadoutTable[(expect string(key) + modType)])
-                    }
-                    else
-                    {
-                        loadout.loadout[(expect string(key) + modType)] <- "none"
-                    }
+
+                    if( shouldPrintDevStuff() )
+                        print("Setting " + expect string(key) + modType + " to " + expect string(loadoutTable[(expect string(key) + modType)]))
+                    loadout.loadout[(expect string(key) + modType)] <- expect string(loadoutTable[(expect string(key) + modType)])
+
                 }
             case "primary":
                 if("primaryAttachment" in loadout.loadout)
@@ -627,7 +626,8 @@ void function SetTitanLoadoutFromClass( string titanClass, string fileName, call
         RunUIScript( "SetTitanLoadoutFromClass", titanClass, fileName, true)
         #endif
     }
-
+    if(shouldPrintDevStuff())
+        PrintTitanLoadout(loadout.loadout)
     #if CLIENT
     GetLocalClientPlayer().ClientCommand("setFrameworkTitanLoadoutFromClass " + fileName + " " + titanClass)
     #endif
@@ -910,4 +910,5 @@ void function DescribeNewPilotLoadoutToServer(frameworkPilotLoadoutOverrides loa
         resultstring += key + " " + value + " "
     }
     GetLocalClientPlayer().ClientCommand("FrameworkNewPilotLoadout " + resultstring)
+    print("FrameworkNewPilotLoadout " + resultstring)
 }

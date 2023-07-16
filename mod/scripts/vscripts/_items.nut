@@ -544,6 +544,8 @@ global struct moddedWeaponAttachmentMod
 	string itemName
 	bool baseGame = true
 	string displayName
+	string description
+	asset icon = $"ui/temp"
 	int itemType = 5 //Mod Type, 5 for attachment
 }
 global struct moddedPilotWeaponData

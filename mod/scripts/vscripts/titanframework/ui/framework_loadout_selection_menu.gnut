@@ -87,8 +87,7 @@ void function OnClassSelectButton_Activate(var button)
 //
 	//	ClientCommand( "SetTitanClass "+uiGlobal.editingLoadoutIndex+" default " + (button.s.titanClass) )
 	//}
-	if(shouldPrintDevStuff())
-		PrintTitanLoadout(shGlobal.cachedTitanLoadouts[uiGlobal.editingLoadoutIndex])
+
 	//uiGlobal.editingLoadoutIndex
 }
 void function OnClassSelectMenu_Open()

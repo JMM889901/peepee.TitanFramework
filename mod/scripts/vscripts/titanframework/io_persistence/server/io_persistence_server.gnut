@@ -87,6 +87,11 @@ bool function setFrameworkTitanLoadoutFromClass( entity player, array<string> ar
 	}
     loadout.fileName = fileName
     frameworkPlayerLoadouts.playerLoadouts[player][fileName] <- loadout
+    if(shouldPrintDevStuff())
+    {
+        PrintTitanLoadout(loadout.loadout)
+        PrintTitanLoadout(GetTitanLoadoutForPlayer(player))
+    }
     return true
 }
 bool function setFrameworkTitanLoadoutValue(entity player, array<string> args)
@@ -256,8 +261,11 @@ bool function registerNewPilotLoadoutFromClient(entity player, array<string> arg
     {
         print("Checking " + args[i] + " " + args[i+1])
         if( ValidPilotLoadoutValue(args[i+1], args[i]) )
+        {
+            print("Valid")
             loadout.loadout[args[i]] <- args[i+1]
-    }
+        }
+        }
     if( !(player in frameworkPlayerLoadouts.playerPilotLoadoutOverrides) )
     {
         frameworkPlayerLoadouts.playerPilotLoadoutOverrides[player] <- {}

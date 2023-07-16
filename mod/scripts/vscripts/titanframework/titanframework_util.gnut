@@ -288,7 +288,20 @@ TitanLoadoutDef function GetBaseTitanByClassNoPersist(string titanClass)
 }
 bool function IsBaseTitan(string titanClass)
 {
-	return titanClass in BaseTitanLoadoutByClass
+	if( titanClass in BaseTitanLoadoutByClass )
+		return true
+	switch (titanClass) //This is a hack, not sure why its needed but i think some stuff isnt being loaded in time
+	{
+		case"northstar":
+		case"ion":
+		case"ronin":
+		case"scorch":
+		case"tone":
+		case"legion":
+		case"monarch":
+			return true
+	}
+	return false
 }
 TitanLoadoutDef function GetAllTitanByClassNoPersist(string titanClass)
 {
@@ -1017,8 +1030,18 @@ void function RegisterModdedTitanItemsSimple( ModdedTitanData titan )
 			TitanIcon = titan.coreIconOverride
 	else if (titan.Core.scriptHandled)
 			TitanIcon = Image
-	else
+	else if(titan.Core.image != $"ui/temp")
+	{
+		try{
 			TitanIcon = GetWeaponInfoFileKeyFieldAsset_Global(titan.Core.weaponName, "menu_icon")
+		}
+		catch(a)
+		{
+			TitanIcon = titan.Core.image
+		}
+	}
+	else
+		TitanIcon = titan.Core.image
 
 	array<int> typesarray = [eItemTypes.TITAN_TITANFALL_PASSIVE, eItemTypes.TITAN_GENERAL_PASSIVE, passive2, passive4, passive5, passive6]
 	ItemData titanData = CreateModdedTitanItem(999, eItemTypes.TITAN, titan.Name, titan.Name, titan.Description, titan.Description, Image, 0, false, typesarray,TitanIcon)
@@ -1047,14 +1070,29 @@ void function RegisterModdedTitanItemsSimple( ModdedTitanData titan )
 			string displayName = weapon.displayName
 			if(displayName == "")
 			{
-				displayName = GetWeaponInfoFileKeyField_GlobalString(weaponName, "printname") //This crashes if fake weapons are passed without a display name, just dont do that :)
+				try
+				{
+					displayName = GetWeaponInfoFileKeyField_GlobalString(weaponName, "printname") //This crashes if fake weapons are passed without a display name, just dont do that :)
+				}
+				catch (ex)
+				{
+					print("Weapon not precached, if this is a fake weapon ignore this error")
+				}
 			}
 			string description = weapon.description
 			string shortDesc = weapon.description
 			if(description == "")
 			{
+				try
+				{
 				shortDesc = GetWeaponInfoFileKeyField_GlobalString(weaponName, "description")
 				description = GetWeaponInfoFileKeyField_GlobalString(weaponName, "longdesc")
+				}
+				catch (ex)
+				{
+					print("Weapon not precached, if this is a fake weapon ignore this error")
+				}
+				
 			}
 			asset image = weapon.image
 			if(image == $"ui/temp")

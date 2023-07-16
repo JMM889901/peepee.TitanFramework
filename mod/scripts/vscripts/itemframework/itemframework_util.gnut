@@ -3,11 +3,13 @@ global function registerModdedPersistentWeapon
 global function registerModdedPilotPassive
 global function registerModdedPilotSuit
 global function GetModdedTacticalSuit
+global function registerModdedModAttachment
 //global function registerModdedPersistentItem
 array<moddedPilotWeaponData> moddedPersistentWeaponData
 array<ItemData> moddedPersistentWeaponItems
 array<string> moddedPersistentWeaponRefs
 array<string> moddedPersistentPassiveRefs
+array<string> moddedPersistentWeaponMods
 table<string, string> moddedTacticalSuitRefs
 table<string, string> moddedTatcialSuitSetFiles
 
@@ -23,15 +25,30 @@ void function registerModdedPersistentWeapon(moddedPilotWeaponData data)
         foreach(int index, moddedWeaponAttachmentMod mod in data.attachments)
         {
             
-            if(mod.baseGame)
-            {
-                ItemData existingData = GetItemData(mod.itemName)
-                CreateGenericSubItemData(mod.itemType, data.weaponName, mod.itemName, 0)
-                InitUnlock(mod.itemName, data.weaponName, eUnlockType.WEAPON_LEVEL, index + 1 )
-            }
+            registerModdedModAttachment(data.weaponName, mod, index)
             
         }
     } )
+}
+void function registerModdedModAttachment(string weaponName, moddedWeaponAttachmentMod mod, int index = 1)
+{
+    if(mod.baseGame)
+    {
+        ItemData existingData = GetItemData(mod.itemName)
+        CreateGenericSubItemData(mod.itemType, weaponName, mod.itemName, 0)
+        InitUnlock(mod.itemName, weaponName, eUnlockType.WEAPON_LEVEL, index + 1 )
+    }
+    else
+    {
+        if( !ItemDefined(mod.itemName) )
+        {
+            moddedPersistentWeaponRefs.append(mod.itemName)
+            ItemData item = CreateGenericItem(1000, mod.itemType, mod.itemName, mod.displayName, mod.description, mod.description, mod.icon, 0, false)
+            item.longname = mod.displayName
+        }
+        CreateGenericSubItemData(mod.itemType, weaponName, mod.itemName, 0)
+        InitUnlock(mod.itemName, weaponName, eUnlockType.WEAPON_LEVEL, index + 1 )
+    }
 }
 void function registerModdedPilotPassive(ModdedPassiveData passive)
 {
@@ -58,5 +75,5 @@ string function GetModdedTacticalSuit(string item)
 }
 bool function IsItemModded(string item)
 {
-    return moddedPersistentWeaponRefs.contains(item) || moddedPersistentPassiveRefs.contains(item)
+    return moddedPersistentWeaponRefs.contains(item) || moddedPersistentPassiveRefs.contains(item) || moddedPersistentWeaponMods.contains(item)
 }
