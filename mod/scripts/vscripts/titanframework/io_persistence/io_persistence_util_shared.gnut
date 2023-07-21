@@ -60,6 +60,10 @@ void function UpdateDerivedFrameworkLoadoutValues( frameworkPersistentTitanLoado
     {
         validation = getBaseLoadoutValidationTable()
     }
+    else
+    {
+        return //Typically a modded titan that has been removed or disabled
+    }
     bool canHavePrime 
     if(IsBaseTitan(loadout.titanName) && loadout.titanName != "vanguard")
         canHavePrime = true
