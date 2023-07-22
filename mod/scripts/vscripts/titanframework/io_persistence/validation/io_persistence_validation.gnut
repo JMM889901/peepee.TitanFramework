@@ -251,12 +251,12 @@ void function ValidatePilotTableForWeapons(frameworkPilotLoadoutOverrides loadou
                         string weapon = value
                         attachment = loadout.loadout[key + modType]
                         if(  !ValidPilotLoadoutAttachment(attachment, key+modType, weapon ) )
-                            delete loadout.loadout[key + modType]
+                            loadout.loadout[key+modType] <- "none"
                         mods.append(attachment)
                     }
                     if(!ValidPilotWeaponAttchmentCombination(value, mods) )
                     {
-                        delete loadout.loadout[key+modType] // i could do this once at the end but this way is a bit more seamless
+                        loadout.loadout[key+modType] <- "none" // i could do this once at the end but this way is a bit more seamless
                         mods.remove(mods.len()-1)
                     }
                 }
@@ -266,9 +266,9 @@ void function ValidatePilotTableForWeapons(frameworkPilotLoadoutOverrides loadou
                 string weapon = value
                 attachment = loadout.loadout["primaryAttachment"]
                 if(  !ValidPilotLoadoutAttachment(attachment, "primaryAttachment", weapon ) )
-                    delete loadout.loadout["primaryAttachment"]
+                    loadout.loadout["primaryAttachment"] <- "none"
                 if(!ValidPilotWeaponAttchmentCombination(value, mods, attachment) )
-                    delete loadout.loadout["primaryAttachment"] // i could do this once at the end but this way is a bit more seamless
+                    loadout.loadout["primaryAttachment"] <- "none" 
                 
 
         }
