@@ -526,7 +526,7 @@ void function LoadPersistentPilotLoadout(table Table)
 {
     if( shouldPrintDevStuff() )
         PrintTable(Table)
-    array<string> modTypes = ["Mod1", "Mod2", "Mod3", "SkinIndex", "CamoIndex"]
+    array<string> modTypes = ["Mod1", "Mod2", "Mod3", "SkinIndex", "CamoIndex"]//I love creating a new identical array every time for no reason
     int index = GetModdedLoadoutNameIndex(expect string(Table["fileName"]))
     if(index >= NUM_PERSISTENT_PILOT_LOADOUTS)
     {
@@ -549,8 +549,18 @@ void function LoadPersistentPilotLoadout(table Table)
             case "primary":
             case "secondary":
             case "weapon3":
+                if( !ItemDefined( expect string(value) ) )
+                    continue
                 foreach(string modType in modTypes)
                 {
+                    if( !( expect string(key) + modType in loadoutTable ) )
+                        continue
+                    
+                    if( !ItemDefined( expect string(loadoutTable[(expect string(key) + modType)] ) ) )
+                        continue
+                    
+                    if( !HasSubitem( expect string(value), expect string(loadoutTable[(expect string(key) + modType)]) ) )
+                        continue
 
                     if( shouldPrintDevStuff() )
                         print("Setting " + expect string(key) + modType + " to " + expect string(loadoutTable[(expect string(key) + modType)]))
@@ -558,8 +568,9 @@ void function LoadPersistentPilotLoadout(table Table)
 
                 }
             case "primary":
-                if("primaryAttachment" in loadout.loadout)
+                if("primaryAttachment" in loadout.loadout && "primaryAttachment" in loadoutTable && ItemDefined(expect string(loadoutTable["primaryAttachment"])) && HasSubitem(expect string(value), expect string(loadoutTable["primaryAttachment"])))
                 {
+
                     loadout.loadout["primaryAttachment"] <- expect string(loadoutTable["primaryAttachment"])
                 }
                 else
@@ -571,6 +582,7 @@ void function LoadPersistentPilotLoadout(table Table)
     foreach(string property, string override in loadout.loadout)
     {
         print("Setting " + property + " to " + override)
+        
     }
     clientframeworkPersistentPilotLoadouts.filesToLoad.removebyvalue(expect string(Table["fileName"]))
 

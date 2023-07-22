@@ -169,7 +169,7 @@ bool function IsValidSetFile(string name, string property, TitanLoadoutDef valid
 	}	
 	return false
 }
-bool function ValidPilotLoadoutValue(string name, string property)
+bool function ValidPilotLoadoutValue(string name, string property) //This is strictly a none-ordered check, meaning we cant rely on other values for validation, attachments must be handled in ValidPilotLoadoutAttachment
 {
 	if(!IsValidPilotLoadoutProperty(property))
 		return false
@@ -186,9 +186,97 @@ bool function ValidPilotLoadoutValue(string name, string property)
 	int itemType = GetItemType(name)
 	return itemType == GetItemTypeFromPilotLoadoutProperty(property)
 }
+bool function ValidPilotLoadoutAttachment(string item, string property, string parentRef)
+{//Cant pass loadout because errrrrrrrr stored as table and i dont want or need to
+	if(!IsValidPilotLoadoutProperty(property))
+		return false
+	if( IsSubItemType(GetItemTypeFromPilotLoadoutProperty(property)) )
+	{ //Duplicate checks just in case
+		if( item == "null" || item == "none" )
+			return true
+		if(!ItemDefined(item))
+			return false
+		if( !HasSubitem( parentRef, item ) )
+			return false
+		return GetItemType(item) == GetItemTypeFromPilotLoadoutProperty(property) || GetItemType(item) == eItemTypes.SUB_PILOT_WEAPON_MOD
+	}
+	return false //This should never happen, this should only be called on subitems
+	//i COULD combine the check for duplicate attachments in here, but i dont want to
+}
+array<string> modTypes = ["Mod1", "Mod2", "Mod3", "SkinIndex", "CamoIndex"]
+bool function ValidPilotWeaponAttchmentCombination( string parentRef, array<string> mods, string attachment = "" )
+{
+	if( !ItemDefined( parentRef ) )
+		return false
+	if( mods.contains("pro_screen") )
+		mods.remove(mods.find("pro_screen")) //Probably need extra stuff later but idk
+	if(mods.len() > 2)
+		return false //dont see how this is even possible unless maybe they used something where pro_screen should go
+	
+	foreach(string mod in mods)
+	{
+		int count = 0// I dont think i need to check for none/null because i think that would be caught by the other checks
+		foreach( string mod2 in mods )
+		{
+			if( mod == mod2 )
+				count++
+		}
+		if( count > 1 )
+			return false //Duplicate mods
+			//There are better ways but like, i dont want to
+		
+	}
+	if(attachment == "threat_scope")
+	{
+		if(mods.len() > 1)
+			return false //Only one attachment allowed
+	}
+	return true
+}
+void function ValidatePilotTableForWeapons(frameworkPilotLoadoutOverrides loadout)
+{
+	array<string> mods
+    string attachment
+    foreach(string key, string value in loadout.loadout )
+    {
+        switch(key)
+        {
+            case "primary":
+            case "secondary":
+            case "weapon3":
+                foreach(string modType in modTypes)
+                {
+                    if( key + modType in loadout.loadout )
+                    {
+                        string weapon = value
+                        attachment = loadout.loadout[key + modType]
+                        if(  !ValidPilotLoadoutAttachment(attachment, key+modType, weapon ) )
+                            delete loadout.loadout[key + modType]
+                        mods.append(attachment)
+                    }
+                    if(!ValidPilotWeaponAttchmentCombination(value, mods) )
+                    {
+                        delete loadout.loadout[key+modType] // i could do this once at the end but this way is a bit more seamless
+                        mods.remove(mods.len()-1)
+                    }
+                }
+            case "primary":
+                if( !(key + "Attachment" in loadout.loadout) )
+                    continue
+                string weapon = value
+                attachment = loadout.loadout["primaryAttachment"]
+                if(  !ValidPilotLoadoutAttachment(attachment, "primaryAttachment", weapon ) )
+                    delete loadout.loadout["primaryAttachment"]
+                if(!ValidPilotWeaponAttchmentCombination(value, mods, attachment) )
+                    delete loadout.loadout["primaryAttachment"] // i could do this once at the end but this way is a bit more seamless
+                
+
+        }
+    }//TODO: I need to add a function later down the line to handle vanilla guns with modded attachments
+}
 bool function propertyDoesNotRequireValidation(string name, string property, TitanLoadoutDef validatedLoadout)
 {
-    return true
+    return true//This function is used where they dont, not to check if they dont, this is not a stub this is just the entire function
 }
 table<string, bool functionref(string value, string property, TitanLoadoutDef validatedLoadout)> function getBaseLoadoutValidationTable()
 {

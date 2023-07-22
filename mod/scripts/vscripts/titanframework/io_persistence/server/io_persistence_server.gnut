@@ -248,16 +248,22 @@ bool function registerNewTitanLoadoutFromClient(entity player, array<string> arg
         delete frameworkPlayerLoadouts.playerMulticommandLoadouts[player][args[3]]
     return true
 }
+
 bool function registerNewPilotLoadoutFromClient(entity player, array<string> args)
 {
+    if(args.len() <= 2)
+        return false
+    if(args.len() % 2 != 0 )
+        return false
     //TODO: Handle responding to client
+    //For now just ignore bad values rather than rejecting the entire loadout
     if(args[0] != "pilot")
     {
         return false
     }
     int index = args[1].tointeger()
     frameworkPilotLoadoutOverrides loadout
-    for( int i = 2; i < args.len(); i+= 2 )
+    for( int i = 2; i < args.len(); i+= 2 ) 
     {
         print("Checking " + args[i] + " " + args[i+1])
         if( ValidPilotLoadoutValue(args[i+1], args[i]) )
@@ -265,7 +271,9 @@ bool function registerNewPilotLoadoutFromClient(entity player, array<string> arg
             print("Valid")
             loadout.loadout[args[i]] <- args[i+1]
         }
-        }
+    }
+    ValidatePilotTableForWeapons(loadout)
+    
     if( !(player in frameworkPlayerLoadouts.playerPilotLoadoutOverrides) )
     {
         frameworkPlayerLoadouts.playerPilotLoadoutOverrides[player] <- {}

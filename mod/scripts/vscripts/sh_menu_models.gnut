@@ -1765,8 +1765,15 @@
 		{
 			print("mod: " + mod)
 		}
+		try
+		{
 		SetBodyGroupsForWeaponConfig( file.menuPilot.weapon, weapon, mods )
-
+		}
+		catch ( e )
+		{
+			print("probably bad mods or smthn, "+ file.menuPilot.weapon + e)
+			SetBodyGroupsForWeaponConfig( file.menuPilot.weapon, weapon, [] )
+		}
 		int weaponCamoIndex
 		int weaponSkinIndex
 		if ( isPreviewingWeaponNotMatchingCurrent )
