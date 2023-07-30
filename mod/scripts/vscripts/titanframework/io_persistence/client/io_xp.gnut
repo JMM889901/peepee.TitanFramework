@@ -52,7 +52,7 @@ void function SavePersistentXP()
         Table[key] <- value
     }
     Table["version"] <- FRAMEWORK_VERSION
-    PPSaveJSONFile("frameworkXP.json", Table)
+    NSSaveJSONFile("frameworkXP.json", Table)
 }
 void function AddModdedTitanXP_Remote(array<string> args)
 {
@@ -72,5 +72,5 @@ void function SetupXPCallbacks()
 #endif
 void function forceLoadXP()
 {
-    PPLoadJSONFile( "frameworkXP.json", loadPersistentXP)
+    NSLoadJSONFile( "frameworkXP.json", loadPersistentXP)
 }

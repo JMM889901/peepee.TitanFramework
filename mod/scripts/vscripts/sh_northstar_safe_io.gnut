@@ -7,8 +7,9 @@ table< int, void functionref() > failedCallbacks
 
 void function NSLoadFile( string file, void functionref( string ) onSuccess, void functionref() onFailure = null )
 {
+    printt("sh_northstar_safe_io.gnut it being modified by titanframework, this version of the file matches version 1.18 of release northstar")
     int handle = NS_InternalLoadFile( file )
-    print("Loading file " + file + " with handle " + handle)
+
     pendingCallbacks[handle] <- onSuccess
     if (onFailure != null)
         failedCallbacks[handle] <- onFailure
@@ -23,21 +24,14 @@ void function NSLoadJSONFile( string file, void functionref( table ) onSuccess, 
         failedCallbacks[handle] <- onFailure
 }
 
-void function NSHandleLoadResult( int handle, bool success, string result ) 
+void function NSHandleLoadResult( int handle, bool success, string result )
 {
     bool hasFailedCallback = handle in failedCallbacks
     bool isJSONRequest = handle in pendingJSONCallbacks
     bool isValid = isJSONRequest || handle in pendingCallbacks
 
-
     if (!isValid)
-    {
-        print("Invalid IO callback handle")
-        #if CLIENT
-        RunUIScript("NSHandleLoadResult", handle, success, result)
-        #endif
-        return //This should throw but it happens constantly and i dont know why
-    } 
+        throw "Invalid IO callback handle"
 
     if (success)
     {
@@ -84,7 +78,7 @@ void function NSHandleLoadResult( int handle, bool success, string result )
         delete failedCallbacks[handle]
 }
 
-array<string> function NSGetAllFiles( string path = "local_mod_data" )
+array<string> function NSGetAllFiles( string path = "" )
 {
     return NS_InternalGetAllFiles(path)
 }
