@@ -7,10 +7,6 @@
 	
 	"Scripts": [
 		{
-			"Path": "sh_northstar_safe_io.gnut",
-			"RunOn": "CLIENT || UI"
-		},
-		{
 			"Path": "titanframework/io_persistence/io_persistence_util_shared.gnut",
 			"RunOn": "SERVER || CLIENT || UI"
 		},

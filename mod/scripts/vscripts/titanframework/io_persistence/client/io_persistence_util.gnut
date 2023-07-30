@@ -37,49 +37,8 @@ void function cl_titanFrameworkPersistenceInit()
     
     #endif
     thread cl_titanFrameworkPersistenceInitThread()
-    #if CLIENT
-    thread framePull()
-    #endif
 
     
-}
-
-void function framePull()
-{
-    while(true)
-    {
-        WaitFrame()
-        PullTasks()
-        
-    }
-}
-
-void function PPLoadJsonFileInternal(string content, void functionref(table) callback)
-{
-    if(content == "")
-    {
-        print("PPLoadJsonFileInternal: File is empty")
-        callback({})
-        return
-    }
-    table result = DecodeJSON(content)
-    callback(result)
-}
-void function PPLoadJSONFile( string fileName, void functionref(table) callback)
-{
-    
-    NSLoadFile(fileName, 
-    void function( string content ) : (callback)
-    {
-        print("hi")
-        PPLoadJsonFileInternal(content, callback)
-    }
-    )   
-}
-void function PPSaveJSONFile( string fileName, table data)
-{
-    string resultStr = EncodeJSON(data)
-    NSSaveFile(fileName, resultStr)
 }
 
 #if CLIENT
@@ -161,7 +120,7 @@ void function setModdedTitanLoadoutIndex(string index, callback = false)
     {
         GetLocalClientPlayer().ClientCommand("titanFrameworkSelectLoadout default")
     }
-    PPSaveJSONFile("frameworkCFG.json", {version = FRAMEWORK_VERSION, moddedSelected = index})
+    NSSaveJSONFile("frameworkCFG.json", {version = FRAMEWORK_VERSION, moddedSelected = index})
     #endif
 }
 void function cl_titanFrameworkPersistenceInitThread()
@@ -169,15 +128,15 @@ void function cl_titanFrameworkPersistenceInitThread()
     if(!NSDoesFileExist("frameworkCFG.json"))
     {
         print("Creating new frameworkCFG.json")
-        PPSaveJSONFile("frameworkCFG.json", {version = FRAMEWORK_VERSION, moddedSelected = ""});
+        NSSaveJSONFile("frameworkCFG.json", {version = FRAMEWORK_VERSION, moddedSelected = ""});
     }
     if(!NSDoesFileExist("frameworkXP.json"))
     {
         print("Creating new frameworkXP.json")
-        PPSaveJSONFile("frameworkXP.json", {version = FRAMEWORK_VERSION});
+        NSSaveJSONFile("frameworkXP.json", {version = FRAMEWORK_VERSION});
     }
-    PPLoadJSONFile( "frameworkXP.json", loadPersistentXP)
-    PPLoadJSONFile( "frameworkCFG.json", loadPersistentData)
+    NSLoadJSONFile( "frameworkXP.json", loadPersistentXP)
+    NSLoadJSONFile( "frameworkCFG.json", loadPersistentData)
 }
 
 
@@ -208,13 +167,13 @@ void function loadPersistentData(table data)
         {
             print("Loading titan loadout: " + loadout)
             clientframeworkPersistentTitanLoadouts.filesToLoad.append(loadout)
-            PPLoadJSONFile( loadout, LoadPersistentTitanLoadout )
+            NSLoadJSONFile( loadout, LoadPersistentTitanLoadout )
         }
         else if(loadoutType == "P")
         {
             print("Loading pilot loadout: " + loadout)
             clientframeworkPersistentPilotLoadouts.filesToLoad.append(loadout)
-            PPLoadJSONFile( loadout, LoadPersistentPilotLoadout )
+            NSLoadJSONFile( loadout, LoadPersistentPilotLoadout )
         }
     }
 
@@ -288,7 +247,7 @@ void function saveNewTitanLoadout(frameworkPersistentTitanLoadout loadout, callb
     loadoutTable.fileName <- ("T_LOADOUT_" + i + ".json")
     if(!callback)
     {
-        PPSaveJSONFile(expect string(loadoutTable.fileName), loadoutTable) // callback implies we have already run this, dont save twice
+        NSSaveJSONFile(expect string(loadoutTable.fileName), loadoutTable) // callback implies we have already run this, dont save twice
     }
     loadout.fileName = ("T_LOADOUT_" + i + ".json")
     clientframeworkPersistentTitanLoadouts.loadouts["T_LOADOUT_" + i + ".json"] <- loadout
@@ -306,12 +265,13 @@ void function saveTitanLoadout(frameworkPersistentTitanLoadout loadout)
     loadoutTable.loadout <- TitanLoadoutDefToTable(loadout.loadout)
     loadoutTable.additionalVars <- loadout.additionalVars
     loadoutTable.fileName <- loadout.fileName
-    PPSaveJSONFile(loadout.fileName, loadoutTable)
+    NSSaveJSONFile(loadout.fileName, loadoutTable)
     clientframeworkPersistentTitanLoadouts.loadouts[loadout.fileName] <- loadout
 }
 void function DeleteFrameworkTitanLoadout(string fileName, bool callback = false)
 {
-    delete clientframeworkPersistentTitanLoadouts.loadouts[fileName]
+    if(fileName in clientframeworkPersistentTitanLoadouts.loadouts) //Might be deleted already just for funky ui stuff
+        delete clientframeworkPersistentTitanLoadouts.loadouts[fileName]
     
     if(!callback)
     {
@@ -362,7 +322,7 @@ void function setFrameworkPilotOverride(int index, string property, string value
         {
             saveTable.loadout[key] <- value
         }
-        PPSaveJSONFile("P_LOADOUT_" + index + ".json", saveTable)
+        NSSaveJSONFile("P_LOADOUT_" + index + ".json", saveTable)
     }
     #if CLIENT
     DescribeNewPilotLoadoutToServer(clientframeworkPersistentPilotLoadouts.loadouts[index], index)//TODO: Should make a different function to change specific properties
@@ -405,7 +365,7 @@ void function removeFrameworkPilotOverride(int index, string property, bool call
         {
             saveTable.loadout[key] <- value
         }
-        PPSaveJSONFile("P_LOADOUT_" + index + ".json", saveTable)
+        NSSaveJSONFile("P_LOADOUT_" + index + ".json", saveTable)
     }
 }
 void function setFrameworkTitanLoadoutValue( string fileName, string property, string value, bool callback = false)
@@ -679,7 +639,7 @@ void function InformFrameworkLoadouts()
             if(Time() - timeSearching > 2)
             {
                 printt("Loadout " + fileName + " failed to load!, Retrying")
-                PPLoadJSONFile( fileName, LoadPersistentTitanLoadout )
+                NSLoadJSONFile( fileName, LoadPersistentTitanLoadout )
                 timeSearching = Time()
             }
             
@@ -731,7 +691,7 @@ void function InitialClientsideTitanValidation()
             if(Time() - timeSearching > 2)
             {
                 printt("Loadout " + fileName + " failed to load!, Retrying")
-                PPLoadJSONFile( fileName, LoadPersistentTitanLoadout )
+                NSLoadJSONFile( fileName, LoadPersistentTitanLoadout )
                 timeSearching = Time()
             }
             
@@ -774,9 +734,9 @@ void function InitialClientsideTitanValidation()
 void function ClientSideLoadoutSetup()
 {
     
-    //#if CLIENT
-    //WaitSignal( level, "CachedLoadoutsReady" )
-    //#endif //Note: Plugin implementation makes this redundant as it takes so long to load this is already triggered
+    #if CLIENT
+    WaitSignal( level, "CachedLoadoutsReady" )
+    #endif //Note: Plugin implementation makes this redundant as it takes so long to load this is already triggered
     
     #if UI
     while( !uiGlobal.loadoutsInitialized)
@@ -801,7 +761,7 @@ void function ClientSideLoadoutSetup()
             if(Time() - timeSearching > 2)
             {
                 printt("Loadout " + fileName + " failed to load!, Retrying")
-                PPLoadJSONFile( fileName, LoadPersistentPilotLoadout )
+                NSLoadJSONFile( fileName, LoadPersistentPilotLoadout )
                 timeSearching = Time()
             }
             

@@ -1332,6 +1332,7 @@ void function RegisterModdedTitanItemsSimple( ModdedTitanData titan )
 	{
 		ItemData subitem = GetItemData(subitemstuff.ref)
 		CreateGenericSubItemData(subitem.itemType,titan.Name, subitem.ref, 0, subitem.i)
+		InitUnlock( subitemstuff.ref, titan.Name, eUnlockType.TITAN_LEVEL, GetUnlockLevelReqWithParent( subitemstuff.ref, titan.BaseName ) )
 	}
 	/*
 	  _______ _ _                __  __           _      _     

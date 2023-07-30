@@ -879,6 +879,7 @@ void function DeleteTitanActivate(  )
 	SetEditLoadout( "titan", 0 )
     RunMenuClientFunction( "SetEditingTitanLoadoutIndex", 0 )
 	RunMenuClientFunction( "UpdateTitanModel", 0 )
+	delete clientframeworkPersistentTitanLoadouts.loadouts[fileName]
 	thread deleteTitanDelayed( fileName )
 	CloseActiveMenu()
 	AdvanceMenu( GetMenu( "EditCustomTitanLoadoutsMenu" ) )
