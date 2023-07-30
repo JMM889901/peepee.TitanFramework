@@ -35,7 +35,9 @@ global function GetModdedTitanReadyMessage
 global function GetTitanEditLoadoutMenu
 global function ModdedTitanPassiveHasCustomAssets
 global function TitanHasForcedItemsForType
+global function TitanHasFindFunctionForType
 global function GetTitanForcedItemsForType
+global function GetTitanFindFunctionForType
 global function TitanClassHasAltTitans
 //global function GetModdedTitanFDPassiveArray
 global function GetModdedTitanPassiveHasAsset
@@ -74,6 +76,7 @@ table<string, string> TitanEditLoadoutMenu
 table<string, table<int, array<ItemData> > > ForcedItemsForItemTypeAndClass 
 array<string> TitansNeedingSetFileFixup//Deprecated
 table<string, void functionref(array<var> icons, string ref) > TitanPreviewControllersByClass
+table<string, table<int, array<ItemData> functionref(string property, TitanLoadoutDef validatedLoadout) > > TitanFindFunctionsForItemType //I should really not be trusted with a computer
 //table<string, array<ItemDisplayData> ModdedTitanFDUpgrades
 
 bool function shouldPrintDevStuff()
@@ -157,6 +160,7 @@ bool function TitanHasForcedItemsForType(string titan, int itemType)
 {
 	if(titan in ForcedItemsForItemTypeAndClass)
 		return itemType in ForcedItemsForItemTypeAndClass[titan]
+
 	return false
 }
 array<ItemData> function GetTitanForcedItemsForType(string titan, int itemType)
@@ -166,6 +170,23 @@ array<ItemData> function GetTitanForcedItemsForType(string titan, int itemType)
 		if(itemType in ForcedItemsForItemTypeAndClass[titan])
 		{
 			return ForcedItemsForItemTypeAndClass[titan][itemType]
+		}
+	}
+	unreachable
+}
+bool function TitanHasFindFunctionForType(string titan, int itemType)
+{
+	if(titan in TitanFindFunctionsForItemType)
+		return itemType in TitanFindFunctionsForItemType[titan]
+	return false
+}
+array<ItemData> functionref(string property, TitanLoadoutDef titan) function GetTitanFindFunctionForType(string titan, int itemType)
+{
+	if(titan in TitanFindFunctionsForItemType)
+	{
+		if(itemType in TitanFindFunctionsForItemType[titan])
+		{
+			return TitanFindFunctionsForItemType[titan][itemType]
 		}
 	}
 	unreachable
@@ -1206,7 +1227,7 @@ void function RegisterModdedTitanItemsSimple( ModdedTitanData titan )
 	foreach(int index, ItemData item in GetAllItemsOfType(eItemTypes.TITAN_GENERAL_PASSIVE))
 	{
 		CreateGenericSubItemData( eItemTypes.TITAN_GENERAL_PASSIVE, titan.Name, item.ref )
-		InitUnlock( item.ref, titan.Name, eUnlockType.TITAN_LEVEL, index+1 )
+		InitUnlock( item.ref, titan.Name, eUnlockType.TITAN_LEVEL, GetUnlockLevelReqWithParent( item.ref, "vanguard" ) )
 	}
 	//foreach(array<var> passive in Passives)
 	// {
@@ -1258,7 +1279,7 @@ void function RegisterModdedTitanItemsSimple( ModdedTitanData titan )
 			continue
 		if(passives.passiveItemsMethod == eItemsMethod.CREATE)
 		{
-			CreateModdedItemType(titan.Name + passives.property)
+			passives.itemTypeOverride = CreateModdedItemType(titan.Name + passives.property)
 			array<ItemData> passivesExtra
 			foreach(int index, ModdedPassiveData passive in passives.acceptedItems)
 			{
@@ -1297,6 +1318,12 @@ void function RegisterModdedTitanItemsSimple( ModdedTitanData titan )
 				CreateGenericSubItemData(  passives.itemTypeOverride, titan.Name, item.ref )
 			}
 			TitanPassiveTypesByClass[titan.Name][name] <- passives.itemTypeOverride
+		}
+		if(passives.FindFunc != null)
+		{
+			if(!(titan.Name in TitanFindFunctionsForItemType))
+				TitanFindFunctionsForItemType[titan.Name] <- {}
+			TitanFindFunctionsForItemType[titan.Name][passives.itemTypeOverride] <- passives.FindFunc
 		}
 	}
 

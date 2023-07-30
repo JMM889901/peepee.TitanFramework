@@ -914,7 +914,7 @@
 		file.titanAnims[ animType ][ "titan_stryder_northstar_prime" ]		<- "titan_light_menu_main_idle_01"
 		file.titanAnims[ animType ][ "titan_stryder_ronin_prime" ]			<- "titan_light_menu_main_idle_01"
 		file.titanAnims[ animType ][ "titan_atlas_tracker" ]				<- "titan_medium_menu_main_idle_01_TONE"
-		file.titanAnims[ animType ][ "titan_atlas_vanguard" ]				<- "titan_medium_menu_main_idle_01_MONARCH"
+		file.titanAnims[ animType ][ "titan_atlas_vanguard" ]				<- "titan_medium_menu_main_idle_01"
 		file.titanAnims[ animType ][ "titan_atlas_stickybomb" ]				<- "titan_medium_menu_main_idle_01"
 		file.titanAnims[ animType ][ "titan_atlas_ion_prime" ]				<- "titan_medium_menu_main_idle_01"
 		file.titanAnims[ animType ][ "titan_atlas_tone_prime" ]				<- "titan_medium_menu_main_idle_01_TONE"

@@ -651,12 +651,22 @@ void function OnPassiveSelectMenu_Open()
 		uiGlobal.editingItemType = GetItemTypeFromTitanLoadoutProperty( uiGlobal.editingLoadoutProperty, nonPrimeSetFile, editLoadout.titanClass )
 		uiGlobal.editingItemRef = GetTitanLoadoutValue( editLoadout, uiGlobal.editingLoadoutProperty )
 	}
-
+	//i dont want to put this code here but its like midnight and nowhere else in this process actually has access to the entire loadout
+	
 	var menu = GetMenu( "PassiveSelectMenu" )
 	var menuTitle = Hud_GetChild( menu, "MenuTitle" )
 	array<var> buttons = GetElementsByClassname( menu, "PassiveSelectClass" )
 	array<ItemDisplayData> items
-	items = GetVisibleItemsOfType( uiGlobal.editingItemType, parentItemRef )
+	//if( uiGlobal.editingLoadoutType == "titan" && TitanHasFindFunctionForType(editLoadout.titanClass, uiGlobal.editingItemType) )
+	//{
+	//	array<ItemData> items = GetTitanFindFunctionDisplayDataForType(editLoadout)
+	//	foreach(ItemData item in items)
+	//	{
+	//		items.append(GetItemDisplayData(item.ref, parentItemRef))
+	//	}
+	//}
+	//else
+		items = GetVisibleItemsOfType( uiGlobal.editingItemType, parentItemRef )
 
 	Hud_SetText( menuTitle, GetDisplayNameFromItemType( uiGlobal.editingItemType ) )
 	SetupLoadoutItemButtons( buttons, items, uiGlobal.editingItemRef, unavailableItems, parentItemRef )

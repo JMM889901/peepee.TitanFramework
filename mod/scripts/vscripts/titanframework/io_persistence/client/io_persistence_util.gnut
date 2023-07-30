@@ -157,6 +157,10 @@ void function setModdedTitanLoadoutIndex(string index, callback = false)
         RunUIScript( "setModdedTitanLoadoutIndex", index, true ) 
     if(index != "")
         DescribeNewTitanLoadoutToServer(GetCurrentModdedPersistentTitanLoadout())
+    else
+    {
+        GetLocalClientPlayer().ClientCommand("titanFrameworkSelectLoadout default")
+    }
     PPSaveJSONFile("frameworkCFG.json", {version = FRAMEWORK_VERSION, moddedSelected = index})
     #endif
 }

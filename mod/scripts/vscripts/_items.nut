@@ -457,8 +457,8 @@ global enum eItemsMethod
 	CREATE, //Create items like standard titan kit
 	FIND, //Find existing items, such as using weapons in kits, requires item type to be specified
 	FIND_FORCE, //Find existing items, regardless of item types and other limits, not ideal so try to avoid
-	FIND_ALL_TYPE,
-	SPECIFY, //Specify item refs directly, unimplemented
+	FIND_ALL_TYPE, // Find all items of a specific type, such as all titan primaries
+	SPECIFY, //Specify item refs directly, unimplemented <- isnt this literally just FIND_FORCE?
 	NONE //Do not create or find, useful you want to use a custom validation function
 }
 global struct CustomPersistentVar
@@ -466,6 +466,7 @@ global struct CustomPersistentVar
 	string property // is this even like, needed?
 	string defaultValue
 	bool functionref(string value, string property, TitanLoadoutDef validatedLoadout) validationFunc // this defaults to ValidPersistentPassiveForLoadout, but due to load order reasons it's not set here
+	array<ItemData> functionref(string property, TitanLoadoutDef validatedLoadout) FindFunc // This defaults to null, but if you want to use a custom find function, you can set it here
 	int itemTypeOverride = -1
 	int passiveItemsMethod = eItemsMethod.CREATE
 	array<ModdedPassiveData> acceptedItems
@@ -5483,7 +5484,7 @@ array<ItemDisplayData> function GetVisibleItemsOfType( int itemType, string pare
 	}
 	else if (TitanHasForcedItemsForType( parentRef, itemType))
 	{
-		array<ItemData> forcedItems = GetTitanForcedItemsForType(parentRef, itemType)
+		array<ItemData> forcedItems = GetTitanForcedItemsForType(parentRef, itemType) //Contextual passives are also handled here <- no they arent dumbass where the fuck is the context
 		foreach ( itemData in forcedItems )
 		{
 			print(itemData.ref + " is a forced item for "+parentRef + " of type "+itemType)
@@ -5491,7 +5492,7 @@ array<ItemDisplayData> function GetVisibleItemsOfType( int itemType, string pare
 		}
 	}
 
-	if ( doSort && !(parentRef in GetModdedTitansByClassNoPersist()))
+	if ( doSort )
 		items.sort( SortByUnlockLevelUntyped )
 	//print("Returning items "+items.len())
 	return items

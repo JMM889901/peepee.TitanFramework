@@ -46,6 +46,11 @@ bool function selectModdedTitanLoadoutFromClient(entity player, array<string> ar
     if( args.len() < 1 )
         return false
     string fileName = args[0]
+    if (fileName == "default")
+    {
+        frameworkPlayerLoadouts.playerSelectedModdedLoadout[player] <- ""
+        return true
+    }
     if( !(player in frameworkPlayerLoadouts.playerLoadouts) || !(fileName in frameworkPlayerLoadouts.playerLoadouts[player]) )
         return false
     frameworkPlayerLoadouts.playerSelectedModdedLoadout[player] <- fileName
@@ -113,10 +118,19 @@ bool function setFrameworkTitanLoadoutValue(entity player, array<string> args)
     {
         PersistentVars = getBaseLoadoutValidationTable()
     } 
+    if( shouldPrintDevStuff() )
+    {
+        print("Setting titan loadout value " + property + " to " + value)
+        PrintTitanLoadout(loadout.loadout)
+    }
     if( !(property in PersistentVars) )
         return false
+    if( shouldPrintDevStuff() )
+        print("Property is valid")
     if( !PersistentVars[property](value, property, loadout.loadout) )
         return false
+    if( shouldPrintDevStuff() )
+        print("Value passes validation")
     if( !TrySetTitanLoadoutValue(loadout.loadout, property, value) )
     {
         loadout.additionalVars[property] <- value
