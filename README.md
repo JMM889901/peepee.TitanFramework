@@ -1,8 +1,6 @@
 the peepeepoopoo mans TitanFramework
 ==
 
-You may need to manually place the file in the plugins directory into your northstar plugins directory, mod managers should handle this automatically
--
 
 This is an experimental mod and any crash logs will be appreciated, i will aim to keep backwards compatability as much as possible to make updating optional
 
