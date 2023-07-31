@@ -3,7 +3,7 @@
 	"Description": "Pain",
 	"LoadPriority": 7,
 	"RequiredOnClient": true,
-	"Version": "2.1.2",
+	"Version": "2.1.3",
 	
 	"Scripts": [
 		{
@@ -60,19 +60,19 @@
 			}
 		},
 		{
-			"Path": "titanframework/ui/framework_custom_titan_loadout_menu/framework_edit_custom_titan_loadout_menu.gnut",
+			"Path": "titanframework/ui/t_loadout_menu/framework_edit_custom_titan_loadout_menu.gnut",
 			"RunOn": "UI"
 		},
 		{
-			"Path": "titanframework/ui/framework_custom_titan_loadout_menu/framework_titan_loadouts_shared.gnut",
+			"Path": "titanframework/ui/t_loadout_menu/framework_titan_loadouts_shared.gnut",
 			"RunOn": "UI"
 		},
 		{
-			"Path": "titanframework/ui/framework_custom_titan_loadout_menu/framework_custom_camoskin_select.gnut",
+			"Path": "titanframework/ui/t_loadout_menu/framework_custom_camoskin_select.gnut",
 			"RunOn": "UI"
 		},
 		{
-			"Path": "titanframework/ui/framework_custom_titan_loadout_menu/framework_custom_noseart_select.gnut",
+			"Path": "titanframework/ui/t_loadout_menu/framework_custom_noseart_select.gnut",
 			"RunOn": "UI"
 		},
 		{
@@ -94,7 +94,7 @@
 			}
 		},
 		{
-			"Path": "titanframework/ui/framework_custom_titan_loadout_menu/framework_custom_passive_select.gnut",
+			"Path": "titanframework/ui/t_loadout_menu/framework_custom_passive_select.gnut",
 			"RunOn": "UI",
 			"UICallback": {
 				"Before": "FrameworkPassiveMenuInit"
