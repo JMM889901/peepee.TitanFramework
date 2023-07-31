@@ -56,12 +56,12 @@ function TitanCockpit_PlayDialog( entity player, string conversationName )
 
 	int priority = GetConversationPriority( conversationName )
 	string soundAlias = GenerateTitanOSAlias( player, conversationName )
-	string titanName = GetActiveTitanLoadout(player).titanClass //This gets spawn loadout not actual but i dont know any way to get real loadout from a player entity
-	string ref = GetActiveTitanLoadout(player).frameworkLoadoutRef
-	string moddedAlias = GetTitanAudioEventAlias(titanName, conversationName, ref, player )
+	string titanName = GetClientActivePetLoadout().loadout.name
+	string moddedAlias = GetTitanAudioEventAlias(titanName, conversationName, GetClientActivePetLoadout(), player )
+	PrintTitanLoadout( GetClientActivePetLoadout().loadout)
 	if( moddedAlias != "" )
 		soundAlias = moddedAlias
-	PlayAudioEventFunction( titanName, conversationName, soundAlias, ref, player, priority )
+	PlayAudioEventFunction( titanName, conversationName, soundAlias, GetClientActivePetLoadout(), player, priority )
 
 }
 

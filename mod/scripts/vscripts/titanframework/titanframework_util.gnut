@@ -51,6 +51,10 @@ global function DevPrintTitanLoadoutPersistentDebug//Guess what, also deprecated
 global function debugNullTitanLoadout//Deprecated
 global function SetTitanLoadout//Deprecated
 #endif 
+#if CLIENT
+global function ForceUpdateClientPetTitanLoadout
+global function GetClientActivePetLoadout
+#endif
 
 
 table<string, TitanLoadoutDef> TitanLoadoutByClass
@@ -564,8 +568,21 @@ void function FrameworkInit()
 void function RegisterFrameworkNetworkVar()
 {
 	Remote_RegisterFunction("UpdateHealthSegmentCount")//TODO
+	Remote_RegisterFunction("ForceUpdateClientPetTitanLoadout")
 
 }
+#if CLIENT
+frameworkPersistentTitanLoadout activePetTitanLoadout
+void function ForceUpdateClientPetTitanLoadout(int refID)
+{
+	string ref = GetModdedLoadoutNameFromIndex(refID, "T", false)
+	overideFrameworkTitanLoadoutWithTitanLoadout(clientframeworkPersistentTitanLoadouts.loadouts[ref], activePetTitanLoadout)
+}
+frameworkPersistentTitanLoadout function GetClientActivePetLoadout()
+{
+	return activePetTitanLoadout
+}
+#endif
 void function checkLoadoutValues()
 {
 	

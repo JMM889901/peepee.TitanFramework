@@ -213,17 +213,26 @@ void function overrideTitanLoadoutWithTitanLoadout(TitanLoadoutDef loadout1, Tit
     loadout1.primeCamoIndex    = loadout2.primeCamoIndex
     loadout1.primeDecalIndex   = loadout2.primeDecalIndex
     loadout1.showArmBadge      = loadout2.showArmBadge
-    loadout1.setFileMods       = loadout2.setFileMods
+    loadout1.setFileMods       = clone loadout2.setFileMods
     loadout1.melee             = loadout2.melee
     loadout1.coreAbility       = loadout2.coreAbility
     loadout1.primary           = loadout2.primary
     loadout1.primaryAttachment = loadout2.primaryAttachment
-    loadout1.primaryMods       = loadout2.primaryMods
+    loadout1.primaryMods       = clone loadout2.primaryMods
     loadout1.ordnance          = loadout2.ordnance
-    loadout1.ordnanceMods      = loadout2.ordnanceMods
-    loadout1.specialMods       = loadout2.specialMods
-    loadout1.antirodeoMods     = loadout2.antirodeoMods
+    loadout1.ordnanceMods      = clone loadout2.ordnanceMods
+    loadout1.specialMods       = clone loadout2.specialMods
+    loadout1.antirodeoMods     = clone loadout2.antirodeoMods
     loadout1.titanExecution    = loadout2.titanExecution
+}
+void function overideFrameworkTitanLoadoutWithTitanLoadout(frameworkPersistentTitanLoadout copyFrom, frameworkPersistentTitanLoadout copyTo)
+{
+    copyTo.loadoutName = copyFrom.loadoutName
+    copyTo.titanName = copyFrom.titanName
+    copyTo.sourceMod = copyFrom.sourceMod
+    copyTo.sourceModVersion = copyFrom.sourceModVersion
+    overrideTitanLoadoutWithTitanLoadout(copyTo.loadout, copyFrom.loadout)
+    copyTo.additionalVars = clone copyFrom.additionalVars
 }
 frameworkPersistentTitanLoadout function createClientFrameworkLoadoutFromLoadoutDef(TitanLoadoutDef loadout)
 {

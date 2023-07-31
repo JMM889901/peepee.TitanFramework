@@ -9,15 +9,15 @@ global function GetTitanAudioEventAlias
 global function PlayAudioEventFunction
 
 struct {
-    table<string, string functionref(string titanName, string eventName, string loadoutRef, entity player) > titanAudioOverrideFunctions
-    table<string, table< string, string functionref(string titanName, string eventName, string loadoutRef, entity player)> > titanAudioEventOverrides //this is kind of pointless
-    table<string, void functionref(string titanName, string eventName, string eventAlias, string loadoutRef, entity player, entity titan, int priority)> titanAudioFunctionsByTitan
-    table<string, void functionref(string titanName, string eventName, string eventAlias, string loadoutRef, entity player, entity titan, int priority)> titanAudioFunctionsByEvent 
+    table<string, string functionref(string titanName, string eventName, frameworkPersistentTitanLoadout loadout, entity player) > titanAudioOverrideFunctions
+    table<string, table< string, string functionref(string titanName, string eventName, frameworkPersistentTitanLoadout loadout, entity player)> > titanAudioEventOverrides //this is kind of pointless
+    table<string, void functionref(string titanName, string eventName, string eventAlias, frameworkPersistentTitanLoadout loadout, entity player, entity titan, int priority)> titanAudioFunctionsByTitan
+    table<string, void functionref(string titanName, string eventName, string eventAlias, frameworkPersistentTitanLoadout loadout, entity player, entity titan, int priority)> titanAudioFunctionsByEvent 
 } file
 
-array<string functionref(string titanName, string eventName, string loadoutRef, entity player)> function GetTitanAudioAliasFunctions(string titanName, string eventName)
+array<string functionref(string titanName, string eventName, frameworkPersistentTitanLoadout loadout, entity player)> function GetTitanAudioAliasFunctions(string titanName, string eventName)
 {
-    array<string functionref(string titanName, string eventName, string loadoutRef, entity player)> functions
+    array<string functionref(string titanName, string eventName, frameworkPersistentTitanLoadout loadout, entity player)> functions
     if(titanName in file.titanAudioOverrideFunctions)
     {
         functions.append(file.titanAudioOverrideFunctions[titanName])
@@ -31,12 +31,12 @@ array<string functionref(string titanName, string eventName, string loadoutRef, 
     }
     return functions
 }
-string function GetTitanAudioEventAlias(string titanName, string eventName, string loadoutRef, entity player)
+string function GetTitanAudioEventAlias(string titanName, string eventName, frameworkPersistentTitanLoadout loadout, entity player)
 {
-    array<string functionref(string titanName, string eventName, string loadoutRef, entity player)> functions = GetTitanAudioAliasFunctions(titanName, eventName)
-    foreach(string functionref(string titanName, string eventName, string loadoutRef, entity player) functionRef in functions)
+    array<string functionref(string titanName, string eventName, frameworkPersistentTitanLoadout loadout, entity player)> functions = GetTitanAudioAliasFunctions(titanName, eventName)
+    foreach(string functionref(string titanName, string eventName, frameworkPersistentTitanLoadout loadout, entity player) functionRef in functions)
     {
-        string alias = functionRef(titanName, eventName, loadoutRef, player)
+        string alias = functionRef(titanName, eventName, loadout, player)
         if(alias != "")
         {
             return alias
@@ -45,17 +45,17 @@ string function GetTitanAudioEventAlias(string titanName, string eventName, stri
     return ""
 }
 
-void function PlayAudioEventFunction(string titanName, string eventName, string eventAlias, string loadoutRef, entity player, int priority )
+void function PlayAudioEventFunction(string titanName, string eventName, string eventAlias, frameworkPersistentTitanLoadout loadout, entity player, int priority )
 {
     entity titan = player.GetPetTitan()
     if(eventName in file.titanAudioFunctionsByEvent)
     {
-        file.titanAudioFunctionsByEvent[eventName](titanName, eventName, eventAlias, loadoutRef, player, titan, priority)
+        file.titanAudioFunctionsByEvent[eventName](titanName, eventName, eventAlias, loadout, player, titan, priority)
         return
     }
     if(titanName in file.titanAudioFunctionsByTitan)
     {
-        file.titanAudioFunctionsByTitan[titanName](titanName, eventName, eventAlias, loadoutRef, player, titan, priority)
+        file.titanAudioFunctionsByTitan[titanName](titanName, eventName, eventAlias, loadout, player, titan, priority)
         return
     }
 	if ( IsAlive( titan ) ) //TODO: Should probably play on the soul instead of playing on the weapon. Next game.
@@ -72,11 +72,11 @@ void function PlayAudioEventFunction(string titanName, string eventName, string 
 	}
 }
 
-void function RegisterTitanAudioAliasFunction(string titanName, string functionref(string titanName, string eventName, string loadoutRef, entity player) functionRef)
+void function RegisterTitanAudioAliasFunction(string titanName, string functionref(string titanName, string eventName, frameworkPersistentTitanLoadout loadout, entity player) functionRef)
 {
     file.titanAudioOverrideFunctions[titanName] <- functionRef
 }
-void function RegisterTitanAudioEventAliasFunction(string titanName, string eventName, string functionref(string titanName, string eventName, string loadoutRef, entity player) functionRef)
+void function RegisterTitanAudioEventAliasFunction(string titanName, string eventName, string functionref(string titanName, string eventName, frameworkPersistentTitanLoadout loadout, entity player) functionRef)
 {
     if(!(titanName in file.titanAudioEventOverrides))
     {
@@ -84,11 +84,11 @@ void function RegisterTitanAudioEventAliasFunction(string titanName, string even
     }
     file.titanAudioEventOverrides[titanName][eventName] <- functionRef
 }
-void function RegisterTitanAudioFunctionByEvent(string eventName, void functionref(string titanName, string eventName,string eventAlias, string loadoutRef, entity player, entity titan, int priority) functionRef)
+void function RegisterTitanAudioFunctionByEvent(string eventName, void functionref(string titanName, string eventName,string eventAlias, frameworkPersistentTitanLoadout loadout, entity player, entity titan, int priority) functionRef)
 {
     file.titanAudioFunctionsByEvent[eventName] <- functionRef
 }
-void function RegisterTitanAudioFunctionByTitan(string titanName, void functionref(string titanName, string eventName,string eventAlias, string loadoutRef, entity player, entity titan, int priority) functionRef)
+void function RegisterTitanAudioFunctionByTitan(string titanName, void functionref(string titanName, string eventName,string eventAlias, frameworkPersistentTitanLoadout loadout, entity player, entity titan, int priority) functionRef)
 {
     file.titanAudioFunctionsByTitan[titanName] <- functionRef
 }

@@ -694,6 +694,8 @@ function CommonNPCTitanOnSpawned( entity npc )
 	{
 		soul.soul.titanLoadout = npc.ai.titanSpawnLoadout
 	}
+	if(npc.ai.titanSpawnLoadout.frameworkLoadoutRef != "" && IsValid(npc.mySpawnOptions_ownerPlayer) )
+		Remote_CallFunction_NonReplay(expect entity(npc.mySpawnOptions_ownerPlayer) , "ForceUpdateClientPetTitanLoadout", GetModdedLoadoutNameIndex(npc.ai.titanSpawnLoadout.frameworkLoadoutRef) )
 }
 
 function ShouldSpawn( team, forced )
