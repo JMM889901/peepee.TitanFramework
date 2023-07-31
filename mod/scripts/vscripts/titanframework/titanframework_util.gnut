@@ -878,9 +878,10 @@ void function RegisterModdedTitanCustomPassiveType(string name, array<ItemData> 
 	string propertyname = name+slot
 	table ePassives = expect table( getconsttable()["ePassives"])
 	table passivesFromEnum = expect table( getconsttable()["_PassiveFromEnum"])
-	foreach(ItemData item in passives)
+	foreach(int index, ItemData item in passives)
 	{
 		CreateGenericSubItemData(  eItemTypes[propertyname], name, item.ref )
+		InitUnlock( item.ref, name, eUnlockType.TITAN_LEVEL, index )
 		//GenerateModdedTitanPassiveStringForPersistence(name, (slot), item.ref, masktype  )
 		if(item.ref in ePassives)
 			continue
@@ -1302,6 +1303,7 @@ void function RegisterModdedTitanItemsSimple( ModdedTitanData titan )
 				if(passive.customIcon)
 					ModdedTitanPassiveHasAsset[titan.Name][name] <- true
 				CreateGenericSubItemData(  passives.itemTypeOverride, titan.Name, passive.Name )
+				InitUnlock( passive.Name, titan.Name, eUnlockType.TITAN_LEVEL, index )
 			}
 			TitanPassiveTypesByClass[titan.Name][name] <- passives.itemTypeOverride
 			if(passives.passiveItemsMethod == eItemsMethod.FIND_FORCE)
@@ -1316,6 +1318,7 @@ void function RegisterModdedTitanItemsSimple( ModdedTitanData titan )
 			foreach(int index, ItemData item in GetAllItemsOfType( passives.itemTypeOverride ))
 			{
 				CreateGenericSubItemData(  passives.itemTypeOverride, titan.Name, item.ref )
+				InitUnlock( item.ref, titan.Name, eUnlockType.TITAN_LEVEL, index )
 			}
 			TitanPassiveTypesByClass[titan.Name][name] <- passives.itemTypeOverride
 		}

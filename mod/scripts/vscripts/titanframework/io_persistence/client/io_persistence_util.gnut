@@ -1,7 +1,7 @@
 untyped
 globalize_all_functions
 
-
+int notify = -1
 
 global struct frameworkHelperValuesStruct
 {
@@ -40,7 +40,35 @@ void function cl_titanFrameworkPersistenceInit()
 
     
 }
-
+#if UI
+void function popupIfNeeded()
+{
+    thread popupIfNeededThread()
+}
+void function popupIfNeededThread()
+{
+    wait(1)
+    print("notify " + notify)
+    while(notify == -1)
+        wait(1)
+    print("notify " + notify)
+    if(notify == 1)
+    {
+        WelcomeToFramework()
+        notify = 0
+    }
+    else if(notify == 2)
+    {
+        WelcomeBackToFramework()
+        notify = 0
+    }
+    else if(notify == 3)
+    {
+        FrameworkHasBeenDowngraded()
+        notify = 0
+    }
+}
+#endif
 #if CLIENT
 void function FrameworkInformLoadoutResponse(array<string> args)
 {
@@ -128,6 +156,10 @@ void function cl_titanFrameworkPersistenceInitThread()
     if(!NSDoesFileExist("frameworkCFG.json"))
     {
         print("Creating new frameworkCFG.json")
+        notify = 1
+        #if UI
+        WelcomeToFramework()
+        #endif
         NSSaveJSONFile("frameworkCFG.json", {version = FRAMEWORK_VERSION, moddedSelected = ""});
     }
     if(!NSDoesFileExist("frameworkXP.json"))
@@ -138,13 +170,74 @@ void function cl_titanFrameworkPersistenceInitThread()
     NSLoadJSONFile( "frameworkXP.json", loadPersistentXP)
     NSLoadJSONFile( "frameworkCFG.json", loadPersistentData)
 }
+#if UI
+void function WelcomeToFramework()
+{
+    DialogData dialogData
+    dialogData.header = Localize("#WELCOME_TO_FRAMEWORK")
+    dialogData.message = Localize( "#WELCOME_TO_FRAMEWORK_DESCRIPTION" )
 
+    AddDialogButton( dialogData, Localize("#CLOSE_MESSAGE") )
+    AddDialogFooter( dialogData, "#A_BUTTON_SELECT" )
+    AddDialogFooter( dialogData, "#B_BUTTON_BACK" )
+
+    OpenDialog( dialogData )
+}
+void function WelcomeBackToFramework()
+{
+    DialogData dialogData
+    dialogData.header = Localize("#WELCOME_BACK_TO_FRAMEWORK")
+    dialogData.message = Localize( "#WELCOME_BACK_TO_FRAMEWORK_DESCRIPTION" )
+
+    AddDialogButton( dialogData, Localize("#CLOSE_MESSAGE") )
+    AddDialogFooter( dialogData, "#A_BUTTON_SELECT" )
+    AddDialogFooter( dialogData, "#B_BUTTON_BACK" )
+
+    OpenDialog( dialogData )
+}
+void function FrameworkHasBeenDowngraded()
+{
+    DialogData dialogData
+    dialogData.header = Localize("#FRAMEWORK_HAS_BEEN_DOWNGRADED")
+    dialogData.message = Localize( "#FRAMEWORK_HAS_BEEN_DOWNGRADED_DESCRIPTION" )
+
+    AddDialogButton( dialogData, Localize("#CLOSE_MESSAGE") )
+    AddDialogFooter( dialogData, "#A_BUTTON_SELECT" )
+    AddDialogFooter( dialogData, "#B_BUTTON_BACK" )
+
+    OpenDialog( dialogData )
+}
+#endif
 
 void function loadPersistentData(table data)
 {
     foreach(string key, var value in data)
     {
         print("key " + key + " value " + value)
+    }
+    if(data.version != FRAMEWORK_VERSION)
+    {
+        int version 
+        array<string> nums = split(FRAMEWORK_VERSION, ".")
+        foreach(int index, string num in nums)
+        {
+            version += num.tointeger()*10^(nums.len() - index)
+        }
+        int oldVersion
+        nums = split(data.version, ".")
+        foreach(int index, string num in nums)
+        {
+            oldVersion += num.tointeger()*10^(nums.len() - index)
+        }
+        print("old version " + oldVersion + " new version " + version)
+        if(oldVersion < version)
+            notify = 2 //framework has been updated
+        if(oldVersion > version)
+            notify = 3 //framework has been downgraded, probably by a mod manager
+    }
+    if(notify == -1)
+    {
+        notify = 0
     }
     print("Loading framework persistentData")
     if(data.moddedSelected != null)
@@ -799,6 +892,9 @@ void function ClientSideLoadoutSetup()
         DescribeNewPilotLoadoutToServer(loadout, index)//TODO: may hit clientcommand limit
         #endif
     }
+    #if UI
+    popupIfNeeded()
+    #endif
 
 }
 void function ApplyPilotLoadoutOverrides(entity player, int index, PilotLoadoutDef loadout)//Clientside implementation, Serverside is at io_persistence_server.gnut:258

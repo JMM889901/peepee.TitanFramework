@@ -3,7 +3,7 @@
 	"Description": "Pain",
 	"LoadPriority": 7,
 	"RequiredOnClient": true,
-	"Version": "2.0.3",
+	"Version": "2.1.2",
 	
 	"Scripts": [
 		{
@@ -23,6 +23,7 @@
 			"RunOn": "UI || CLIENT",
 			"ClientCallback": {
 				"Before": "cl_titanFrameworkPersistenceInit"
+
 			}
 		},
 		{

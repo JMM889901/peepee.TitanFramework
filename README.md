@@ -1,203 +1,313 @@
 the peepeepoopoo mans TitanFramework
 ==
 
+You may need to manually place the file in the plugins directory into your northstar plugins directory, mod managers should handle this automatically
+-
+
 This is an experimental mod and any crash logs will be appreciated, i will aim to keep backwards compatability as much as possible to make updating optional
 
-Confused with how to use the mod, have suggestions or found a bug, please DM me @The peepeepoopoo man#3301 on discord
+Confused with how to use the mod, have suggestions or found a bug, please DM me `the_peepeepoopoo_man.` on discord
 
 framework for adding custom titans
 
 Using the mod
 --
-To use the mod, install a compatible titan mod such as Archon or Chimera, Go to the titan loadout selection menu and select one of the last 3 titans in your list (10 should be visibile), Click the "Select Titan" button and choose the titan to use in this slot
+
+To use the mod, install a compatible titan mod such as Archon or Chimera, Go to the titan loadout selection menu and select "Custom loadouts", Create a new loadout, within this loadout click the "Select Titan" button to bring up the titan selection.
 
 Example script
 --
-	ModdedTitanData Chimera
-	Chimera.Name = "Chimera"
-	Chimera.Description = "This is the description for Chimera"
-	Chimera.BaseSetFile = "titan_atlas_vanguard"
-	Chimera.BaseName = "vanguard" //we will use monarchs model
 
-	ModdedTitanWeaponAbilityData GenericWeaponMount
-	GenericWeaponMount.custom = true //when this is false titanframework will not create items, useful if you want to use default items
-	GenericWeaponMount.scriptHandled = true //When this is true weapons are not given in the onspawn callback
-	//useful if you set titan weapons in a custom callback, also allows you to set nonexistent weapons in weaponName
-	GenericWeaponMount.displayName = "Generic weapon mount"
-	GenericWeaponMount.weaponName = "GenericWeaponMount" //Custom weapons can actually use default weapons as the item
-    // the rest of these just effect descriptions and such, this is ideal if you want to create a generic slot, which chimera does
-    //However when doing so with the weapon remember that this weapon is what will be displayed in the menu
-	GenericWeaponMount.MenuModelWeapon = "mp_titanweapon_xo16_vanguard" //Still needed for menu models
-	GenericWeaponMount.description = "You have hands, hands hold things, things include: guns"
-	Chimera.Primary = GenericWeaponMount
+```cpp
+global function ChimeraSetup
+void function ChimeraSetup()
+{
+ 
+ ModdedTitanData Chimera
+ Chimera.Name = "#DEFAULT_TITAN_CHIMERA"
+ Chimera.Tag = "Atlas" //The tag is displayed in the selection menu if groupsettings.showtagasprefix /suffix is enabled
+ //can be used to give an alternate name to a titan in selection vs actual use
+ Chimera.Description = "This is the description for Chimera"
+ Chimera.BaseSetFile = "titan_atlas_tracker"
+ Chimera.BaseName = "tone" //we will use monarchs model
+ Chimera.altChassisType = frameworkAltChassisMethod.ALT_TITAN
+ Chimera.titanHints = [
+ "#DEATH_HINT_CHIMERA_001",
+ "#DEATH_HINT_CHIMERA_002",
+ "#DEATH_HINT_CHIMERA_003",
+ "#DEATH_HINT_CHIMERA_004",
+ "#DEATH_HINT_CHIMERA_005",
+ "#DEATH_HINT_CHIMERA_006"
+ ]
+ #if UI
+ Chimera.loadoutsMenuControllerFunc = ChimeraPreviewController
+ #endif
+ Chimera.groupSettings.Name = "#CHIMERACATEGORY"
+ Chimera.groupSettings.showTagAsSuffix = true
+ Chimera.groupSettings.showName = false //Only show the chassis type in selection menu
 
-	ModdedTitanWeaponAbilityData GenericDefensiveMount
-	GenericDefensiveMount.custom = true
-	GenericDefensiveMount.scriptHandled = true
-	GenericDefensiveMount.displayName = "Generic Defensive mount"
-	GenericDefensiveMount.weaponName = "GenericDefensiveMount"
-	GenericDefensiveMount.description = "Chimera has a number of defensive options at its disposal"
-	Chimera.Left = GenericDefensiveMount
 
-	ModdedTitanWeaponAbilityData SalvoCore
-	SalvoCore.weaponName = "mp_titancore_salvo_core" //We only have 6 passive slots, 2 are universal and 4 are titan unique
+ ModdedTitanWeaponAbilityData GenericWeaponMount
+ GenericWeaponMount.weaponName = "mp_titanweapon_xo16_vanguard" //Custom weapons can actually use default weapons as the item
+ Chimera.Primary = GenericWeaponMount
+
+ ModdedTitanWeaponAbilityData GenericDefensiveMount
+ GenericDefensiveMount.weaponName = "mp_titanability_particle_wall"
+ Chimera.Left = GenericDefensiveMount
+
+ ModdedTitanWeaponAbilityData DefaultCore
+ DefaultCore.weaponName = "mp_titancore_salvo_core" //We only have 6 passive slots, 2 are universal and 4 are titan unique
     //So we can only really use 4 Generic slots meaning we cant make all items (gun, core, abilities) generic 
-	Chimera.Core = SalvoCore
+ Chimera.Core = DefaultCore
 
-	ModdedTitanWeaponAbilityData GenericOffensiveMount
-	GenericOffensiveMount.custom = true
-	GenericOffensiveMount.scriptHandled = true
-	GenericOffensiveMount.displayName = "Generic Offensive mount"
-	GenericOffensiveMount.weaponName = "GenericOffensiveMount"
-	GenericOffensiveMount.description = "A multipurpose mount designed for a variety of weapons"
-	Chimera.Right = GenericOffensiveMount
+ ModdedTitanWeaponAbilityData GenericOffensiveMount
+ GenericOffensiveMount.weaponName = "mp_titanweapon_salvo_rockets"
+ Chimera.Right = GenericOffensiveMount
 
-	ModdedTitanWeaponAbilityData GenricUtilityMount
-	GenricUtilityMount.custom = true
-	GenricUtilityMount.scriptHandled = true
-	GenricUtilityMount.displayName = "Genric Utility Mount"
-	GenricUtilityMount.weaponName = "GenricUtilityMount"
-	GenricUtilityMount.description = "A variety of utility options are available to chimeras adaptive systems"
-	Chimera.Mid = GenricUtilityMount
+ ModdedTitanWeaponAbilityData GenricUtilityMount
+ GenricUtilityMount.weaponName = "mp_titanability_phase_dash"
 
-    /*
-    Chimera uses passives to select what goes on its mounts, passive2 (titan kit) is the weapon, 4, 5 and 6 are the left middle and right abilities respectively
-    */
+ Chimera.Mid = GenricUtilityMount
 
+ CustomPersistentVar Primary
+ Primary.property = "primary"
+ Primary.defaultValue = "mp_titanweapon_xo16_vanguard" //<- this value is actually not err, used. i need to setup "true" custom values first
+ Primary.passiveItemsMethod = eItemsMethod.FIND_ALL_TYPE //FIND_ALL_TYPE will setup all items matching itemTypeOverride as accepted items
+ Primary.itemTypeOverride = eItemTypes.TITAN_PRIMARY
 
-    /*
-    ======IMPORTANT======
-    titanFramework uses persitence masking to map real passives in persistent data to the "fake" ones created here
-    this means the number of custom passives in a slot cannot exceed the number of default passives that exist
-    I err, dont know what will happen if you do this. Probably an index error 
-    */
-    ModdedPassiveData PredatorCannon //Define a new passive to equip the predator cannon
-    PredatorCannon.Name = "Predator Cannon"
-    PredatorCannon.description = "BRRRRRT"
-    PredatorCannon.image = $"r2_ui/menus/loadout_icons/titan_weapon/titan_weapon_predator"
-    Chimera.passive2Array.append(PredatorCannon) //If nothing is registered in passive2 it will 
-    //display the defaults passivesfor the base titan(vanguard in this case))
-
-    ModdedPassiveData xo16
-    xo16.Name = "XO16"
-    xo16.description = "Standard battle rifle"
-    xo16.image = $"r2_ui/menus/loadout_icons/titan_weapon/titan_weapon_xo16"
-    Chimera.passive2Array.append(xo16)
-
-
-    ModdedPassiveData leadWall
-    leadWall.Name = "Leadwall"
-    leadWall.description = "Shotgun"
-    leadWall.image = $"r2_ui/menus/loadout_icons/titan_weapon/titan_weapon_leadwall"
-    Chimera.passive2Array.append(leadWall)
-
-
-    ModdedPassiveData RocketLauncher
-    RocketLauncher.Name = "Rocket launcher"
-    RocketLauncher.description ="Does what it says on the tin"
-    RocketLauncher.image = $"r2_ui/menus/loadout_icons/titan_weapon/titan_weapon_quad"
-    Chimera.passive2Array.append(RocketLauncher)
-
+ Chimera.ValidationOverrides["primary"] <- Primary
 
     /*
     ========Defining Passive4, or Defensive=======
     */
-	ModdedPassiveData ParticleWall
-	ParticleWall.Name = "#WPN_TITAN_SHIELD_WALL"//Basegame localised names/descriptions can be used
-	//This may cause issues with other mods that do this as these names are both display names
-	//and internal names, This may change in the future 
-	ParticleWall.description = "#WPN_TITAN_SHIELD_WALL_DESC" 
-	ParticleWall.image = $"rui/titan_loadout/defensive/titan_defensive_particle_wall_menu"
-	Chimera.passive4Array.append(ParticleWall)
 
-	ModdedPassiveData HeatShield
-	HeatShield.Name = "#WPN_TITAN_HEAT_SHIELD"
-	HeatShield.description = "#WPN_TITAN_HEAT_SHIELD_DESC"
-	HeatShield.image = $"rui/titan_loadout/defensive/titan_defensive_heat_shield_menu"
-	Chimera.passive4Array.append(HeatShield)
+ CustomPersistentVar Defensive
+ Defensive.property = "special"
+ Defensive.defaultValue = "mp_titanability_particle_wall"
+ Defensive.passiveItemsMethod = eItemsMethod.FIND_FORCE//Forces the game to use the exact list of refs we provide
+ //In this case FIND Seems like it would work initially, however mp_titanweapon_stun_laser is also of type TITAN_ORDNANCE, but is unique in that it fits a different slot
+ //therefor it must be in the utility slot
+ //however FIND For this slot would still discover it, and add it to the list of accepted items
+ Defensive.itemTypeOverride = eItemTypes.TITAN_SPECIAL
+ Defensive.validationFunc = IsValidChimeraSpecial
 
-	ModdedPassiveData VortexShield
-	VortexShield.Name = "#WPN_TITAN_VORTEX_SHIELD"
-	VortexShield.description = "WPN_TITAN_VORTEX_SHIELD_DESC"
-	VortexShield.image = $"rui/titan_loadout/defensive/titan_defensive_vortex_menu"
-	Chimera.passive4Array.append(VortexShield)
+ Chimera.ValidationOverrides["special"] <- Defensive
+
+ ModdedPassiveData ParticleWall
+ ParticleWall.Name = "mp_titanability_particle_wall"//Basegame localised names/descriptions can be used
+ //This may cause issues with other mods that do this as these names are both display names
+ //and internal names, This may change in the future 
+ ParticleWall.description = "#WPN_TITAN_SHIELD_WALL_DESC" 
+ ParticleWall.image = $"rui/titan_loadout/defensive/titan_defensive_particle_wall_menu"
+ Chimera.ValidationOverrides["special"].acceptedItems.append(ParticleWall)
+
+ ModdedPassiveData HeatShield
+ HeatShield.Name = "mp_titanweapon_heat_shield"
+ HeatShield.description = "#WPN_TITAN_HEAT_SHIELD_DESC"
+ HeatShield.image = $"rui/titan_loadout/defensive/titan_defensive_heat_shield_menu"
+ Chimera.ValidationOverrides["special"].acceptedItems.append(HeatShield)
+
+ ModdedPassiveData VortexShield
+ VortexShield.Name = "mp_titanweapon_vortex_shield_ion"
+ VortexShield.description = "WPN_TITAN_VORTEX_SHIELD_DESC"
+ VortexShield.image = $"rui/titan_loadout/defensive/titan_defensive_vortex_menu"
+ Chimera.ValidationOverrides["special"].acceptedItems.append(VortexShield)
     /*
     =======Defining Passive5, or utility==========
     */
-	ModdedPassiveData Siphon
-	Siphon.Name = "#WPN_TITAN_STUN_LASER"
-	Siphon.description = "WPN_TITAN_STUN_LASER_DESC"
-	Siphon.image = $"rui/titan_loadout/defensive/titan_defensive_energy_siphon_menu"
-	Chimera.passive5Array.append(Siphon)
 
-	ModdedPassiveData PhaseDash
-	PhaseDash.Name = "#WPN_TITAN_PHASE_DASH"
-	PhaseDash.description = "WPN_TITAN_PHASE_DASH_DESC"
-	PhaseDash.image = $"rui/titan_loadout/tactical/titan_tactical_phase_dash_menu"
-	Chimera.passive5Array.append(PhaseDash)
-	//You do not need to have as many custom passives as default ones, just make sure you dont have more
-	/*
-	=======Defining Passive6, or Offensive========
-	*/
-	ModdedPassiveData RocketPod
-	RocketPod.Name = "#WPN_TITAN_SALVO_ROCKETS"
-	RocketPod.description = "WPN_TITAN_SALVO_ROCKETS_DESC"
-	RocketPod.image = $"rui/titan_loadout/ordnance/tracking_rockets_menu"
-	Chimera.passive6Array.append(RocketPod)
+ CustomPersistentVar Utility
+ Utility.property = "antirodeo"
+ Utility.defaultValue = "mp_titanability_phase_dash"
+ Utility.passiveItemsMethod = eItemsMethod.FIND_FORCE //Not all abilities we have in this slot share a type, so we use FIND_FORCE to specify an exact list of refs
+ Utility.itemTypeOverride = eItemTypes.TITAN_ANTIRODEO
+ Utility.validationFunc = IsValidChimeraAntirodeo
 
-	ModdedPassiveData FlameWall
-	FlameWall.Name = "#WPN_TITAN_FIREWALL"
-	FlameWall.description = "WPN_TITAN_FIREWALL_DESC"
-	FlameWall.image = $"rui/titan_loadout/ordnance/flame_wall_menu"
-	Chimera.passive6Array.append(FlameWall)
-	
-	ModdedPassiveData Laser
-	Laser.Name = "#WPN_TITAN_LASER_LITE"
-	Laser.description = "WPN_TITAN_LASER_LITE_DESC"
-	Laser.image = $"rui/titan_loadout/ordnance/laser_shot_menu"
-	Chimera.passive6Array.append(Laser)
+ Chimera.ValidationOverrides["antirodeo"] <- Utility
 
-	CreateModdedTitanSimple(Chimera)//Ah yes """"""""""""Simple""""""""""""
-``
+ ModdedPassiveData Siphon
+ Siphon.Name = "mp_titanweapon_stun_laser"
+ Siphon.description = "WPN_TITAN_STUN_LASER_DESC"
+ Siphon.image = $"rui/titan_loadout/defensive/titan_defensive_energy_siphon_menu"
+ Chimera.ValidationOverrides["antirodeo"].acceptedItems.append(Siphon)
 
+ ModdedPassiveData PhaseDash
+ PhaseDash.Name = "mp_titanability_phase_dash"
+ PhaseDash.description = "WPN_TITAN_PHASE_DASH_DESC"
+ PhaseDash.image = $"rui/titan_loadout/tactical/titan_tactical_phase_dash_menu"
+ Chimera.ValidationOverrides["antirodeo"].acceptedItems.append(PhaseDash)
+
+ ModdedPassiveData hover
+ hover.Name = "mp_titanability_hover"
+ hover.description = "WPN_TITAN_HOVER_DESC"
+ hover.image = $"rui/titan_loadout/tactical/titan_tactical_hover_menu"
+ Chimera.ValidationOverrides["antirodeo"].acceptedItems.append(hover)
+
+ ModdedPassiveData tripwire
+ tripwire.Name = "mp_titanability_laser_trip"
+ tripwire.description = "WPN_TITAN_TRIPWIRE_DESC"
+ tripwire.image = $"rui/titan_loadout/tactical/titan_tactical_laser_tripwire_menu"
+ Chimera.ValidationOverrides["antirodeo"].acceptedItems.append(tripwire)
+ 
+ /*
+ =======Defining Passive6, or Offensive========
+ */
+ CustomPersistentVar ordnanceSlot
+ ordnanceSlot.property = "ordnance"
+ ordnanceSlot.defaultValue = "mp_titanweapon_laser_lite"
+ ordnanceSlot.passiveItemsMethod = eItemsMethod.FIND
+ ordnanceSlot.itemTypeOverride = eItemTypes.TITAN_ORDNANCE
+ ordnanceSlot.validationFunc = IsValidChimeraOrdnance
+
+ Chimera.ValidationOverrides["ordnance"] <- ordnanceSlot
+
+
+ ModdedPassiveData RocketPod
+ RocketPod.Name = "mp_titanweapon_salvo_rockets"
+ RocketPod.description = "WPN_TITAN_SALVO_ROCKETS_DESC"
+ RocketPod.image = $"rui/titan_loadout/ordnance/tracking_rockets_menu"
+ Chimera.ValidationOverrides["ordnance"].acceptedItems.append(RocketPod)
+
+ ModdedPassiveData FlameWall
+ FlameWall.Name = "mp_titanweapon_flame_wall"
+ FlameWall.description = "WPN_TITAN_FIREWALL_DESC"
+ FlameWall.image = $"rui/titan_loadout/ordnance/flame_wall_menu"
+ Chimera.ValidationOverrides["ordnance"].acceptedItems.append(FlameWall)
+ 
+ ModdedPassiveData Laser
+ Laser.Name = "mp_titanweapon_laser_lite"
+ Laser.description = "WPN_TITAN_LASER_LITE_DESC"
+ Laser.image = $"rui/titan_loadout/ordnance/laser_shot_menu"
+ Chimera.ValidationOverrides["ordnance"].acceptedItems.append(Laser)
+
+ ModdedPassiveData DumbfireRockets
+ DumbfireRockets.Name = "mp_titanweapon_dumbfire_rockets"
+ DumbfireRockets.description = "WPN_TITAN_DUMB_SHOULDER_ROCKETS_DESC"
+ DumbfireRockets.image = $"rui/titan_loadout/ordnance/cluster_missile_menu"
+ Chimera.ValidationOverrides["ordnance"].acceptedItems.append(DumbfireRockets)
+
+ ModdedPassiveData arcWave
+ arcWave.Name = "mp_titanweapon_arc_wave"
+ arcWave.description = "WPN_TITAN_ARC_WAVE_DESC"
+ arcWave.image = $"rui/titan_loadout/ordnance/arc_wave_menu"
+ Chimera.ValidationOverrides["ordnance"].acceptedItems.append(arcWave)
+
+ CustomPersistentVar coreAbility
+ coreAbility.property = "coreAbility"
+ coreAbility.defaultValue = "mp_titancore_salvo_core"
+ coreAbility.passiveItemsMethod = eItemsMethod.FIND //These all match the same type, but we dont want ALL titan cores 
+ coreAbility.itemTypeOverride = eItemTypes.TITAN_CORE_ABILITY
+ coreAbility.validationFunc = IsValidChimeraCore
+
+ Chimera.ValidationOverrides["coreAbility"] <- coreAbility
+
+ ModdedPassiveData SalvoCore
+ SalvoCore.Name = "mp_titancore_salvo_core"
+ SalvoCore.customIcon = true //Icons arent actually custom, but hardcoded ui atlas' arent meant to display these icons on passive icons
+ Chimera.ValidationOverrides["coreAbility"].acceptedItems.append(SalvoCore)
+
+ ModdedPassiveData LaserCore
+ LaserCore.Name = "mp_titancore_laser_cannon"
+ LaserCore.customIcon = true
+ Chimera.ValidationOverrides["coreAbility"].acceptedItems.append(LaserCore)
+
+ ModdedPassiveData FlameCore
+ FlameCore.Name = "mp_titancore_flame_wave"
+ FlameCore.customIcon = true
+ Chimera.ValidationOverrides["coreAbility"].acceptedItems.append(FlameCore)
+
+ ModdedPassiveData DashCore
+ DashCore.Name = "mp_titancore_dash_core"
+ DashCore.customIcon = true
+ Chimera.ValidationOverrides["coreAbility"].acceptedItems.append(DashCore)
+
+ ModdedPassiveData ampCore
+ ampCore.Name = "mp_titancore_amp_core"
+ ampCore.customIcon = true
+ Chimera.ValidationOverrides["coreAbility"].acceptedItems.append(ampCore)
+
+ FrameworkChassisStruct Ogre
+ Ogre.name = "Ogre"
+ Ogre.setFile = "titan_ogre_minigun"
+ Ogre.executionAnimationType = 57
+ #if CLIENT || SERVER
+ PrecacheModel($"models/titans/heavy/titan_heavy_ogre_base.mdl")
+ #endif
+ Ogre.modelOverride = $"models/titans/heavy/titan_heavy_ogre_base.mdl"
+ 
+ Chimera.altChassisArray.append(Ogre)
+
+ FrameworkChassisStruct Atlas 
+ Atlas.name = "Atlas"
+ Atlas.setFile = "titan_atlas_tracker"
+ Atlas.executionAnimationType = 55
+ //#if CLIENT || SERVER //Removed temporarily because animations crash server
+ //PrecacheModel($"models/titans/medium/titan_medium_atlas_base.mdl")
+ //#endif
+ //Atlas.modelOverride = $"models/titans/medium/titan_medium_atlas_base.mdl"
+
+ Chimera.altChassisArray.append(Atlas)
+
+ FrameworkChassisStruct Stryder
+ Stryder.name = "Stryder"
+ Stryder.setFile = "titan_stryder_leadwall"
+ Stryder.executionAnimationType = 52
+ #if CLIENT || SERVER
+ PrecacheModel($"models/titans/light/titan_light_stryder_base.mdl")
+ #endif
+ Stryder.modelOverride = $"models/titans/light/titan_light_stryder_base.mdl"
+
+ Chimera.altChassisArray.append(Stryder)
+
+ CreateModdedTitanSimple(Chimera)//Ah yes """"""""""""Simple""""""""""""
+
+
+ #if CLIENT
+ RegisterTitanAudioFunctionByTitan("#DEFAULT_TITAN_CHIMERA", chimeraHandleVoice)
+ #endif
+
+}
+```
 
 what is a base titan?
 -----
+
 A base titan is just the titan from which to get the persistent passives, animations, xp and various other things from.
 
 Does framework break basegame persistence?
 ---------
-No, framework will only ever modify the last 3 titans on the titan menu, which are not checked by basegame persistence, similarly removing a modded titan from framework will also not break persistence, instead the titan will return to its base titan, however the name may appear to be that of the modded titan you uninstalled
 
+It should not, framework uses its own standalone persistence system built using safe IO
+
+If persistence breaks for any reason simply go to `Titanfall2\local_mod_data` and remove every file, this will reset titanframework back to its base state, while preserving your vanilla loadouts
 
 Debugging
 --
+
 To help debugging broken persistence data it can be helpful to run the command 
 
-`script_client DevPrintTitanLoadoutPersistentDebug(GetLocalClientPlayer(), (number between 0 and 9) )` 
-
+`titanFrameworkDevPrintsEnabled 1` 
 
 Changelog ish
 -------
 
+Now uses a fully custom persistence system for storing loadouts using local JSON instead of trying to use basegame persistence
 
-Titan groups now implemented to support packs, variants and other collections of titans, including Tag option for titans to allow titans to have a different selection name to the in game name
+This means:
 
-Initial titan icon support implementation
+. Unlimited titan loadouts
 
-Limited FD icon support (RUI limitations make it impossible for custom icons to render with most default ui elements)
+. Titans no longer have restrictions on how many passives they can load
 
-Added option for titans to default to being prime
+. Titans can have arbitrary persistent vars allowing more or different changable values than would otherwise be allowed 
 
-Added additional functionality for script handled weapons to specify a function for menu models 
+This also leads onto the main new **feature**
 
-Fixed titan loadous appearing empty on first use (again)
+Custom pilot equipment
+-
 
-Added some extra debug stuff 
+Titanframework now supports custom custom grenades, tacticals and guns, this is done using overrides rathere than creating further loadouts just for modded content
 
-Refactor part 1
+Other notable features
 
-Added support for moreskins
-
-
-Special thanks to Dinorush and GalacticMoblin for creating the titans used to test as well as feature suggestions, and Spoon for actually understanding how ui and persistence works unlike myself 
+Remade titan UI to facilitate all the new additions, Titans can now be accessed from the "Custom loadouts" footer button on the bottom of the titan menu
