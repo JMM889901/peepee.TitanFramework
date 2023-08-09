@@ -1,6 +1,7 @@
 the peepeepoopoo mans TitanFramework
 ==
 
+If you have having issues with manual install make sure you delete any previous versions (including jmm889901.titanframework) before updating
 
 This is an experimental mod and any crash logs will be appreciated, i will aim to keep backwards compatability as much as possible to make updating optional
 
