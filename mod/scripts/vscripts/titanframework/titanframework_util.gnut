@@ -149,7 +149,7 @@ void function debugNullTitanLoadout(entity player, int index)
 void functionref(array<var> icons, string ref) function GetModdedTitanPreviewController(string titanClass)
 {
 	if(!(titanClass in TitanPreviewControllersByClass))
-		return null
+		return null //Preview controller default is set in Registermoddedtitan so this shouldnt happen unless the titan doesnt exist
 	return TitanPreviewControllersByClass[titanClass]
 }
 bool function TitanClassHasAltTitans(string titanClass)
