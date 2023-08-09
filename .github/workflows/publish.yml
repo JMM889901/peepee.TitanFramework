@@ -44,6 +44,6 @@ jobs:
           # Thunderstore API token
           token: ${{ secrets.TS_KEY }} 
           # Directory to wrap the contents of the repo in
-          wrap: mods/Peepee.${{ env.name }} # This will wrap your Author.ModName folder in a mods/ folder before publishing
+          wrap: mods/peepee.${{ env.name }} # This will wrap your Author.ModName folder in a mods/ folder before publishing
           #deps: "northstar-Northstar@1.9.3" # <------------- Uncomment this line to add dependencies to your mod, each sparated by a space
           categories: "mods client-side server-side" # <----------------------------- Add more categories as needed, separated by spaces

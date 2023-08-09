@@ -3,7 +3,7 @@
 	"Description": "Pain",
 	"LoadPriority": 7,
 	"RequiredOnClient": true,
-	"Version": "2.1.3",
+	"Version": "2.2.1",
 	
 	"Scripts": [
 		{

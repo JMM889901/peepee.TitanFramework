@@ -406,7 +406,7 @@ global struct ItemData
 }
 
 //Framework modded titan structs
-global const string FRAMEWORK_VERSION = "2.1.2"
+global const string FRAMEWORK_VERSION = "2.2.1"
 global enum frameworkAltChassisMethod
 {
 	ALT_TITAN, 

@@ -921,13 +921,6 @@ void function CreateModdedTitanSimple( ModdedTitanData Titan )
 	{
 		Titan.derivedData.PersistentValuesValidation["setFile"] <- IsValidSetFile
 	}
-	foreach(string name, CustomPersistentVar passives in Titan.ValidationOverrides)
-	{
-		if(passives.validationFunc == null)
-			Titan.derivedData.PersistentValuesValidation[name] <- ValidPersistentPassiveForLoadout
-		else
-			Titan.derivedData.PersistentValuesValidation[name] <- passives.validationFunc
-	}
 	if(Titan.passive2Array.len() == 0)
 		delete Titan.derivedData.PersistentValuesValidation["passive2"]
 	if(Titan.passive4Array.len() == 0)
@@ -936,6 +929,13 @@ void function CreateModdedTitanSimple( ModdedTitanData Titan )
 		delete Titan.derivedData.PersistentValuesValidation["passive5"]
 	if(Titan.passive6Array.len() == 0)	
 		delete Titan.derivedData.PersistentValuesValidation["passive6"]
+	foreach(string name, CustomPersistentVar passives in Titan.ValidationOverrides)
+	{
+		if(passives.validationFunc == null)
+			Titan.derivedData.PersistentValuesValidation[name] <- ValidPersistentPassiveForLoadout
+		else
+			Titan.derivedData.PersistentValuesValidation[name] <- passives.validationFunc
+	}
 	//No point searching for values that dont exist
 	RegisterModdedTitanData(Titan)
 
