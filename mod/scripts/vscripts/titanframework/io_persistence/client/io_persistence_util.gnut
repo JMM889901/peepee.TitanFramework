@@ -954,7 +954,7 @@ void function DescribeNewTitanLoadoutToServer(frameworkPersistentTitanLoadout lo
             resultString += varName + " " + loadout.additionalVars[varName] + " "
         else if (varName in loadoutTable)
             resultString += varName + " " + loadoutTable[varName] + " "
-        if(resultString.len() >= 450) //500 ish is the max length of a clientcommand 
+        if(resultString.len() >= 400) //500 ish is the max length of a clientcommand 
         {
             resultString += "multicommand yes"
             multicommand = true

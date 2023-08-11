@@ -5,6 +5,7 @@ global struct globalPlayerCustomLoadouts
     table<entity, table<string, frameworkPersistentTitanLoadout> > playerLoadouts
     table<entity, table<string, frameworkPersistentTitanLoadout> > playerMulticommandLoadouts
     table<entity, table<int, frameworkPilotLoadoutOverrides> > playerPilotLoadoutOverrides
+    table<entity, table<string, array<array<string > > > > playerOutOfOrderMulticommands
 }
 global globalPlayerCustomLoadouts frameworkPlayerLoadouts
 void function frameworkIOPersistInit()
@@ -182,7 +183,12 @@ bool function registerNewTitanLoadoutFromClient(entity player, array<string> arg
     }
     else if (continuePast)
     {
-        //ServerToClientStringCommand(player, "FrameworkInformLoadoutResponse " + args[3] + " #REJECTED #INVALIDFORMAT #NOMULTICOMMAND" )//This would overwrite error messages, need to write some extra client stuff to fix that
+        if( !(player in frameworkPlayerLoadouts.playerOutOfOrderMulticommands) )
+            frameworkPlayerLoadouts.playerOutOfOrderMulticommands[player] <- {}
+        if( !(args[3] in frameworkPlayerLoadouts.playerOutOfOrderMulticommands[player]) )
+            frameworkPlayerLoadouts.playerOutOfOrderMulticommands[player][args[3]] <- []
+        frameworkPlayerLoadouts.playerOutOfOrderMulticommands[player][args[3]].append(args) //Store to be loaded after the "first" command is received
+        ServerToClientStringCommand(player, "FrameworkInformLoadoutResponse " + args[3] + " #REJECTED #INVALIDFORMAT #OUTOFORDER_MULTICOMMAND" )//This would overwrite error messages, need to write some extra client stuff to fix that
         return false
     }
     else
@@ -234,10 +240,19 @@ bool function registerNewTitanLoadoutFromClient(entity player, array<string> arg
                     frameworkPlayerLoadouts.playerMulticommandLoadouts[player] <- {}
                 frameworkPlayerLoadouts.playerMulticommandLoadouts[player][args[3]] <- PersistLoadout
                 ServerToClientStringCommand(player, "FrameworkInformLoadoutResponse " + args[3] + " #ACCEPTED #MULTICOMMAND" )
+                if( player in frameworkPlayerLoadouts.playerOutOfOrderMulticommands && args[3] in frameworkPlayerLoadouts.playerOutOfOrderMulticommands[player])
+                {
+                    foreach( array<string> command in frameworkPlayerLoadouts.playerOutOfOrderMulticommands[player][args[3]])
+                    {
+                        registerNewTitanLoadoutFromClient(player, command )
+                    }
+                    delete frameworkPlayerLoadouts.playerOutOfOrderMulticommands[player][args[3]]
+                }
                 return true
             }
             if( args[i+1] == "continue")
                 continue
+            ServerToClientStringCommand(player, "FrameworkInformLoadoutResponse " + args[3] + " #REJECTED #INVALIDFORMAT #INVALIDMULTICOMMAND " + args[i+1] )
             return false
         }
         
