@@ -56,6 +56,7 @@ void function InitTitanLoadoutsMenu()
 
 	AddMenuFooterOption( menu, BUTTON_A, "#A_BUTTON_SELECT" )
 	AddMenuFooterOption( menu, BUTTON_B, "#B_BUTTON_BACK", "#BACK" )
+	AddMenuFooterOption( menu, BUTTON_X, "#MODDED_LOADOUTS_CONTROLLER", "#MODDED_LOADOUTS_KEY", AdvanceMenuEventHandler( GetMenu( "EditCustomTitanLoadoutsMenu" ) ) )
 }
 
 void function OnTitanLoadoutsMenu_Open()
