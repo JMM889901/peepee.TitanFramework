@@ -53,6 +53,7 @@ global function SetTitanLoadout//Deprecated
 #endif 
 #if CLIENT
 global function ForceUpdateClientPetTitanLoadout
+global function ForceUpdateClientPetTitanLoadoutVanilla
 global function GetClientActivePetLoadout
 #endif
 
@@ -569,6 +570,7 @@ void function RegisterFrameworkNetworkVar()
 {
 	Remote_RegisterFunction("UpdateHealthSegmentCount")//TODO
 	Remote_RegisterFunction("ForceUpdateClientPetTitanLoadout")
+	Remote_RegisterFunction("ForceUpdateClientPetTitanLoadoutVanilla")
 
 }
 #if CLIENT
@@ -577,6 +579,12 @@ void function ForceUpdateClientPetTitanLoadout(int refID)
 {
 	string ref = GetModdedLoadoutNameFromIndex(refID, "T", false)
 	overideFrameworkTitanLoadoutWithTitanLoadout(clientframeworkPersistentTitanLoadouts.loadouts[ref], activePetTitanLoadout)
+}
+void function ForceUpdateClientPetTitanLoadoutVanilla(int id)
+{
+	frameworkPersistentTitanLoadout blank
+	overrideTitanLoadoutWithTitanLoadout(blank.loadout, GetCachedTitanLoadout( id ))
+	overideFrameworkTitanLoadoutWithTitanLoadout(blank, activePetTitanLoadout)
 }
 frameworkPersistentTitanLoadout function GetClientActivePetLoadout()
 {

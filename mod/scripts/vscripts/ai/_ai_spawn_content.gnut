@@ -696,6 +696,35 @@ function CommonNPCTitanOnSpawned( entity npc )
 	}
 	if(npc.ai.titanSpawnLoadout.frameworkLoadoutRef != "" && IsValid(npc.mySpawnOptions_ownerPlayer) )
 		Remote_CallFunction_NonReplay(expect entity(npc.mySpawnOptions_ownerPlayer) , "ForceUpdateClientPetTitanLoadout", GetModdedLoadoutNameIndex(npc.ai.titanSpawnLoadout.frameworkLoadoutRef) )
+	else if(IsValid(npc.mySpawnOptions_ownerPlayer))
+	{
+		int index 
+		switch(npc.ai.titanSpawnLoadout.titanClass)
+		{
+			case "ion":
+				index = 0
+				break
+			case "scorch":
+				index = 1
+				break
+			case "northstar":
+				index = 2
+				break
+			case "ronin":
+				index = 3
+				break
+			case "tone":
+				index = 4
+				break
+			case "legion":
+				index = 5
+				break
+			case "vanguard":
+				index = 6
+				break
+		} //yes there is a better way for this, i cba
+		Remote_CallFunction_NonReplay(expect entity(npc.mySpawnOptions_ownerPlayer) , "ForceUpdateClientPetTitanLoadoutVanilla", index )
+	}
 }
 
 function ShouldSpawn( team, forced )

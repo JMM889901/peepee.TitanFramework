@@ -182,6 +182,7 @@ void function OnLoadoutButton_Activate( var button )
 
 	uiGlobal.titanSpawnLoadoutIndex = loadoutIndex
 	ClientCommand( "RequestTitanLoadout " + loadoutIndex )
+	setModdedTitanLoadoutIndex("")
 
 	if ( IsLobby() )
 		CloseActiveMenu()
