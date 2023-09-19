@@ -1301,7 +1301,7 @@ bool function IsValidTitanPassive(entity player, int loadoutIndex, string loadou
 	unreachable
 }
 
-bool function IsValidTitanExecution( int loadoutIndex, string loadoutProperty, var value, string ref, entity player ) //TODO: Not using all parameters in this function yet, might need them for full validation
+bool function IsValidTitanExecution( int loadoutIndex, string loadoutProperty, var value, string ref, entity player = null ) //TODO: Not using all parameters in this function yet, might need them for full validation
 {
 	//Should have run IsRefValid(ref already, so fine to do GetItemType( ref ))
 	int itemType = GetItemType( ref )
@@ -1334,6 +1334,8 @@ bool function IsValidTitanExecution( int loadoutIndex, string loadoutProperty, v
 				case 6:
 					return itemType == eItemTypes.TITAN_VANGUARD_EXECUTION
 				default:
+					if ( !IsValid(player) )
+						return false
 					if(shouldPrintDevStuff())
 						print("IsValidTitanExecution Type "+itemType)
 					string titanClass
