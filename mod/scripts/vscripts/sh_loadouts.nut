@@ -3072,7 +3072,7 @@ void function SetPersistentSpawnLoadoutIndex( entity player, string loadoutType,
 {
 	Assert( loadoutIndex >= 0 )
 	if(!IsValid(player)) 
-		continue
+		return
 	player.SetPersistentVar( loadoutType + "SpawnLoadout.index", loadoutIndex )
 }
 #endif // SERVER
