@@ -25,6 +25,14 @@ int function GetModdedtitanXP( string name )
     }
     return FrameworkModdedXP.xpTable[name]
 }
+int function GetModdedWeaponXP( string name )
+{
+    if( !(name in FrameworkModdedXP.xpTable) )
+    {
+        return 0
+    }
+    return FrameworkModdedXP.xpTable[name]
+}
 void function AddModdedTitanXP(string name, int amount, bool Sync = true)
 {
     print("AddModdedTitanXP: " + name + " " + amount)
@@ -40,6 +48,25 @@ void function AddModdedTitanXP(string name, int amount, bool Sync = true)
         #endif
         #if UI
         RunClientScript("AddModdedTitanXP", name, amount, false)
+        #endif
+        SavePersistentXP()
+    }
+}
+void function AddModdedWeaponXP(string name, int amount, bool Sync = true)
+{
+    print("AddModdedWeaponXP: " + name + " " + amount)
+    if( !(name in FrameworkModdedXP.xpTable) )
+    {
+        FrameworkModdedXP.xpTable[name] <- 0
+    }
+    FrameworkModdedXP.xpTable[name] += amount
+    if(Sync)
+    {
+        #if CLIENT
+        RunUIScript("AddModdedWeaponXP", name, amount, false)
+        #endif
+        #if UI
+        RunClientScript("AddModdedWeaponXP", name, amount, false)
         #endif
         SavePersistentXP()
     }

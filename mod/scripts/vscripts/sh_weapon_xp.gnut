@@ -121,30 +121,37 @@ void function WeaponSetXPPerLevelType( string weaponClassName, string xpPerLevel
 
 int function WeaponGetMaxXP( string weaponClassName )
 {
-	if(IsItemModded(weaponClassName))
-		return 10 //TODO: WEAPON XP
+	//if(IsItemModded(weaponClassName))
+	//	return 10 //TODO: WEAPON XP
 	return WeaponGetMaxXPPerGen( weaponClassName ) * MAX_WEAPON_GEN
 }
 
 int function WeaponGetMaxXPPerGen( string weaponClassName )
 {
+	string xpPerLevelType
 	if(IsItemModded(weaponClassName))
-		return 10 //TODO: WEAPON XP
-	string xpPerLevelType = file.xpPerLevelTypes[ weaponClassName ]
+		xpPerLevelType = GetModdedWeaponXPType( weaponClassName )
+	else
+		xpPerLevelType = file.xpPerLevelTypes[ weaponClassName ]
 	return file.weaponXPForLevel[ xpPerLevelType ][ file.maxLevelPerGen ] + file.weaponXPPipsPerLevel[ xpPerLevelType ][ file.maxLevelPerGen ]
 }
 
 int function WeaponGetNumPipsForXP( string weaponClassName, int weaponXP )
 {
-	if(IsItemModded(weaponClassName))
-		return 10 //TODO: WEAPON XP
+	//if(IsItemModded(weaponClassName))
+	//	return 10 //TODO: WEAPON XP
 	int maxXP = WeaponGetMaxXP( weaponClassName )
 	if ( weaponXP >= maxXP )
 		return 10
 
 	int weaponLevel = WeaponGetLevelForXP( weaponClassName, weaponXP )
 
-	string xpPerLevelType = file.xpPerLevelTypes[ weaponClassName ]
+	string xpPerLevelType
+	if(IsItemModded(weaponClassName))
+		xpPerLevelType = GetModdedWeaponXPType( weaponClassName )
+	else
+		xpPerLevelType = file.xpPerLevelTypes[ weaponClassName ]
+
 	return file.weaponXPPipsPerLevel[ xpPerLevelType ][ weaponLevel ]
 }
 
@@ -164,9 +171,14 @@ int function WeaponGetFilledPipsForXP( string weaponClassName, int weaponXP )
 int function WeaponGetXPForLevel( string weaponClassName, int weaponLevel )
 {
 	Assert( weaponLevel > 0 && weaponLevel <= file.maxLevelPerGen )
+
+	string xpPerLevelType
+	
 	if(IsItemModded(weaponClassName))
-		return 10 //TODO: WEAPON XP
-	string xpPerLevelType = file.xpPerLevelTypes[ weaponClassName ]
+		xpPerLevelType = GetModdedWeaponXPType( weaponClassName )
+	else
+		xpPerLevelType = file.xpPerLevelTypes[ weaponClassName ]
+		
 	return file.weaponXPForLevel[ xpPerLevelType ][ weaponLevel ]
 }
 
@@ -192,8 +204,7 @@ int function WeaponGetRawLevelForXP( string weaponClassName, int weaponXP )
 
 int function WeaponGetLevelForXP( string weaponClassName, int weaponXP )
 {
-	if(IsItemModded(weaponClassName))
-		return 10 //TODO: WEAPON XP
+
 	int maxXP = WeaponGetMaxXP( weaponClassName )
 	if ( weaponXP >= maxXP )
 		return 1
@@ -201,7 +212,13 @@ int function WeaponGetLevelForXP( string weaponClassName, int weaponXP )
 	int maxXPPerGen = WeaponGetMaxXPPerGen( weaponClassName )
 	int xpIntoCurrentGen = weaponXP % maxXPPerGen
 
-	string xpPerLevelType = file.xpPerLevelTypes[ weaponClassName ]
+	string xpPerLevelType
+	
+	
+	if(IsItemModded(weaponClassName))
+		xpPerLevelType = GetModdedWeaponXPType( weaponClassName )
+	else
+		xpPerLevelType = file.xpPerLevelTypes[ weaponClassName ]
 	foreach ( i, xpVal in file.weaponXPForLevel[ xpPerLevelType ] )
 	{
 		if ( xpIntoCurrentGen < xpVal )
@@ -244,8 +261,13 @@ int function WeaponGetPreviousLevel( entity player, string weaponRef )
 int function WeaponGetXP( entity player, string weaponRef )
 {
 	string persistenceVar = GetItemPersistenceStruct( weaponRef ) + ".weaponXP"
+	#if SERVER
 	if(IsItemModded(weaponRef))
 		return 0
+	#elseif CLIENT || UI
+	if(IsItemModded(weaponRef))
+		return GetModdedWeaponXP( weaponRef )
+	#endif
 	return player.GetPersistentVarAsInt( persistenceVar )
 }
 

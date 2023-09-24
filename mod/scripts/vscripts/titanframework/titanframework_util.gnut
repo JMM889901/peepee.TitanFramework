@@ -50,6 +50,7 @@ global function DevPrintTitanLoadoutPersistentDebug//Guess what, also deprecated
 #if SERVER
 global function debugNullTitanLoadout//Deprecated
 global function SetTitanLoadout//Deprecated
+global function spawnTitanWithModdedLoadout
 #endif 
 #if CLIENT
 global function ForceUpdateClientPetTitanLoadout
@@ -138,6 +139,33 @@ void function DevPrintTitanLoadoutPersistentDebug(entity player, int index)
 	PrintStringArray( loadout.antirodeoMods                                                       )
 }
 #if SERVER
+void function spawnTitanWithModdedLoadout(string titanClass, int team = -1, entity specific_player = null)
+{
+	entity player = GetPlayerArray()[0]
+	if(specific_player != null)
+		player = specific_player
+	if(team == -1)
+		team = GetEnemyTeam(player.GetTeam())
+	vector spawnpointOrigin = GetPlayerCrosshairOrigin( player )
+	vector spawnpointAngles = VectorToAngles( FlattenVector( GetPlayerArray()[0].GetViewVector() ) * -1 )
+	entity titan = CreateAutoTitan_FromLoadout( TitanLoadoutByClass[titanClass], spawnpointOrigin, spawnpointAngles, team )
+	DispatchSpawn( titan )
+}
+entity function CreateAutoTitan_FromLoadout( TitanLoadoutDef loadout, vector origin, vector angles, int team )
+{
+
+	entity npcTitan = CreateNPCTitan( loadout.setFile, team, origin, angles, loadout.setFileMods )
+	npcTitan.ai.titanSpawnLoadout = loadout
+
+	#if MP
+		string titanRef = GetTitanCharacterNameFromSetFile( loadout.setFile )
+		if( GetModdedTitanClasses().contains(loadout.name) )
+			titanRef = loadout.name
+		npcTitan.SetTargetInfoIcon( GetTitanCoreIcon( titanRef ) )
+	#endif
+
+	return npcTitan
+}
 void function debugNullTitanLoadout(entity player, int index)
 {
 	DevPrintTitanLoadoutPersistentDebug(player, index)

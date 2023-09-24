@@ -555,6 +555,8 @@ global struct moddedPilotWeaponData
 	int itemType = 0 //Pilot weapons are apparently type 0 huh
 	string weaponName //Most values are derrived from weapon txts
 	bool customIcon
+	string weaponXPType = "default" //default, sniper, pistol, antititan
+	//Used for weapon xp
 	array<moddedWeaponAttachmentMod> attachments
 }
 global struct moddedPilotSuitData

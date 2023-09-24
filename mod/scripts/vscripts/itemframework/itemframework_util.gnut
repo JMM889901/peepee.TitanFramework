@@ -4,6 +4,7 @@ global function registerModdedPilotPassive
 global function registerModdedPilotSuit
 global function GetModdedTacticalSuit
 global function registerModdedModAttachment
+global function GetModdedWeaponXPType
 //global function registerModdedPersistentItem
 array<moddedPilotWeaponData> moddedPersistentWeaponData
 array<ItemData> moddedPersistentWeaponItems
@@ -12,6 +13,7 @@ array<string> moddedPersistentPassiveRefs
 array<string> moddedPersistentWeaponMods
 table<string, string> moddedTacticalSuitRefs
 table<string, string> moddedTatcialSuitSetFiles
+table<string, string> weaponXPType
 
 void function registerModdedPersistentWeapon(moddedPilotWeaponData data)
 {
@@ -19,16 +21,21 @@ void function registerModdedPersistentWeapon(moddedPilotWeaponData data)
         moddedPersistentWeaponData.append(data)
     if(!moddedPersistentWeaponRefs.contains(data.weaponName))
         moddedPersistentWeaponRefs.append(data.weaponName)
+
+        
+    weaponXPType[data.weaponName] <- data.weaponXPType
     AddCallback_OnRegisterCustomItems( void function() : ( data ){
         CreateWeaponData(999, data.itemType, false, data.weaponName, false )
         InitUnlock(data.weaponName, "", eUnlockType.PLAYER_LEVEL, 0 )
         foreach(int index, moddedWeaponAttachmentMod mod in data.attachments)
         {
-            
-            registerModdedModAttachment(data.weaponName, mod, index)
-            
+            registerModdedModAttachment(data.weaponName, mod, index) 
         }
     } )
+}
+string function GetModdedWeaponXPType(string weapon)
+{
+    return weaponXPType[weapon]
 }
 void function registerModdedModAttachment(string weaponName, moddedWeaponAttachmentMod mod, int index = 1)
 {
