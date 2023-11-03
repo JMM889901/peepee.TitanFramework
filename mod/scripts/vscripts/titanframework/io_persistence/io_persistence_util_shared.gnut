@@ -78,6 +78,9 @@ void function UpdateDerivedFrameworkLoadoutValues( frameworkPersistentTitanLoado
         }
         else if (loadout.loadout.isPrime == "titan_is_not_prime" && loadout.loadout.setFile.find("prime") != null)//This is really scuffed, oh well!
             loadout.loadout.setFile = GetBaseTitanSetFileFromPrimeSetFile(loadout.loadout.setFile)
+		else if (loadout.loadout.isPrime == "titan_is_not_prime") {
+	    	loadout.loadout.setFile = GetModdedTitanData(loadout.titanName).BaseSetFile
+		}
     }
     else if (loadout.titanName != "vanguard" && GetModdedTitanData(loadout.titanName).altChassisType == frameworkAltChassisMethod.ALT_TITAN)
     {
@@ -91,13 +94,20 @@ void function UpdateDerivedFrameworkLoadoutValues( frameworkPersistentTitanLoado
                     break
                 }
             }
-        }
-            
+        //FUCK
+		loadout.loadout.setFile = GetModdedTitanData(loadout.titanName).altChassisArray[0].setFile
+        }   
     }
+    else if (loadout.titanName != "vanguard") {
+		loadout.loadout.setFile = GetModdedTitanData(loadout.titanName).BaseSetFile //I dont want to have to do this really 
+		//but its the easiest way to let people change the setfile in code without everything exploding
+	}
+
     loadout.loadout.setFileMods = GetSetFileModsForSettingType("titan", [ loadout.loadout.passive1, loadout.loadout.passive2, loadout.loadout.passive3, loadout.loadout.passive4, loadout.loadout.passive5, loadout.loadout.passive6 ] )
 
 
-    //TODO: Add callbacks for custom derived values
+    //TODO: Add callbacks for custom derived values <- You wrote this months ago and you still have not done this
+	//Lol, lmao even
 }
 
 table function TitanLoadoutDefToTable(TitanLoadoutDef loadout)
