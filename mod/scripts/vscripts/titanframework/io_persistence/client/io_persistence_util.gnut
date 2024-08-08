@@ -565,6 +565,18 @@ void function setFrameworkTitanLoadoutValueCallback(entity player, string fileNa
 }
 void function LoadPersistentTitanLoadout(table Table)
 {
+    bool contains = false
+    foreach(key, value in Table){
+        if(key == "fileName"){
+            contains = true
+        }
+    }
+
+    if (!contains)
+    {
+        print("No fileName in loadout") //To account for double-loading bug
+        return
+    }
     print("loading titan loadout from json " + expect string(Table["fileName"]))
     frameworkPersistentTitanLoadout loadout
     loadout.loadoutName = expect string(Table["loadoutName"])
@@ -583,6 +595,18 @@ void function LoadPersistentPilotLoadout(table Table)
 {
     if( shouldPrintDevStuff() )
         PrintTable(Table)
+    bool contains = false
+    foreach(key, value in Table){
+        if(key == "fileName"){
+            contains = true
+        }
+    }
+
+    if (!contains)
+    {
+        print("No fileName in loadout") //To account for double-loading bug
+        return
+    }
     array<string> modTypes = ["Mod1", "Mod2", "Mod3", "SkinIndex", "CamoIndex"]//I love creating a new identical array every time for no reason
     int index = GetModdedLoadoutNameIndex(expect string(Table["fileName"]))
     if(index >= NUM_PERSISTENT_PILOT_LOADOUTS)
