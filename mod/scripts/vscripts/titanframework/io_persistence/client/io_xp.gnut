@@ -38,6 +38,12 @@ void function AddModdedTitanXP(string name, int amount, bool Sync = true)
     print("AddModdedTitanXP: " + name + " " + amount)
     if( !(name in FrameworkModdedXP.xpTable) )
     {
+        // Check that the titan exists, This is the only function that allows servers to (indirectly) write to client, so I want to have that check at least
+        if (!GetModdedTitanClasses().contains(name))
+        {
+            print("AddModdedTitanXP: Invalid titan name: " + name)
+            return
+        }
         FrameworkModdedXP.xpTable[name] <- 0
     }
     FrameworkModdedXP.xpTable[name] += amount
@@ -88,8 +94,11 @@ void function AddModdedTitanXP_Remote(array<string> args)
         print("AddModdedTitanXP_Remote: Invalid number of arguments")
         return
     }
+    if 
     print("AddModdedTitanXP_Remote: " + args[0] + " " + args[1])
-    AddModdedTitanXP(args[0], args[1].tointeger())
+    AddModdedTitanXP(args[0], args[1].tointeger())//I don't know how i feel about an unchecked tointeger
+    // But honestly, if the server was malicious I sincerely doubt that causing a script error that takes you back to main menu is the most effective plan
+    // I mean they could literally just use kick and that would be the same with like 2 less steps
 }
 #if CLIENT
 void function SetupXPCallbacks()
