@@ -1250,7 +1250,7 @@ void function RegisterModdedTitanItemsSimple( ModdedTitanData titan )
 		}
 		RegisterModdedTitanCustomPassiveType(titan.Name, passives4, "passive4")
 	}
-	if(titan.passive6Array.len() > 0 )
+	if(titan.passive5Array.len() > 0 )
 	{
 		array<ItemData> passives5
 		foreach(int index, ModdedPassiveData passive in titan.passive5Array)
