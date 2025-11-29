@@ -15,6 +15,17 @@ void function frameworkIOPersistInit()
     AddClientCommandCallback("titanFrameworkSelectLoadout", selectModdedTitanLoadoutFromClient)
     AddClientCommandCallback("setFrameworkTitanLoadoutFromClass", setFrameworkTitanLoadoutFromClass)
     AddClientCommandCallback("SetFrameworkTitanLoadoutValue", setFrameworkTitanLoadoutValue)
+    AddClientCommandCallback("TestStringEscaping", testStringEscapingFromClient)
+}
+bool function testStringEscapingFromClient(entity player, array<string> args)
+{
+    if(args.len() < 1)
+        return false
+    foreach (string arg in args)
+    {
+        print("Received arg: " + arg)
+    }
+    return true
 }
 bool function PlayerHasModdedTitanLoadout(entity player)
 {

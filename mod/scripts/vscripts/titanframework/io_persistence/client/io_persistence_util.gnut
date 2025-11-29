@@ -963,9 +963,11 @@ void function DescribeNewTitanLoadoutToServer(frameworkPersistentTitanLoadout lo
         PersistentVars = getBaseLoadoutValidationTable()
     } 
     table loadoutTable = TitanLoadoutDefToTable(loadout.loadout)
-    //TODO: Dynamic contextual var support
+    //TODO: Dynamic contextual var support <- what the fuck does that even mean?
+    // I think its meant to refer to the idea i had where passives can be dependant on others, IE if you can pick a gun then some passives wont show up
+    // But I dont thinkk i have ever called it this before what even
     if( "setFile" in PersistentVars)
-    {
+    {        
         resultString += "setFile" + " " + loadout.loadout.setFile + " "
     }
     foreach(string varName, bool functionref(string value, string property, TitanLoadoutDef acceptedLoadout) valid in PersistentVars)
@@ -973,11 +975,12 @@ void function DescribeNewTitanLoadoutToServer(frameworkPersistentTitanLoadout lo
         if(varName == "setFile")
         {
             continue //Aldreany handled, effcts animations so should come first if it exists
+            //^ Lol, aldreany 
         }
-        if(varName in loadout.additionalVars)
-            resultString += varName + " " + loadout.additionalVars[varName] + " "
+        if(varName in loadout.additionalVars)//What was i thinking. Good god
+            resultString += "\"" + varName + "\" \"" + loadout.additionalVars[varName] + "\" "
         else if (varName in loadoutTable)
-            resultString += varName + " " + loadoutTable[varName] + " "
+            resultString += "\"" + varName + "\" \"" + loadoutTable[varName] + "\" "
         if(resultString.len() >= 400) //500 ish is the max length of a clientcommand 
         {
             resultString += "multicommand yes"
