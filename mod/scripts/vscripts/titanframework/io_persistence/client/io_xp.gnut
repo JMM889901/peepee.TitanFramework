@@ -94,7 +94,6 @@ void function AddModdedTitanXP_Remote(array<string> args)
         print("AddModdedTitanXP_Remote: Invalid number of arguments")
         return
     }
-    if 
     print("AddModdedTitanXP_Remote: " + args[0] + " " + args[1])
     AddModdedTitanXP(args[0], args[1].tointeger())//I don't know how i feel about an unchecked tointeger
     // But honestly, if the server was malicious I sincerely doubt that causing a script error that takes you back to main menu is the most effective plan
