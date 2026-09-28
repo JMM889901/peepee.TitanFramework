@@ -72,12 +72,13 @@ void function popupIfNeededThread()
 #if CLIENT
 void function FrameworkInformLoadoutResponse(array<string> args)
 {
+    print("FrameworkInformLoadoutResponse: ")
     foreach(string arg in args)
     {
-        printt("FrameworkInformLoadoutResponse", arg)
+        print("    " + arg)
     }
 	//TODO: Make this a popup on loadouts screen
-    if(args[0] == "#REJECED")
+    if(args[0] == "#REJECTED")
     {
         print("FrameworkInformLoadoutResponse: Loadout rejected by server due to bad format")
         return
@@ -86,7 +87,7 @@ void function FrameworkInformLoadoutResponse(array<string> args)
     frameworkPersistentTitanLoadout loadout = clientframeworkPersistentTitanLoadouts.loadouts[fileName]
     if(args[1] == "#REJECTED")
     {
-        loadout.response.status = eLoadoutStatus.REJECED
+        loadout.response.status = eLoadoutStatus.REJECTED
         if(args[3] != "#FAILEDVALIDATION")
         {
             loadout.response.reason = args[2]
@@ -99,6 +100,13 @@ void function FrameworkInformLoadoutResponse(array<string> args)
             loadout.response.badValue = args[5]
         }    
         print("reason " + loadout.response.reason + " cause " + loadout.response.cause + " bad value " + loadout.response.badValue)
+        return
+    }
+    else if(args[1] == "#PENDING"){
+        // Don't revert to pending if we actually aren't
+        if(loadout.response.status != eLoadoutStatus.REJECTED && loadout.response.status != eLoadoutStatus.ACCEPTED){
+            loadout.response.status = eLoadoutStatus.PENDING
+        }
     }
     else
     {
@@ -937,19 +945,25 @@ void function ApplyPilotLoadoutOverrides(entity player, int index, PilotLoadoutD
         }
     }
 }
+
+string function titanLoadoutKey(frameworkPersistentTitanLoadout loadout, batches) {
+    string resultString = ""
+    resultString += "titanName" + " \"" + loadout.titanName  + "\" " 
+    resultString += "fileName" + " \"" + loadout.fileName + "\" "
+    resultString += "batch" + " " + batches + " "
+    return resultString
+}
 void function DescribeNewTitanLoadoutToServer(frameworkPersistentTitanLoadout loadout)
 {
-    bool multicommand
-    string resultString = ""
-    resultString += "titanName" + " " + loadout.titanName  + " " 
-    resultString += "fileName" + " " + loadout.fileName + " "
+    int batches = 1
+    string configString = ""
     if(clientframeworkPersistentTitanLoadouts.moddedLoadoutIndex == loadout.fileName)
     {
-        resultString += "select" + " " + "yes "
+        configString += "select" + " " + "yes "
     }
     else
     {
-        resultString += "select" + " " + "no "
+        configString += "select" + " " + "no "
     }
     table<string, bool functionref(string value, string property, TitanLoadoutDef acceptedLoadout)> PersistentVars
     if(GetModdedTitanClasses().contains(loadout.titanName))
@@ -966,9 +980,10 @@ void function DescribeNewTitanLoadoutToServer(frameworkPersistentTitanLoadout lo
     //TODO: Dynamic contextual var support <- what the fuck does that even mean?
     // I think its meant to refer to the idea i had where passives can be dependant on others, IE if you can pick a gun then some passives wont show up
     // But I dont thinkk i have ever called it this before what even
+    // ^ I think that was supposed to have a / between it? so like its dynamic OR contextual, which are synonymous but i guess? 
     if( "setFile" in PersistentVars)
     {        
-        resultString += "setFile" + " " + loadout.loadout.setFile + " "
+        configString += "setFile" + " " + loadout.loadout.setFile + " "
     }
     foreach(string varName, bool functionref(string value, string property, TitanLoadoutDef acceptedLoadout) valid in PersistentVars)
     {
@@ -978,31 +993,32 @@ void function DescribeNewTitanLoadoutToServer(frameworkPersistentTitanLoadout lo
             //^ Lol, aldreany 
         }
         if(varName in loadout.additionalVars)//What was i thinking. Good god
-            resultString += "\"" + varName + "\" \"" + loadout.additionalVars[varName] + "\" "
+            configString += "\"" + varName + "\" \"" + loadout.additionalVars[varName] + "\" "
         else if (varName in loadoutTable)
-            resultString += "\"" + varName + "\" \"" + loadoutTable[varName] + "\" "
-        if(resultString.len() >= 400) //500 ish is the max length of a clientcommand 
+            configString += "\"" + varName + "\" \"" + loadoutTable[varName] + "\" "
+        if(configString.len() >= 350) //500 ish is the max length of a clientcommand 
         {
-            resultString += "multicommand yes"
-            multicommand = true
+            string resultString = titanLoadoutKey(loadout, batches) + configString
+            print("sending batched command: " + configString)
             #if CLIENT
             GetLocalClientPlayer().ClientCommand("titanFrameworkNewLoadout " + resultString)
             #endif
             #if UI
             ClientCommand("titanFrameworkNewLoadout " + resultString)
             #endif
-            print("sending multicommand " + resultString)
-            resultString = "titanName " + loadout.titanName + " fileName " + loadout.fileName + " select " + ( clientframeworkPersistentTitanLoadouts.moddedLoadoutIndex == loadout.fileName ? "yes " : "no ")  + "multicommand continue "
+            batches++
+            configString = ""
         }
     }
-    printt("resultString", resultString)
+    string resultString = titanLoadoutKey(loadout, batches)
+    resultString += "batches " + batches + " " + configString
+    printt("final loadout string: ", resultString)
     if(shouldPrintDevStuff())
     {    
         PrintTable(loadoutTable)
         PrintTable(loadout.additionalVars)
     }
     print(resultString.len())
-    //TODO: Improve multicommand support incase its recieved by the server in the wrong order
     #if CLIENT
     GetLocalClientPlayer().ClientCommand("titanFrameworkNewLoadout " + resultString) 
     #endif

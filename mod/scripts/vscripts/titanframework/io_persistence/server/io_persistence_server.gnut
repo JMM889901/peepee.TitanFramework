@@ -1,11 +1,21 @@
 globalize_all_functions
+
+//its just easier to make this global ngl
+global struct frameworkLoadoutBuffer {
+    int totalBatches = 0
+    //Dedup tomfoolery because i send it from ui and client
+    // Why *do* i do that?
+    array<int> seenBatches = []
+    string titanName = ""
+    table<string, string> config
+}
+
 global struct globalPlayerCustomLoadouts
 {
     table<entity, string> playerSelectedModdedLoadout //player, loadoutName
     table<entity, table<string, frameworkPersistentTitanLoadout> > playerLoadouts
-    table<entity, table<string, frameworkPersistentTitanLoadout> > playerMulticommandLoadouts
     table<entity, table<int, frameworkPilotLoadoutOverrides> > playerPilotLoadoutOverrides
-    table<entity, table<string, array<array<string > > > > playerOutOfOrderMulticommands
+    table<entity, table<string, frameworkLoadoutBuffer > > playerLoadoutCommandsBuffer
 }
 global globalPlayerCustomLoadouts frameworkPlayerLoadouts
 void function frameworkIOPersistInit()
@@ -16,6 +26,7 @@ void function frameworkIOPersistInit()
     AddClientCommandCallback("setFrameworkTitanLoadoutFromClass", setFrameworkTitanLoadoutFromClass)
     AddClientCommandCallback("SetFrameworkTitanLoadoutValue", setFrameworkTitanLoadoutValue)
 }
+
 
 bool function PlayerHasModdedTitanLoadout(entity player)
 {
@@ -155,6 +166,7 @@ bool function registerNewTitanLoadoutFromClient(entity player, array<string> arg
     }
     if( args[0] != "titanName" )
     {
+        //Why get this here, the key only needs loadout name
         ServerToClientStringCommand(player, "FrameworkInformLoadoutResponse " + args[3] + " #REJECTED #INVALIDFORMAT #NOTITANNAME" )
         return false;
     }
@@ -171,90 +183,125 @@ bool function registerNewTitanLoadoutFromClient(entity player, array<string> arg
     } 
     else 
     {
-        ServerToClientStringCommand(player, "FrameworkInformLoadoutResponse " + args[3] + " #REJECED #INVALIDLOADOUT #INVALIDTITANNAME " + args[1] )
+        ServerToClientStringCommand(player, "FrameworkInformLoadoutResponse " + args[3] + " #REJECTED #INVALIDLOADOUT #INVALIDTITANNAME " + args[1] )
         return false;
     }
+    int batch = args[5].tointeger()
+    // tointeger is 0 on non-number... I think?
+    if( batch <= 0) {
+        ServerToClientStringCommand(player, "FrameworkInformLoadoutResponse " + args[3] + " #REJECTED #INVALIDFORMAT #INVALIDBATCH" )
+        return false
+    }
+    if( !(player in frameworkPlayerLoadouts.playerLoadoutCommandsBuffer))
+        frameworkPlayerLoadouts.playerLoadoutCommandsBuffer[player] <- {}
+
+    frameworkLoadoutBuffer loadoutBuffer
+    if( !(args[3] in frameworkPlayerLoadouts.playerLoadoutCommandsBuffer[player]) ){
+        loadoutBuffer.titanName = args[1]
+    } else
+        loadoutBuffer = frameworkPlayerLoadouts.playerLoadoutCommandsBuffer[player][args[3]]
+
+    if (loadoutBuffer.seenBatches.contains(batch)) {
+        //Duplicate, probably another VM
+        return false;
+    }
+    int configStart = 6
+    if (args[6] == "batches") {
+        if (args[7].tointeger() <= 0) {
+            ServerToClientStringCommand(player, "FrameworkInformLoadoutResponse " + args[3] + " #REJECTED #INVALIDFORMAT #INVALIDBATCHES" )
+            return false
+        }
+        int totalBatches = args[7].tointeger()
+        configStart = 8
+        loadoutBuffer.totalBatches = totalBatches
+    }
+    for(int i = configStart; i < args.len(); i += 2) {
+        if (args[i] in loadoutBuffer.config) {
+            print("MAYBE NOT GOOD: Duplicate config key detected in loadout buffer: " + args[i])
+            print("MAYBE NOT GOOD: This should never happen and means I probably broke something, the most recent value will be used: " + args[i+1])
+        }
+        loadoutBuffer.config[args[i]] <- args[i+1]
+    }
+    loadoutBuffer.seenBatches.append(batch)
+    frameworkPlayerLoadouts.playerLoadoutCommandsBuffer[player][args[3]] <- loadoutBuffer
+    // Actually check that we have them all BEFORE running validation shit, yeah thats a good idea, a rarity in my case
+    // That said, not an excuse to let bad validation cause server crashes, alas I don't care to test this so oh well lol
+    if(loadoutBuffer.totalBatches > 0 && loadoutBuffer.seenBatches.len() == loadoutBuffer.totalBatches){
+        return parseLoadoutFromBuffer(player, args[3], loadoutBuffer)
+    }
+    else {
+        ServerToClientStringCommand(player, "FrameworkInformLoadoutResponse " + args[3] + " #PENDING #BATCHES_INCOMPLETE" )
+    }
+    return false
+}
+
+bool function parseLoadoutFromBuffer(entity player, string loadoutName, frameworkLoadoutBuffer buffer) {
+
+    table<string, bool functionref(string value, string property, TitanLoadoutDef acceptedLoadout)> PersistentVars
+    bool modded
+    if( GetModdedTitanClasses().contains(buffer.titanName ) )
+    {
+        modded = true
+        PersistentVars = GetModdedTitanData(buffer.titanName).derivedData.PersistentValuesValidation
+    }
+    else if(IsBaseTitan(buffer.titanName))
+    {
+        PersistentVars = getBaseLoadoutValidationTable()
+    } 
+    else 
+    {
+        //Don't like moving this here, put it before we buffer shit
+        ServerToClientStringCommand(player, "FrameworkInformLoadoutResponse " + loadoutName + " #REJECTED #INVALIDLOADOUT #INVALIDTITANNAME " + buffer.titanName )
+        return false;
+    }
+
+
     frameworkPersistentTitanLoadout PersistLoadout
     TitanLoadoutDef loadout
-    bool continuePast = (args[6] == "multicommand" && args[7] == "continue")
-    if(player in frameworkPlayerLoadouts.playerMulticommandLoadouts && args[3] in frameworkPlayerLoadouts.playerMulticommandLoadouts[player] && continuePast)
-    {
-        PersistLoadout = frameworkPlayerLoadouts.playerMulticommandLoadouts[player][args[3]]
-        loadout = PersistLoadout.loadout
-    }
-    else if (continuePast)
-    {
-        if( !(player in frameworkPlayerLoadouts.playerOutOfOrderMulticommands) )
-            frameworkPlayerLoadouts.playerOutOfOrderMulticommands[player] <- {}
-        if( !(args[3] in frameworkPlayerLoadouts.playerOutOfOrderMulticommands[player]) )
-            frameworkPlayerLoadouts.playerOutOfOrderMulticommands[player][args[3]] <- []
-        frameworkPlayerLoadouts.playerOutOfOrderMulticommands[player][args[3]].append(args) //Store to be loaded after the "first" command is received
-        ServerToClientStringCommand(player, "FrameworkInformLoadoutResponse " + args[3] + " #REJECTED #INVALIDFORMAT #OUTOFORDER_MULTICOMMAND" )//This would overwrite error messages, need to write some extra client stuff to fix that
-        return false
-    }
+    PersistLoadout.fileName = loadoutName
+    PersistLoadout.titanName = buffer.titanName
+    loadout = PersistLoadout.loadout
+    if(modded)
+        overrideTitanLoadoutWithTitanLoadout(loadout, GetModdedTitanByClassNoPersist(buffer.titanName))
     else
+        overrideTitanLoadoutWithTitanLoadout(loadout, GetBaseTitanByClassNoPersist(buffer.titanName))
+    loadout.titanClass = buffer.titanName
+    table<string, string> config = buffer.config
+    if( !("select" in config))
     {
-        PersistLoadout.fileName = args[3]
-        PersistLoadout.titanName = args[1]
-        loadout = PersistLoadout.loadout
-        if(modded)
-            overrideTitanLoadoutWithTitanLoadout(loadout, GetModdedTitanByClassNoPersist(args[1]))
-        else
-            overrideTitanLoadoutWithTitanLoadout(loadout, GetBaseTitanByClassNoPersist(args[1]))
-        loadout.titanClass = args[1]
-    }
-    if( args[4] != "select")
-    {
-        ServerToClientStringCommand(player, "FrameworkInformLoadoutResponse " + args[3] + " #REJECTED #INVALIDFORMAT #NOSELECT" )
+        ServerToClientStringCommand(player, "FrameworkInformLoadoutResponse " + loadoutName + " #REJECTED #INVALIDFORMAT #NOSELECT" )
         return false
     }
-    for( int i = 6; i < args.len(); i+= 2 )
+    bool select = false
+    foreach(string key, string value in config)
     {
-        if ( args[i] in PersistentVars)
+        if ( key in PersistentVars)
         {
-            switch(args[i])
+            switch(key)
             {
                 case "skinIndex":
                 case "primeSkinIndex":
                 case "primarySkinIndex":
-                    SetTitanLoadoutValue(loadout, GetCorrectCamoProperty(args[i]), args[args.find(GetCorrectCamoProperty(args[i])) + 1])
+                    // SetTitanLoadoutValue(loadout, GetCorrectCamoProperty(args[i]), args[args.find(GetCorrectCamoProperty(args[i])) + 1])
+                    // This looks dubious, not as sketchy as before but does this actually like, work?
+                    SetTitanLoadoutValue(loadout, GetCorrectCamoProperty(key), config[GetCorrectCamoProperty(key)])
                     break
+                case "select":
+                    if (value == "yes")
+                        select = true
             }
-            if( !PersistentVars[args[i]](args[i+1], args[i], loadout) )
+            if( !PersistentVars[key](value, key, loadout) )
             {
-                ServerToClientStringCommand(player, "FrameworkInformLoadoutResponse " + args[3] + " #REJECED #INVALIDLOADOUT #FAILEDVALIDATION " + args[i] + " " + args[i+1]  )
+                ServerToClientStringCommand(player, "FrameworkInformLoadoutResponse " + loadoutName + " #REJECTED #INVALIDLOADOUT #FAILEDVALIDATION " + key + " " + value  )
                 return false;
             }
             else
             {
-                if(!TrySetTitanLoadoutValue(loadout, args[i], args[i+1]))  
+                if(!TrySetTitanLoadoutValue(loadout, key, value))  
                 {
-                    PersistLoadout.additionalVars[args[i]] = args[i+1]
+                    PersistLoadout.additionalVars[key] = value
                 }
             }
-        }//could return false, but instead just ignore
-        else if ( args[i] == "multicommand")
-        {
-            if( args[i+1] == "yes" )
-            {
-                if( !(player in frameworkPlayerLoadouts.playerMulticommandLoadouts ) )
-                    frameworkPlayerLoadouts.playerMulticommandLoadouts[player] <- {}
-                frameworkPlayerLoadouts.playerMulticommandLoadouts[player][args[3]] <- PersistLoadout
-                ServerToClientStringCommand(player, "FrameworkInformLoadoutResponse " + args[3] + " #ACCEPTED #MULTICOMMAND" )
-                if( player in frameworkPlayerLoadouts.playerOutOfOrderMulticommands && args[3] in frameworkPlayerLoadouts.playerOutOfOrderMulticommands[player])
-                {
-                    foreach( array<string> command in frameworkPlayerLoadouts.playerOutOfOrderMulticommands[player][args[3]])
-                    {
-                        registerNewTitanLoadoutFromClient(player, command )
-                    }
-                    delete frameworkPlayerLoadouts.playerOutOfOrderMulticommands[player][args[3]]
-                }
-                return true
-            }
-            if( args[i+1] == "continue")
-                continue
-            ServerToClientStringCommand(player, "FrameworkInformLoadoutResponse " + args[3] + " #REJECTED #INVALIDFORMAT #INVALIDMULTICOMMAND " + args[i+1] )
-            return false
         }
         
     }
@@ -265,17 +312,15 @@ bool function registerNewTitanLoadoutFromClient(entity player, array<string> arg
         table<string, frameworkPersistentTitanLoadout> new
         frameworkPlayerLoadouts.playerLoadouts[player] <- new 
     }
-    if(args[5] == "yes")
-    {
+    if(select)
         frameworkPlayerLoadouts.playerSelectedModdedLoadout[player] <- PersistLoadout.fileName
-    }
     if( !(player in frameworkPlayerLoadouts.playerLoadouts ) )
         frameworkPlayerLoadouts.playerLoadouts[player] <- {}
     UpdateDerivedFrameworkLoadoutValues(PersistLoadout)
     frameworkPlayerLoadouts.playerLoadouts[player][PersistLoadout.fileName] <- PersistLoadout
-    ServerToClientStringCommand(player, "FrameworkInformLoadoutResponse " + args[3] + " #ACCEPTED" )
-    if( player in frameworkPlayerLoadouts.playerMulticommandLoadouts && args[3] in frameworkPlayerLoadouts.playerMulticommandLoadouts[player])
-        delete frameworkPlayerLoadouts.playerMulticommandLoadouts[player][args[3]]
+    ServerToClientStringCommand(player, "FrameworkInformLoadoutResponse " + loadoutName + " #ACCEPTED" )
+
+    delete frameworkPlayerLoadouts.playerLoadoutCommandsBuffer[player][loadoutName]
     return true
 }
 

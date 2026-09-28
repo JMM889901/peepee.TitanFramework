@@ -3,7 +3,8 @@ global enum eLoadoutStatus
 {
 	ACCEPTED,
 	REJECTED,
-	NO_RESPONSE
+	NO_RESPONSE,
+    PENDING
 }
 global struct frameworkLoadoutRejectionReason
 {
