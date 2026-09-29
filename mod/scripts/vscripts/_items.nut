@@ -6167,7 +6167,7 @@ bool function IsUnlockValid( string ref, string parentRef = "" )
 
 bool function IsSubItemLocked( entity player, string ref, string parentRef )
 {
-	if ( DevEverythingUnlocked( player ) )
+	if ( DevEverythingUnlocked( player ) || GetModdedTitanClasses().contains(parentRef) )
 		return false
 	
 	if ( IsItemPurchasableEntitlement( ref, parentRef ) )
@@ -6686,6 +6686,10 @@ bool function IsItemLockedForFrontierDefense( entity player, string ref, string 
 
 bool function IsItemLockedForTitan( entity player, string ref, string parentRef )
 {
+	if ( GetModdedTitanClasses().contains(parentRef) )
+		return false
+		// You could put a gun to my head and demand i do unlocks for custom titans
+		// I would BEG you to shoot, its not happening
 	return IsItemLockedForTitanLevel( TitanGetRawLevel( player, parentRef ), ref, parentRef )
 }
 
@@ -9657,7 +9661,6 @@ string function GetTableValueForSuit( string suit, string columnName )
 int function GetTitanLoadoutPropertyPassiveType( string setFile, string loadoutProperty )
 {
 	Assert( loadoutProperty == "passive1" || loadoutProperty == "passive2" || loadoutProperty == "passive3" || loadoutProperty == "passive4" || loadoutProperty == "passive5" || loadoutProperty == "passive6")
-	setFile = GetModdedTitanSetFileForAnims(setFile)
 	var dataTable = GetDataTable( $"datatable/titan_properties.rpak" )
 	int row = GetDataTableRowMatchingStringValue( dataTable, GetDataTableColumnByName( dataTable, "setFile" ), setFile )
 	int column = GetDataTableColumnByName( dataTable, loadoutProperty )

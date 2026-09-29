@@ -566,21 +566,26 @@ void function OnAbilitySelectMenu_Open()
 		TitanLoadoutDef loadout = GetCachedTitanLoadout( uiGlobal.editingLoadoutIndex )
 		string nonPrimeSetFile = GetSetFileForTitanClassAndPrimeStatus( loadout.titanClass, false )
 		uiGlobal.editingItemRef = GetTitanLoadoutValue( loadout, uiGlobal.editingLoadoutProperty )
-		if( uiGlobal.editingLoadoutProperty == "titanExecution" && GetModdedTitanClasses().contains(loadout.titanClass) && GetModdedTitanData( loadout.titanClass ).altChassisType == frameworkAltChassisMethod.ALT_TITAN)
+		if( uiGlobal.editingLoadoutProperty == "titanExecution" && GetModdedTitanClasses().contains(loadout.titanClass))
 		{
 			ModdedTitanData data = GetModdedTitanData( loadout.titanClass )
-			foreach( FrameworkChassisStruct chassisInstance in data.altChassisArray )
-			{
-				if( chassisInstance.setFile == loadout.setFile )
+			if ( data.altChassisType == frameworkAltChassisMethod.ALT_TITAN ){
+				foreach( FrameworkChassisStruct chassisInstance in data.altChassisArray )
 				{
-					uiGlobal.editingItemType = chassisInstance.executionAnimationType
-					break
-				}
+					if( chassisInstance.setFile == loadout.setFile )
+					{
+						uiGlobal.editingItemType = chassisInstance.executionAnimationType
+						break
+					}
 
-			}
+				}
+			} 
+			else
+				uiGlobal.editingItemType = GetModdedTitanLoadoutPassiveTypeByClass( loadout.titanClass, uiGlobal.editingLoadoutProperty )
 		}
-		else if( nonPrimeSetFile != "" )
+		else if( nonPrimeSetFile != "" ){
 			uiGlobal.editingItemType = GetItemTypeFromTitanLoadoutProperty( uiGlobal.editingLoadoutProperty, nonPrimeSetFile )
+		}
 		else
 			uiGlobal.editingItemType = -1
 
