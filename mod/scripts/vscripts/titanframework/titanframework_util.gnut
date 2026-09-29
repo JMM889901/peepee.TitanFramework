@@ -5,22 +5,17 @@ global function GetModdedTitanByClassNoPersist
 global function GetBaseTitanByClassNoPersist
 global function IsBaseTitan
 global function GetAllTitanByClassNoPersist
-//global function GetModdedTitanByIndexNoPersist
-//global function GetModdedTitansByIndexNoPersist
 global function GetModdedTitansByClassNoPersist
 global function OverwriteGlobalTitanLoadoutByIndex
 global function GetModdedTitanClassForMods
 global function GetModdedTitanSetFileForAnims
 global function GetModdedTitansSetFileForAnims
-global function GetModdedTitanExecutionTypeByClass
 global function GetModdedTitanLoadoutPassiveType
 global function GetModdedTitanLoadoutPassiveTypeByClass
 global function GetModdedTitanLoadoutContextualPassiveTypeByContext
 global function GetModdedTitanLoadoutPassiveTypes
 global function OverwriteModdedTitanLoadoutDefaultEquipment
 global function OverwriteDefaultTitanLoadoutByIndex
-global function RegisterModdedTitan
-global function RegisterModdedTitanItems
 global function ModdedTitanHasPassiveSlot
 global function RegisterModdedTitanCustomPassiveType
 global function GenerateModdedTitanPassiveStringForPersistence
@@ -62,12 +57,10 @@ global function GetClientActivePetLoadout
 table<string, TitanLoadoutDef> TitanLoadoutByClass
 table<string, TitanLoadoutDef> BaseTitanLoadoutByClass
 table<string, TitanLoadoutDef> ModdedTitanLoadoutByClass
-table<int, TitanLoadoutDef> TitanLoadoutByIndex
 table<string, string> TitanClassModsToUse //Used for alot, but not actually used for passives
 table<string, string> TitanSetFilesForAnims
 // Used for other things
 table<string, int> TitanPassiveTypesByRef
-table<int, int> TitanExecutionsByIndex
 table<string, table<string, int> > TitanPassiveTypesBySetFile
 table<string, table<string, int> > TitanPassiveTypesByClass
 table<string, int> ModdedTitanExtraPassiveTypes
@@ -328,10 +321,6 @@ int function GetModdedTitanLoadoutContextualPassiveTypeByContext(TitanLoadoutDef
 	}
 	return GetModdedTitanLoadoutPassiveTypeByClass(loadout.titanClass, property)
 }
-int function GetModdedTitanExecutionTypeByClass(string titanClass)
-{
-	return TitanExecutionsByIndex[titanClass]
-}
 TitanLoadoutDef function GetModdedTitanByClassNoPersist(string titanClass)
 {
 	return ModdedTitanLoadoutByClass[titanClass]
@@ -360,14 +349,6 @@ bool function IsBaseTitan(string titanClass)
 TitanLoadoutDef function GetAllTitanByClassNoPersist(string titanClass)
 {
 	return TitanLoadoutByClass[titanClass]
-}
-TitanLoadoutDef function GetModdedTitanByIndexNoPersist(int index)
-{
-	return TitanLoadoutByIndex[index]
-}
-table<int, TitanLoadoutDef>  function GetModdedTitansByIndexNoPersist()
-{
-	return TitanLoadoutByIndex
 }
 table<string, TitanLoadoutDef>  function GetModdedTitansByClassNoPersist()
 {
@@ -779,117 +760,115 @@ void function OverwriteModdedTitanLoadoutDefaultEquipment(TitanLoadoutDef loadou
 
 }
 array<string> ModdedTitanClasses
-void function RegisterModdedTitan(
-	string Name, 
-	string Primary, 
-	string Left, string Mid, 
-	string Right, string Core, 
-	string BaseSetFile, 
-	string BaseName, 
-	int difficulty, 
-	string PassiveTypeName,
-	int ExecutionType,
-	//array<array<var> > Passives,
-	string Melee = "melee_titan_punch_scorch",
-	string Voice = "titanos_bt"
-)
-{
-	print("/////////////////CREATING CUSTOM TITAN////////////////////")
-	print("/////////////////" + Name + "//////////////////////////////")
-	//RegisterNewItemInitCallback(SCUFFED_UI_INIT2)
-	//Create loadout
-	TitanLoadoutDef loadout
-	loadout.name				= Name
-	loadout.titanClass			= Name
-	loadout.setFile 			= BaseSetFile
-	loadout.special				= Left
-	loadout.antirodeo			= Mid
-	loadout.voice				= Voice
-	loadout.primary				= Primary
-	loadout.melee		= Melee
-	loadout.ordnance	= Right
-	loadout.coreAbility	= Core
-	loadout.difficulty	= difficulty
-	loadout.isPrime = "titan_is_not_prime"
-	loadout.primeTitanRef = "scorch_prime"
-	loadout.passive4 = "pas_vanguard_core1"
-	loadout.passive5 = "pas_vanguard_core4"
-	loadout.passive6 = "pas_vanguard_core7"
+// void function RegisterModdedTitan(
+// 	string Name, 
+// 	string Primary, 
+// 	string Left, string Mid, 
+// 	string Right, string Core, 
+// 	string BaseSetFile, 
+// 	string BaseName, 
+// 	int difficulty, 
+// 	string PassiveTypeName,
+// 	int ExecutionType,
+// 	//array<array<var> > Passives,
+// 	string Melee = "melee_titan_punch_scorch",
+// 	string Voice = "titanos_bt"
+// )
+// {
+// 	print("/////////////////CREATING CUSTOM TITAN////////////////////")
+// 	print("/////////////////" + Name + "//////////////////////////////")
+// 	//RegisterNewItemInitCallback(SCUFFED_UI_INIT2)
+// 	//Create loadout
+// 	TitanLoadoutDef loadout
+// 	loadout.name				= Name
+// 	loadout.titanClass			= Name
+// 	loadout.setFile 			= BaseSetFile
+// 	loadout.special				= Left
+// 	loadout.antirodeo			= Mid
+// 	loadout.voice				= Voice
+// 	loadout.primary				= Primary
+// 	loadout.melee		= Melee
+// 	loadout.ordnance	= Right
+// 	loadout.coreAbility	= Core
+// 	loadout.difficulty	= difficulty
+// 	loadout.isPrime = "titan_is_not_prime"
+// 	loadout.primeTitanRef = "scorch_prime"
+// 	loadout.passive4 = "pas_vanguard_core1"
+// 	loadout.passive5 = "pas_vanguard_core4"
+// 	loadout.passive6 = "pas_vanguard_core7"
 	
-	TitanClassModsToUse[loadout.titanClass] <- BaseName
-	//OverwriteDefaultTitanLoadoutByIndex(7 + ModdedTitanClasses.len(), loadout)
-	TitanLoadoutByIndex[7+TitanLoadoutByIndex.len()] <- loadout
-	TitanExecutionsByIndex[7 + TitanExecutionsByIndex.len()] <- ExecutionType
-	ModdedTitanLoadoutByClass[loadout.titanClass] <- loadout
-	TitanLoadoutByClass[loadout.titanClass] <- loadout
-	ModdedTitanClasses.append(Name)
-	//TitanSetFilesForAnims[SetFile] <- BaseSetFile
-}
-void function RegisterModdedTitanItems(
-		string Name, 
-		string Primary, 
-		string Left, string Mid, 
-		string Right, string Core, 
-		string BaseSetFile, 
-		string BaseName, 
-		string PassiveTypeName,
-		int ExecutionType,
-		bool InheritDefault = true,
-		int difficulty = 2,
-		//array<array<var> > Passives,
-		string Melee = "melee_titan_punch_scorch",
-		string Voice = "titanos_bt"
-)
-{
-	ModdedTitanExtraPassiveTypes[Name] <- 0
-	int passive4 = CreateModdedItemType(Name+"passive4")
-	int passive5 = CreateModdedItemType(Name+"passive5")
-	int passive6 = CreateModdedItemType(Name+"passive6")
-	//Setfile indexing is bad, but still needed for some stuff
-	TitanPassiveTypesBySetFile[BaseSetFile] <- {}
-	TitanPassiveTypesBySetFile[BaseSetFile]["passive3"] <- eItemTypes.TITAN_TITANFALL_PASSIVE
-	TitanPassiveTypesBySetFile[BaseSetFile]["passive1"] <- eItemTypes.TITAN_GENERAL_PASSIVE
-	TitanPassiveTypesBySetFile[BaseSetFile]["passive2"] <- eItemTypes[PassiveTypeName]
-	TitanPassiveTypesBySetFile[BaseSetFile]["passive4"] <- passive4
-	TitanPassiveTypesBySetFile[BaseSetFile]["passive5"] <- passive5
-	TitanPassiveTypesBySetFile[BaseSetFile]["passive6"] <- passive6
-	TitanPassiveTypesBySetFile[BaseSetFile]["titanExecution"] <- ExecutionType
+// 	TitanClassModsToUse[loadout.titanClass] <- BaseName
+// 	ModdedTitanLoadoutByClass[loadout.titanClass] <- loadout
+// 	TitanLoadoutByClass[loadout.titanClass] <- loadout
+// 	ModdedTitanClasses.append(Name)
+// 	//TitanSetFilesForAnims[SetFile] <- BaseSetFile
+// }
+// void function RegisterModdedTitanItems(
+// 		string Name, 
+// 		string Primary, 
+// 		string Left, string Mid, 
+// 		string Right, string Core, 
+// 		string BaseSetFile, 
+// 		string BaseName, 
+// 		string PassiveTypeName,
+// 		int ExecutionType,
+// 		bool InheritDefault = true,
+// 		int difficulty = 2,
+// 		//array<array<var> > Passives,
+// 		string Melee = "melee_titan_punch_scorch",
+// 		string Voice = "titanos_bt"
+// )
+// {
+// 	ModdedTitanExtraPassiveTypes[Name] <- 0
+// 	int passive4 = CreateModdedItemType(Name+"passive4")
+// 	int passive5 = CreateModdedItemType(Name+"passive5")
+// 	int passive6 = CreateModdedItemType(Name+"passive6")
+// 	//Setfile indexing is bad, but still needed for some stuff
+// 	// Is it though? That is definitionally a bad idea
+// 	TitanPassiveTypesBySetFile[BaseSetFile] <- {}
+// 	TitanPassiveTypesBySetFile[BaseSetFile]["passive3"] <- eItemTypes.TITAN_TITANFALL_PASSIVE
+// 	TitanPassiveTypesBySetFile[BaseSetFile]["passive1"] <- eItemTypes.TITAN_GENERAL_PASSIVE
+// 	TitanPassiveTypesBySetFile[BaseSetFile]["passive2"] <- eItemTypes[PassiveTypeName]
+// 	TitanPassiveTypesBySetFile[BaseSetFile]["passive4"] <- passive4
+// 	TitanPassiveTypesBySetFile[BaseSetFile]["passive5"] <- passive5
+// 	TitanPassiveTypesBySetFile[BaseSetFile]["passive6"] <- passive6
+// 	TitanPassiveTypesBySetFile[BaseSetFile]["titanExecution"] <- ExecutionType
 	
-	TitanPassiveTypesByClass[Name] <- {}
-	TitanPassiveTypesByClass[Name]["passive3"] <- eItemTypes.TITAN_TITANFALL_PASSIVE
-	TitanPassiveTypesByClass[Name]["passive1"] <- eItemTypes.TITAN_GENERAL_PASSIVE
-	TitanPassiveTypesByClass[Name]["passive2"] <- eItemTypes[PassiveTypeName]
-	TitanPassiveTypesByClass[Name]["passive4"] <- passive4
-	TitanPassiveTypesByClass[Name]["passive5"] <- passive5
-	TitanPassiveTypesByClass[Name]["passive6"] <- passive6
-	TitanPassiveTypesByClass[Name]["titanExecution"] <- ExecutionType
-	array<int> typesarray = [eItemTypes.TITAN_TITANFALL_PASSIVE, eItemTypes.TITAN_GENERAL_PASSIVE, eItemTypes[PassiveTypeName], passive4, passive5, passive6]
-	CreateModdedTitanItem(999, eItemTypes.TITAN, Name, Name, "Whats the deal. with airline food?", "i sure love losing progress", $"ui/temp", 0, false, typesarray,expect asset(GetItemData(BaseName).i.coreIcon))
+// 	TitanPassiveTypesByClass[Name] <- {}
+// 	TitanPassiveTypesByClass[Name]["passive3"] <- eItemTypes.TITAN_TITANFALL_PASSIVE
+// 	TitanPassiveTypesByClass[Name]["passive1"] <- eItemTypes.TITAN_GENERAL_PASSIVE
+// 	TitanPassiveTypesByClass[Name]["passive2"] <- eItemTypes[PassiveTypeName]
+// 	TitanPassiveTypesByClass[Name]["passive4"] <- passive4
+// 	TitanPassiveTypesByClass[Name]["passive5"] <- passive5
+// 	TitanPassiveTypesByClass[Name]["passive6"] <- passive6
+// 	TitanPassiveTypesByClass[Name]["titanExecution"] <- ExecutionType
+// 	array<int> typesarray = [eItemTypes.TITAN_TITANFALL_PASSIVE, eItemTypes.TITAN_GENERAL_PASSIVE, eItemTypes[PassiveTypeName], passive4, passive5, passive6]
+// 	CreateModdedTitanItem(999, eItemTypes.TITAN, Name, Name, "Whats the deal. with airline food?", "i sure love losing progress", $"ui/temp", 0, false, typesarray,expect asset(GetItemData(BaseName).i.coreIcon))
 	
-	CreateGenericSubItemData( eItemTypes.TITAN_TITANFALL_PASSIVE, Name, "pas_warpfall" )
-	CreateGenericSubItemData( eItemTypes.TITAN_TITANFALL_PASSIVE, Name, "pas_bubbleshield" )
-	foreach(ItemData item in GetAllItemsOfType(eItemTypes.TITAN_GENERAL_PASSIVE))
-	{
-	CreateGenericSubItemData( eItemTypes.TITAN_GENERAL_PASSIVE, Name, item.ref )
-	}
-	//foreach(array<var> passive in Passives)
-	// {
-		// CreateGenericItem(999, eItemTypes[PassiveTypeName], expect string(passive[0]), expect string(passive[1]), expect string(passive[2]), expect string(passive[3]), expect asset(passive[4]), 0, false)
-	// }
+// 	CreateGenericSubItemData( eItemTypes.TITAN_TITANFALL_PASSIVE, Name, "pas_warpfall" )
+// 	CreateGenericSubItemData( eItemTypes.TITAN_TITANFALL_PASSIVE, Name, "pas_bubbleshield" )
+// 	foreach(ItemData item in GetAllItemsOfType(eItemTypes.TITAN_GENERAL_PASSIVE))
+// 	{
+// 	CreateGenericSubItemData( eItemTypes.TITAN_GENERAL_PASSIVE, Name, item.ref )
+// 	}
+// 	//foreach(array<var> passive in Passives)
+// 	// {
+// 		// CreateGenericItem(999, eItemTypes[PassiveTypeName], expect string(passive[0]), expect string(passive[1]), expect string(passive[2]), expect string(passive[3]), expect asset(passive[4]), 0, false)
+// 	// }
 
-	foreach(string ref, SubItemData subitemstuff in GetItemData(BaseName).subitems)
-	{
-		ItemData subitem = GetItemData(subitemstuff.ref)
-		CreateGenericSubItemData(subitem.itemType,Name, subitem.ref, 0, subitem.i)
-	}
-	if(InheritDefault)
-	{
-		foreach(ItemData item in GetAllItemsOfType( eItemTypes[PassiveTypeName]))
-		{
-			CreateGenericSubItemData(  eItemTypes[PassiveTypeName], Name, item.ref )
-		}
-	}
-}
+// 	foreach(string ref, SubItemData subitemstuff in GetItemData(BaseName).subitems)
+// 	{
+// 		ItemData subitem = GetItemData(subitemstuff.ref)
+// 		CreateGenericSubItemData(subitem.itemType,Name, subitem.ref, 0, subitem.i)
+// 	}
+// 	if(InheritDefault)
+// 	{
+// 		foreach(ItemData item in GetAllItemsOfType( eItemTypes[PassiveTypeName]))
+// 		{
+// 			CreateGenericSubItemData(  eItemTypes[PassiveTypeName], Name, item.ref )
+// 		}
+// 	}
+// }
 void function RegisterModdedTitanCustomPassiveType(string name, array<ItemData> passives, string slot, int forceType = -1)
 {
 	if(!(name in ModdedTitanExtraPassiveTypes))
@@ -998,9 +977,6 @@ void function CreateModdedTitanSimple( ModdedTitanData Titan )
 	loadout.passive6 = "pas_vanguard_core7"
 	
 	TitanClassModsToUse[loadout.titanClass] <- Titan.BaseName
-	//OverwriteDefaultTitanLoadoutByIndex(7 + ModdedTitanClasses.len(), loadout)
-	TitanLoadoutByIndex[7+TitanLoadoutByIndex.len()] <- loadout
-	TitanExecutionsByIndex[7 + TitanExecutionsByIndex.len()] <- Titan.ExecutionType
 	ModdedTitanLoadoutByClass[loadout.titanClass] <- loadout
 	TitanLoadoutByClass[loadout.titanClass] <- loadout
 	ModdedTitanClasses.append(Titan.Name)
@@ -1083,7 +1059,7 @@ void function RegisterModdedTitanItemsSimple( ModdedTitanData titan )
 	}
 
 	TitanPassiveTypesByClass[titan.Name]["titanExecution"] <- GetModdedTitanLoadoutPassiveTypeByClass(titan.BaseName, "titanExecution")
-	
+
 	/*
 	_______ _ _                _ _                 
 	|__   __(_) |              (_) |                
