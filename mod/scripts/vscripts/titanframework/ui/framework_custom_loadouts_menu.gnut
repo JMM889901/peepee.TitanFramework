@@ -118,7 +118,6 @@ void function OnFrameworkLoadoutsMenu_Open()
     rejectedLoadouts = 0
     foreach(string loadoutName, frameworkPersistentTitanLoadout loadout in clientframeworkPersistentTitanLoadouts.loadouts )
     {
-        print("Loadout: " + loadoutName + " Status: " + loadout.response.status)
         if(loadout.response.status == eLoadoutStatus.REJECTED && !UIShowRejectedLoadouts)
         {
             print("Rejected " + loadoutName +" for reason " + loadout.response.reason + " and status " + loadout.response.cause + " with bad value (if applicable) " + loadout.response.badValue)
@@ -153,7 +152,6 @@ void function OnFrameworkLoadoutsSubMenu_Open()
     rejectedLoadouts = 0
     foreach(string loadoutName, frameworkPersistentTitanLoadout loadout in clientframeworkPersistentTitanLoadouts.loadouts )
     {
-        print("Loadout: " + loadoutName + " Status: " + loadout.response.status)
         if(loadout.response.status == eLoadoutStatus.REJECTED && !UIShowRejectedLoadouts)
         {
             print("Rejected " + loadoutName +" for reason " + loadout.response.reason + " and status " + loadout.response.cause + " with bad value (if applicable) " + loadout.response.badValue)

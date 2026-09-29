@@ -69,9 +69,23 @@ void function popupIfNeededThread()
     }
 }
 #endif
-#if CLIENT
+
+#if CLIENT || UI
+#if UI
+void function FrameworkInformLoadoutResponseUICallback(string args){
+    array<string> argsArray = split(args, "\n")
+    FrameworkInformLoadoutResponse(argsArray)
+}
+#endif
 void function FrameworkInformLoadoutResponse(array<string> args)
 {
+    #if CLIENT
+    string Resp = ""
+    foreach(string arg in args) {
+        Resp += arg + "\n"
+    }
+    RunUIScript("FrameworkInformLoadoutResponseUICallback", Resp)
+    #endif
     print("FrameworkInformLoadoutResponse: ")
     foreach(string arg in args)
     {
