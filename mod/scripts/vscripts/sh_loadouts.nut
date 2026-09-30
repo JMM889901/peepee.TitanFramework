@@ -262,12 +262,6 @@ void function PopulateTitanLoadoutFromPersistentData( entity player, TitanLoadou
 	loadout.passive4 			= GetValidatedPersistentLoadoutValue( player, "titan", loadoutIndex, "passive4" )
 	loadout.passive5 			= GetValidatedPersistentLoadoutValue( player, "titan", loadoutIndex, "passive5" )
 	loadout.passive6 			= GetValidatedPersistentLoadoutValue( player, "titan", loadoutIndex, "passive6" )
-		loadout.passive1 = GetModdedTitanPassiveStringForPersistenceInverted(loadout.name, "passive1", loadout.passive1)
-		loadout.passive2 = GetModdedTitanPassiveStringForPersistenceInverted(loadout.name, "passive2", loadout.passive2)
-		loadout.passive3 = GetModdedTitanPassiveStringForPersistenceInverted(loadout.name, "passive3", loadout.passive3)
-		loadout.passive4 = GetModdedTitanPassiveStringForPersistenceInverted(loadout.name, "passive4", loadout.passive4)
-		loadout.passive5 = GetModdedTitanPassiveStringForPersistenceInverted(loadout.name, "passive5", loadout.passive5)
-		loadout.passive6 = GetModdedTitanPassiveStringForPersistenceInverted(loadout.name, "passive6", loadout.passive6)
 	loadout.camoIndex			= GetValidatedPersistentLoadoutValueInt( player, "titan", loadoutIndex, "camoIndex" )
 	loadout.skinIndex			= GetValidatedPersistentLoadoutValueInt( player, "titan", loadoutIndex, "skinIndex" ) //Important: Skin index needs to be gotten after camoIndex for loadout validation purposes
 	loadout.decalIndex			= GetValidatedPersistentLoadoutValueInt( player, "titan", loadoutIndex, "decalIndex" )
@@ -418,20 +412,6 @@ function SetPersistentLoadoutValue( entity player, string loadoutType, int loado
 	 //printt( "SetPersistentLoadoutValue called with loadoutType:", loadoutType, "loadoutIndex:", loadoutIndex, "loadoutProperty:" , loadoutProperty, "value:", value )
 	 //printl( "script GetPlayerArray()[0].SetPersistentVar( \"" + loadoutType + "Loadouts[" + loadoutIndex + "]." + loadoutProperty + "\", \"" + value + "\" )" )
 	 //printt( "=======================================================================================" )
-	string Class = GetPersistentLoadoutValue(player, "titan", loadoutIndex, "name")
-	if(GetModdedTitanClasses().contains(Class))
-	{
-		switch(loadoutProperty)
-		{
-			case "passive1":
-			case "passive2":
-			case "passive3":
-			case "passive4":
-			case "passive5":
-			case "passive6":
-				value = GetModdedTitanPassiveStringForPersistence(Class, loadoutProperty, value)
-		}
-	}
 	bool loadoutIsPilot = ( loadoutType == "pilot" )
 	bool loadoutIsTitan = ( loadoutType == "titan" )
 	bool loadoutIsPilotOrTitan = ( loadoutIsPilot || loadoutIsTitan )
@@ -3812,21 +3792,7 @@ string function Loadouts_GetSetFileForRequestedClass( entity player )
 			loadout = GetTitanLoadoutFromPersistentData( player, GetPersistentSpawnLoadoutIndex( player, "titan" ) )
 		}
 		player.SetPersistentVar( "activeTitanLoadout.name", 				loadout.name )
-		if(GetModdedTitanClasses().contains(loadout.titanClass))
-		{
-			player.SetPersistentVar( "activeTitanLoadout.titanClass", 		GetModdedTitanClassForMods(loadout.name) )
-			//player.SetPersistentVar( "activeTitanLoadout.titanClass", 		null )
-			//return
-			player.SetPersistentVar( "activeTitanLoadout.passive1", 			GetModdedTitanPassiveStringForPersistence(loadout.name, "passive1", loadout.passive1 ))
-			player.SetPersistentVar( "activeTitanLoadout.passive2", 			GetModdedTitanPassiveStringForPersistence(loadout.name, "passive2", loadout.passive2 ))
-			player.SetPersistentVar( "activeTitanLoadout.passive3", 			GetModdedTitanPassiveStringForPersistence(loadout.name, "passive3", loadout.passive3 ))
-			player.SetPersistentVar( "activeTitanLoadout.passive4", 			GetModdedTitanPassiveStringForPersistence(loadout.name, "passive4", loadout.passive4 ))
-			player.SetPersistentVar( "activeTitanLoadout.passive5", 			GetModdedTitanPassiveStringForPersistence(loadout.name, "passive5", loadout.passive5 ))
-			player.SetPersistentVar( "activeTitanLoadout.passive6", 			GetModdedTitanPassiveStringForPersistence(loadout.name, "passive6", loadout.passive6 ))
-		}
-		else
-		{
-			player.SetPersistentVar( "activeTitanLoadout.titanClass", 		loadout.titanClass )
+		player.SetPersistentVar( "activeTitanLoadout.titanClass", 		loadout.titanClass )
 		//player.SetPersistentVar( "activeTitanLoadout.titanClass", 			loadout.titanClass )
 		player.SetPersistentVar( "activeTitanLoadout.primaryMod", 			loadout.primaryMod )
 		player.SetPersistentVar( "activeTitanLoadout.special", 				loadout.special )
@@ -3837,7 +3803,6 @@ string function Loadouts_GetSetFileForRequestedClass( entity player )
 		player.SetPersistentVar( "activeTitanLoadout.passive4", 			loadout.passive4 )
 		player.SetPersistentVar( "activeTitanLoadout.passive5", 			loadout.passive5 )
 		player.SetPersistentVar( "activeTitanLoadout.passive6", 			loadout.passive6 )
-		}
 
 
 		player.SetPersistentVar( "activeTitanLoadout.skinIndex", 			loadout.skinIndex )

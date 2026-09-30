@@ -18,10 +18,6 @@ global function OverwriteModdedTitanLoadoutDefaultEquipment
 global function OverwriteDefaultTitanLoadoutByIndex
 global function ModdedTitanHasPassiveSlot
 global function RegisterModdedTitanCustomPassiveType
-global function GenerateModdedTitanPassiveStringForPersistence
-global function GetModdedTitanPassiveStringForPersistence
-global function GetModdedTitanPassiveStringForPersistenceInverted
-global function DevGetPassivePersistentConversionTable
 global function GetModdedTitanPassivePersistentType
 global function RegisterModdedTitanItemsSimple
 global function CreateModdedTitanSimple
@@ -64,8 +60,6 @@ table<string, int> TitanPassiveTypesByRef
 table<string, table<string, int> > TitanPassiveTypesBySetFile
 table<string, table<string, int> > TitanPassiveTypesByClass
 table<string, int> ModdedTitanExtraPassiveTypes
-table<string, table<string, table <string, string > > > ModdedTitanCustomPassivePersistentNames
-table<string, table<string, table <string, string > > > ModdedTitanCustomPassivePersistentNamesInverted
 table<int, int > ModdedTitanPassivePersistentType
 table<int, string> ModdedPassiveTypeDisplayNames
 table<string, table<string, bool> > ModdedTitanPassiveHasAsset
@@ -457,84 +451,6 @@ void function SetTitanLoadout(entity player, int index, TitanLoadoutDef loadout)
 	}
 }
 #endif
-void function GenerateModdedTitanPassiveStringForPersistence(string titan, string passiveslot, string passive, int masktype = -1)
-{
-	if(!(titan in ModdedTitanCustomPassivePersistentNames))
-		ModdedTitanCustomPassivePersistentNames[titan] <- {}
-
-	if(!(passiveslot in ModdedTitanCustomPassivePersistentNames[titan]))
-		ModdedTitanCustomPassivePersistentNames[titan][passiveslot] <- {}
-	if(passive in ModdedTitanCustomPassivePersistentNames[titan][passiveslot])
-	{
-		print("Already registered that passive")
-		return
-	}
-	if(shouldPrintDevStuff())
-		print(passiveslot)
-	int ItemType
-
-	if(passiveslot == "passive4")
-		ItemType = eItemTypes.TITAN_UPGRADE1_PASSIVE
-	if(passiveslot == "passive5")
-		ItemType = eItemTypes.TITAN_UPGRADE2_PASSIVE
-	if(passiveslot == "passive6")
-		ItemType = eItemTypes.TITAN_UPGRADE3_PASSIVE
-	if(passiveslot == "passive2")
-		ItemType = masktype
-
-	if(shouldPrintDevStuff())
-		print(ItemType)
-	string name = GetAllItemsOfType(ItemType)[ModdedTitanCustomPassivePersistentNames[titan][passiveslot].len()].ref
-	if(shouldPrintDevStuff())
-		print(name)
-	ModdedTitanCustomPassivePersistentNames[titan][passiveslot][passive] <- name
-}
-string function GetModdedTitanPassiveStringForPersistence(string titan, string passiveslot, string passive)
-{
-	if(!(titan in ModdedTitanCustomPassivePersistentNames))
-	{
-		if(shouldPrintDevStuff())
-			print("titan not registered with custom to persistent index "+titan)
-		return passive
-	}
-	if(!(passiveslot in ModdedTitanCustomPassivePersistentNames[titan]))
-	{
-		if(shouldPrintDevStuff())
-			print("passiveslot not registered with custom to persistent index for "+titan)
-		return passive
-	}
-	if(!(passive in ModdedTitanCustomPassivePersistentNames[titan][passiveslot]))
-	{
-		if(shouldPrintDevStuff())
-			print("passive not registered with custom to persistent index for "+titan +" and "+passive)
-		return passive
-	}
-	return ModdedTitanCustomPassivePersistentNames[titan][passiveslot][passive]
-	
-}
-string function GetModdedTitanPassiveStringForPersistenceInverted(string titan, string passiveslot, string passive)
-{
-	if(!(titan in ModdedTitanCustomPassivePersistentNames))
-		return passive
-	if(shouldPrintDevStuff())
-		print("titan exists "+titan)
-	if(!(passiveslot in ModdedTitanCustomPassivePersistentNames[titan]))
-		return passive
-	if(shouldPrintDevStuff())
-		print("passivetype exists "+passiveslot)
-	foreach(string key, string value in ModdedTitanCustomPassivePersistentNames[titan][passiveslot])
-	{
-		if( value == passive )
-			return key
-	}
-	print("Passive not found "+passive )
-	return passive
-	
-}
-table<string, table<string, table<string, string> > > function DevGetPassivePersistentConversionTable()
-{
-	return ModdedTitanCustomPassivePersistentNames
-}
 void function PreInit()
 {
 	#if SERVER || CLIENT
@@ -914,7 +830,6 @@ void function RegisterModdedTitanCustomPassiveType(string name, array<ItemData> 
 	{
 		CreateGenericSubItemData(  eItemTypes[propertyname], name, item.ref )
 		InitUnlock( item.ref, name, eUnlockType.TITAN_LEVEL, index )
-		//GenerateModdedTitanPassiveStringForPersistence(name, (slot), item.ref, masktype  )
 		if(item.ref in ePassives)
 			continue
 		
